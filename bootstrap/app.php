@@ -23,8 +23,10 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Excluir las rutas proxy SUNAT del CSRF (reciben requests del iframe del bot).
         $middleware->validateCsrfTokens(except: [
-            'facturador/clients/sunat-frame/*',
-            'facturador/clients/sunat-resource/*',
+            'facturador/clients/sunat-frame*',
+            'facturador/clients/sunat-resource*',
+            'facturador/sunat-frame*',
+            'facturador/sunat-resource*',
         ]);
 
         $middleware->alias([
