@@ -27,6 +27,7 @@ use App\Repositories\Eloquent\ProductRepository;
 use App\Repositories\Eloquent\UserProfileRepository;
 use App\Repositories\Eloquent\UserRepository;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -54,6 +55,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // EasyPanel suele terminar TLS en proxy inverso. Esto evita Mixed Content
+        // al generar asset()/url() en HTTP cuando el sitio público va en HTTPS.
+        if (app()->environment('production') || request()->header('x-forwarded-proto') === 'https') {
+            URL::forceScheme('https');
+        }
+
         // ── Policies base ────────────────────────────────────────────────
         Gate::policy(Company::class, CompanyPolicy::class);
 
