@@ -58,26 +58,40 @@ class SunatLoginController extends Controller
             ], 422);
         }
 
-        $baseUrl = rtrim(config('services.bot_cookies.url', 'https://heliotypic-stealthily-carie.ngrok-free.dev'), '/');
+        $baseUrl = rtrim(config('services.bot_cookies.url', 'http://localhost:8001'), '/');
         $apiKey  = config('services.bot_cookies.key', '');
 
         try {
             $response = Http::timeout(30)
-                ->withHeaders(['x-api-key' => $apiKey])
+                ->withHeaders([
+                    'x-api-key'                    => $apiKey,
+                    'ngrok-skip-browser-warning'   => 'true',
+                    'User-Agent'                   => 'LaravelBot/1.0',
+                    'Accept'                       => 'application/json',
+                ])
                 ->post("{$baseUrl}/proxy/create", [
                     'ruc'         => $client->numero_documento,
                     'usuario_sol' => $client->usuario_sol,
-                    'clave_sol'   => $client->clave_sol, // cast 'encrypted' ya lo desencripta
+                    // El cast encrypted del modelo ya devuelve la clave desencriptada.
+                    'clave_sol'   => $client->clave_sol,
                     'portal'      => 'sunat',
                 ]);
 
             $data = $response->json();
 
+            // Si bot_cookies devuelve HTML (p.ej. advertencia ngrok), exponer detalle claro.
+            if (! is_array($data)) {
+                return response()->json([
+                    'ok'    => false,
+                    'error' => 'Respuesta no valida del microservicio bot_cookies. Verifique BOT_COOKIES_URL y headers ngrok.',
+                ], 502);
+            }
+
             if (! ($data['ok'] ?? false)) {
                 return response()->json([
                     'ok'    => false,
                     'error' => $data['detalle'] ?? $data['error'] ?? 'Error al conectar con SUNAT.',
-                ], 502);
+                ], $response->status() >= 400 ? $response->status() : 502);
             }
 
             return response()->json([
