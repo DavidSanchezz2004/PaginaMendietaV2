@@ -136,20 +136,43 @@ Route::middleware('auth')->group(function (): void {
             Route::post('clients/{client}/sunat-proxy', [SunatLoginController::class, 'getProxyUrl'])
                 ->name('clients.sunat-proxy');
 
-            // Proxy iframe SUNAT: sirve el contenido del bot añadiendo headers ngrok server-side
-            // para que el iframe del navegador no reciba la advertencia de ngrok.
+            // Proxy iframe SUNAT: sirve el HTML del bot y reemplaza URLs absolutas
+            // del microservicio por rutas propias de Laravel para que el iframe
+            // pueda cargar CSS / JS / fuentes sin hacer peticiones directas a ngrok.
             Route::get('clients/sunat-frame/{token}', function (string $token) {
-                $botUrl = rtrim(config('services.bot_cookies.url'), '/');
+                $botUrl     = rtrim(config('services.bot_cookies.url'), '/');
+                $laravelBase = url('facturador/clients/sunat-resource');
 
                 $response = Http::withHeaders([
                     'ngrok-skip-browser-warning' => 'true',
                     'User-Agent'                 => 'LaravelBot/1.0',
                 ])->get("{$botUrl}/proxy/{$token}");
 
-                return response($response->body(), $response->status())
-                    ->header('Content-Type', 'text/html; charset=utf-8')
-                    ->header('X-Frame-Options', 'SAMEORIGIN');
+                // Sustituir todas las URLs absolutas del bot por el proxy Laravel.
+                $html = str_replace($botUrl, $laravelBase, $response->body());
+
+                return response($html, 200)
+                    ->header('Content-Type', 'text/html; charset=utf-8');
             })->name('clients.sunat-frame');
+
+            // Proxy de recursos del bot (CSS, JS, fuentes, imágenes).
+            // El segmento {path} captura rutas con barras gracias a ->where('path', '.*').
+            Route::get('clients/sunat-resource/{path}', function (string $path) {
+                $botUrl = rtrim(config('services.bot_cookies.url'), '/');
+                $url    = "{$botUrl}/{$path}";
+
+                if (request()->getQueryString()) {
+                    $url .= '?' . request()->getQueryString();
+                }
+
+                $response = Http::withHeaders([
+                    'ngrok-skip-browser-warning' => 'true',
+                    'User-Agent'                 => 'LaravelBot/1.0',
+                ])->get($url);
+
+                return response($response->body(), $response->status())
+                    ->header('Content-Type', $response->header('Content-Type') ?: 'application/octet-stream');
+            })->where('path', '.*')->name('clients.sunat-resource');
 
             // Facturas
             Route::resource('invoices', InvoiceController::class)
