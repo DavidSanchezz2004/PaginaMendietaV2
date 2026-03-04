@@ -21,6 +21,12 @@ return Application::configure(basePath: dirname(__DIR__))
                 | Request::HEADER_X_FORWARDED_PROTO,
         );
 
+        // Excluir las rutas proxy SUNAT del CSRF (reciben requests del iframe del bot).
+        $middleware->validateCsrfTokens(except: [
+            'facturador/clients/sunat-frame/*',
+            'facturador/clients/sunat-resource/*',
+        ]);
+
         $middleware->alias([
             'active.company'       => \App\Http\Middleware\EnsureUserBelongsToActiveCompany::class,
             // ── Facturador ─────────────────────────────────────────────────
