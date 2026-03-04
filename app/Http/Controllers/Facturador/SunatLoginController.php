@@ -64,10 +64,10 @@ class SunatLoginController extends Controller
         try {
             $response = Http::timeout(30)
                 ->withHeaders([
-                    'x-api-key'                    => $apiKey,
-                    'ngrok-skip-browser-warning'   => 'true',
-                    'User-Agent'                   => 'LaravelBot/1.0',
-                    'Accept'                       => 'application/json',
+                    'x-api-key'                  => $apiKey,
+                    'ngrok-skip-browser-warning' => 'true',
+                    'User-Agent'                 => 'LaravelBot/1.0',
+                    'Accept'                     => 'application/json',
                 ])
                 ->post("{$baseUrl}/proxy/create", [
                     'ruc'         => $client->numero_documento,
@@ -76,6 +76,9 @@ class SunatLoginController extends Controller
                     'clave_sol'   => $client->clave_sol,
                     'portal'      => 'sunat',
                 ]);
+
+            \Log::info('Bot response status: ' . $response->status());
+            \Log::info('Bot response body: ' . $response->body());
 
             $data = $response->json();
 
@@ -90,8 +93,8 @@ class SunatLoginController extends Controller
             if (! ($data['ok'] ?? false)) {
                 return response()->json([
                     'ok'    => false,
-                    'error' => $data['detalle'] ?? $data['error'] ?? 'Error al conectar con SUNAT.',
-                ], $response->status() >= 400 ? $response->status() : 502);
+                    'error' => $data['detalle'] ?? $data['error'] ?? 'Error del bot',
+                ], 500);
             }
 
             return response()->json([
@@ -100,15 +103,11 @@ class SunatLoginController extends Controller
                 'ruc'       => $data['ruc'] ?? $client->numero_documento,
             ]);
 
-        } catch (\Illuminate\Http\Client\ConnectionException) {
-            return response()->json([
-                'ok'    => false,
-                'error' => 'No se pudo conectar con el servicio de autenticación. Verifique que esté activo.',
-            ], 503);
         } catch (\Throwable $e) {
+            \Log::error('SunatProxy error: ' . $e->getMessage());
             return response()->json([
                 'ok'    => false,
-                'error' => 'Error inesperado: ' . $e->getMessage(),
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
