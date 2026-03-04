@@ -19,6 +19,7 @@ use App\Http\Controllers\TicketController;
 use App\Http\Controllers\User\CompanyUserController;
 use App\Enums\RoleEnum;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn () => redirect()->route('dashboard'));
@@ -134,6 +135,21 @@ Route::middleware('auth')->group(function (): void {
                 ->name('clients.sunat-login');
             Route::post('clients/{client}/sunat-proxy', [SunatLoginController::class, 'getProxyUrl'])
                 ->name('clients.sunat-proxy');
+
+        // Proxy iframe SUNAT: sirve el contenido del bot añadiendo headers ngrok server-side
+        // para que el iframe del navegador no reciba la advertencia de ngrok.
+        Route::get('sunat-frame/{token}', function (string $token) {
+            $botUrl = rtrim(config('services.bot_cookies.url'), '/');
+
+            $response = Http::withHeaders([
+                'ngrok-skip-browser-warning' => 'true',
+                'User-Agent'                 => 'LaravelBot/1.0',
+            ])->get("{$botUrl}/proxy/{$token}");
+
+            return response($response->body(), $response->status())
+                ->header('Content-Type', 'text/html')
+                ->header('X-Frame-Options', 'ALLOWALL');
+        })->name('clients.sunat-frame');
 
             // Facturas
             Route::resource('invoices', InvoiceController::class)
