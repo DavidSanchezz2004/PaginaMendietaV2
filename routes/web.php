@@ -158,22 +158,32 @@ Route::middleware('auth')->group(function (): void {
             // Proxy de recursos del bot (CSS, JS, fuentes, imágenes).
             // Route::any para soportar POST (405 con GET solo).
             Route::any('clients/sunat-resource/{path}', function (string $path) {
-                $botUrl = rtrim(config('services.bot_cookies.url'), '/');
-                $url    = "{$botUrl}/{$path}";
+                $botUrl      = rtrim(config('services.bot_cookies.url'), '/');
+                $laravelBase = url('facturador/clients/sunat-resource');
+                $url         = "{$botUrl}/{$path}";
 
                 if (request()->getQueryString()) {
                     $url .= '?' . request()->getQueryString();
                 }
 
-                $response = Http::withHeaders([
+                $response    = Http::withHeaders([
                     'ngrok-skip-browser-warning' => 'true',
                     'User-Agent'                 => 'LaravelBot/1.0',
                 ])->send(request()->method(), $url, [
                     'body' => request()->getContent(),
                 ]);
 
-                return response($response->body(), $response->status())
-                    ->header('Content-Type', $response->header('Content-Type') ?: 'application/octet-stream')
+                $contentType = $response->header('Content-Type') ?: 'application/octet-stream';
+                $body        = $response->body();
+
+                // En archivos de texto (CSS, JS) reescribir las URLs absolutas del bot
+                // para que los recursos secundarios (fuentes, imágenes) también pasen por el proxy.
+                if (str_contains($contentType, 'text/css') || str_contains($contentType, 'javascript')) {
+                    $body = str_replace($botUrl, $laravelBase, $body);
+                }
+
+                return response($body, $response->status())
+                    ->header('Content-Type', $contentType)
                     ->header('Access-Control-Allow-Origin', '*')
                     ->header('Access-Control-Allow-Methods', '*')
                     ->header('Access-Control-Allow-Headers', '*');

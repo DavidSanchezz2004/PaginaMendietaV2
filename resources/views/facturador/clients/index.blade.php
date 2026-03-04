@@ -170,8 +170,7 @@
 
       {{-- iframe SUNAT --}}
       <iframe id="sunat-iframe"
-        style="flex:1; border:none; display:none;"
-        sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation">
+        style="flex:1; border:none; display:none;">
       </iframe>
 
       {{-- Estado: Error --}}
