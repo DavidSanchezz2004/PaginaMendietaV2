@@ -1,61 +1,51 @@
-# =========================
-# 1) Composer dependencies
-# =========================
-FROM composer:2 AS vendor
+# ---------- Frontend build (Node 22) ----------
+FROM node:22-bookworm AS nodebuild
 WORKDIR /app
-COPY composer.json composer.lock ./
-RUN composer install --no-dev --prefer-dist --no-interaction --no-progress --optimize-autoloader --no-scripts
-COPY . .
-RUN composer dump-autoload --optimize \
- && php artisan package:discover --ansi
 
-# =========================
-# 2) Node build (Vite)
-# =========================
-FROM node:20-alpine AS assets
-WORKDIR /app
+# Cache npm deps first
 COPY package*.json ./
-RUN npm install --no-audit --no-fund
+RUN npm ci || npm install
+
+# Build Vite assets
 COPY . .
 RUN npm run build
 
-# =========================
-# 3) Runtime: Nginx + PHP-FPM
-# =========================
-FROM php:8.3-fpm-bookworm
 
-# System deps
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    nginx supervisor git unzip libzip-dev libpng-dev libjpeg-dev libfreetype6-dev \
-    libicu-dev libonig-dev \
+# ---------- PHP runtime (Laravel) ----------
+FROM php:8.3-cli AS app
+WORKDIR /app
+
+# System deps + required PHP extensions
+RUN apt-get update && apt-get install -y \
+    git unzip zip libzip-dev \
+  && docker-php-ext-install pdo_mysql zip \
   && rm -rf /var/lib/apt/lists/*
 
-# PHP extensions
-RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
- && docker-php-ext-install -j$(nproc) \
-    pdo_mysql mbstring bcmath intl zip gd opcache
+# Composer binary
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-WORKDIR /var/www/html
+# App source
+COPY . .
 
-# Copy app (vendor + source)
-COPY --from=vendor /app /var/www/html
-# Copy built assets
-COPY --from=assets /app/public/build /var/www/html/public/build
+# Built assets from node stage
+COPY --from=nodebuild /app/public/build /app/public/build
 
-# Nginx + Supervisor config
-COPY docker/nginx.conf /etc/nginx/nginx.conf
-COPY docker/site.conf /etc/nginx/sites-available/default
-COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+# PHP dependencies (production)
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress
 
 # Laravel runtime dirs + permissions
-RUN mkdir -p /var/www/html/storage/framework/views \
-  /var/www/html/storage/framework/cache/data \
-  /var/www/html/storage/framework/sessions \
-  /var/www/html/storage/framework/testing \
-  /var/www/html/bootstrap/cache \
- && chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
- && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+RUN mkdir -p storage/framework/views \
+    storage/framework/cache/data \
+    storage/framework/sessions \
+    storage/framework/testing \
+    bootstrap/cache \
+ && chown -R www-data:www-data storage bootstrap/cache \
+ && chmod -R 775 storage bootstrap/cache
 
-EXPOSE 80
+# Optional caches (do not fail build)
+RUN php artisan config:cache || true \
+ && php artisan route:cache || true \
+ && php artisan view:cache || true
 
-CMD ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisor/supervisord.conf"]
+EXPOSE 8080
+CMD ["bash", "-lc", "php artisan serve --host=0.0.0.0 --port=${PORT:-8080}"]
