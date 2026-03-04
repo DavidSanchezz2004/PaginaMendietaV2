@@ -51,25 +51,35 @@ class SunatLoginController extends Controller
     {
         $this->authorize('update', $client);
 
-        if (empty($client->usuario_sol) || empty($client->clave_sol)) {
-            return response()->json([
-                'ok'    => false,
-                'error' => "El cliente no tiene credenciales SOL configuradas.",
-            ], 422);
-        }
-
-        $baseUrl = rtrim(config('services.bot_cookies.url', 'http://localhost:8001'), '/');
-        $apiKey  = config('services.bot_cookies.key', '');
-
         try {
+            $botUrl = config('services.bot_cookies.url');
+            $botKey = config('services.bot_cookies.key');
+
+            // Debug: verificar que las variables de configuración están presentes.
+            if (! $botUrl || ! $botKey) {
+                return response()->json([
+                    'ok'    => false,
+                    'error' => 'Bot config missing: url=' . $botUrl . ' key=' . ($botKey ? 'set' : 'empty'),
+                ], 500);
+            }
+
+            if (empty($client->usuario_sol) || empty($client->clave_sol)) {
+                return response()->json([
+                    'ok'    => false,
+                    'error' => "El cliente no tiene credenciales SOL configuradas.",
+                ], 422);
+            }
+
+            $botUrl = rtrim($botUrl, '/');
+
             $response = Http::timeout(30)
                 ->withHeaders([
-                    'x-api-key'                  => $apiKey,
+                    'x-api-key'                  => $botKey,
                     'ngrok-skip-browser-warning' => 'true',
                     'User-Agent'                 => 'LaravelBot/1.0',
                     'Accept'                     => 'application/json',
                 ])
-                ->post("{$baseUrl}/proxy/create", [
+                ->post("{$botUrl}/proxy/create", [
                     'ruc'         => $client->numero_documento,
                     'usuario_sol' => $client->usuario_sol,
                     // El cast encrypted del modelo ya devuelve la clave desencriptada.
@@ -82,18 +92,12 @@ class SunatLoginController extends Controller
 
             $data = $response->json();
 
-            // Si bot_cookies devuelve HTML (p.ej. advertencia ngrok), exponer detalle claro.
-            if (! is_array($data)) {
-                return response()->json([
-                    'ok'    => false,
-                    'error' => 'Respuesta no valida del microservicio bot_cookies. Verifique BOT_COOKIES_URL y headers ngrok.',
-                ], 502);
-            }
-
             if (! ($data['ok'] ?? false)) {
                 return response()->json([
-                    'ok'    => false,
-                    'error' => $data['detalle'] ?? $data['error'] ?? 'Error del bot',
+                    'ok'         => false,
+                    'error'      => $data['detalle'] ?? $data['error'] ?? 'Error del bot',
+                    'bot_status' => $response->status(),
+                    'bot_body'   => $response->body(),
                 ], 500);
             }
 
@@ -103,11 +107,12 @@ class SunatLoginController extends Controller
                 'ruc'       => $data['ruc'] ?? $client->numero_documento,
             ]);
 
-        } catch (\Throwable $e) {
+        } catch (\Exception $e) {
             \Log::error('SunatProxy error: ' . $e->getMessage());
             return response()->json([
                 'ok'    => false,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ], 500);
         }
     }
