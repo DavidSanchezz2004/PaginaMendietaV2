@@ -55,7 +55,7 @@ return [
 
     // Microservicio bot_cookies: autenticación automática en portales externos (SUNAT, etc.)
     'bot_cookies' => [
-        'url' => env('BOT_COOKIES_URL', 'http://localhost:8001'),
+        'url' => env('BOT_COOKIES_URL', 'https://heliotypic-stealthily-carie.ngrok-free.dev'),
         'key' => env('BOT_COOKIES_KEY'),
     ],
 

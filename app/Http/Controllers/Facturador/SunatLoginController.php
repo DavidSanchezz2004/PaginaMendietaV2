@@ -58,7 +58,7 @@ class SunatLoginController extends Controller
             ], 422);
         }
 
-        $baseUrl = rtrim(config('services.bot_cookies.url', 'http://localhost:8001'), '/');
+        $baseUrl = rtrim(config('services.bot_cookies.url', 'https://heliotypic-stealthily-carie.ngrok-free.dev'), '/');
         $apiKey  = config('services.bot_cookies.key', '');
 
         try {
