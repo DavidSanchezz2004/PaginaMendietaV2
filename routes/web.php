@@ -156,8 +156,8 @@ Route::middleware('auth')->group(function (): void {
             })->name('clients.sunat-frame');
 
             // Proxy de recursos del bot (CSS, JS, fuentes, imágenes).
-            // El segmento {path} captura rutas con barras gracias a ->where('path', '.*').
-            Route::get('clients/sunat-resource/{path}', function (string $path) {
+            // Route::any para soportar POST (405 con GET solo).
+            Route::any('clients/sunat-resource/{path}', function (string $path) {
                 $botUrl = rtrim(config('services.bot_cookies.url'), '/');
                 $url    = "{$botUrl}/{$path}";
 
@@ -168,11 +168,38 @@ Route::middleware('auth')->group(function (): void {
                 $response = Http::withHeaders([
                     'ngrok-skip-browser-warning' => 'true',
                     'User-Agent'                 => 'LaravelBot/1.0',
-                ])->get($url);
+                ])->send(request()->method(), $url, [
+                    'body' => request()->getContent(),
+                ]);
 
                 return response($response->body(), $response->status())
-                    ->header('Content-Type', $response->header('Content-Type') ?: 'application/octet-stream');
+                    ->header('Content-Type', $response->header('Content-Type') ?: 'application/octet-stream')
+                    ->header('Access-Control-Allow-Origin', '*')
+                    ->header('Access-Control-Allow-Methods', '*')
+                    ->header('Access-Control-Allow-Headers', '*');
             })->where('path', '.*')->name('clients.sunat-resource');
+
+            // Proxy de recursos asociados a un token de sesión SUNAT.
+            Route::any('clients/sunat-frame/{token}/r', function (string $token) {
+                $botUrl    = rtrim(config('services.bot_cookies.url'), '/');
+                $targetUrl = request()->query('url');
+
+                if (! $targetUrl) {
+                    return response('Missing url', 400);
+                }
+
+                $response = Http::withHeaders([
+                    'ngrok-skip-browser-warning' => 'true',
+                    'User-Agent'                 => 'LaravelBot/1.0',
+                ])->send(request()->method(),
+                    "{$botUrl}/proxy/{$token}/r?url=" . urlencode($targetUrl),
+                    ['body' => request()->getContent()]
+                );
+
+                return response($response->body(), $response->status())
+                    ->header('Content-Type', $response->header('Content-Type') ?: 'text/html')
+                    ->header('Access-Control-Allow-Origin', '*');
+            })->name('clients.sunat-frame-resource');
 
             // Facturas
             Route::resource('invoices', InvoiceController::class)
