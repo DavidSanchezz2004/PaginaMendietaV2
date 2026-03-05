@@ -250,10 +250,30 @@
 
         loadMsg.textContent = 'Cargando portal de SUNAT...';
 
-        iframe.onload = () => {
+        // Guardar token para redirigir navegaciones internas de SUNAT.
+        const tokenMatch = data.proxy_url.match(/sunat-frame\/([a-f0-9-]{32,36})/);
+        if (tokenMatch) window._sunatToken = tokenMatch[1];
+
+        iframe.addEventListener('load', function onIframeLoad() {
+          try {
+            const src = iframe.src || '';
+            // Si el iframe navegó fuera del proxy (URL sin token válido de 32 chars)
+            if (
+              src.includes('sunat-frame') &&
+              !src.match(/sunat-frame\/[a-f0-9-]{32,36}(?:\/|$)/) &&
+              window._sunatToken
+            ) {
+              const subpath = src.split('sunat-frame/')[1] || '';
+              iframe.src = window.location.origin +
+                '/facturador/clients/sunat-frame/' + window._sunatToken +
+                '/r?url=' + encodeURIComponent('https://e-menu.sunat.gob.pe/cl-ti-itmenu/' + subpath);
+              return; // Esperar el siguiente onload
+            }
+          } catch (e) { /* cross-origin: ignorar */ }
           loading.style.display = 'none';
           iframe.style.display  = 'block';
-        };
+        });
+
         iframe.src = data.proxy_url;
 
       } catch (err) {
