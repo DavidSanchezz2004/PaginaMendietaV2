@@ -214,21 +214,18 @@
     });
 
     async function abrirSUNAT(proxyUrl, razonSocial) {
-      const modal    = document.getElementById('sunat-modal');
-      const loading  = document.getElementById('sunat-loading');
-      const iframe   = document.getElementById('sunat-iframe');
-      const errorBox = document.getElementById('sunat-error');
-      const title    = document.getElementById('sunat-modal-title');
       const loadMsg  = document.getElementById('sunat-loading-msg');
+      const loading  = document.getElementById('sunat-loading');
+      const modal    = document.getElementById('sunat-modal');
+      const errorBox = document.getElementById('sunat-error');
 
-      // Reset estado
       modal.style.display    = 'flex';
       loading.style.display  = 'flex';
-      iframe.style.display   = 'none';
+      document.getElementById('sunat-iframe').style.display  = 'none';
       errorBox.style.display = 'none';
-      iframe.src             = '';
-      title.textContent      = razonSocial ? `SUNAT — ${razonSocial}` : 'Portal SUNAT SOL';
-      loadMsg.textContent    = 'Conectando con el servicio...';
+      document.getElementById('sunat-modal-title').textContent =
+        razonSocial ? `SUNAT — ${razonSocial}` : 'Portal SUNAT SOL';
+      loadMsg.textContent = 'Conectando con SUNAT...';
 
       try {
         loadMsg.textContent = 'Verificando credenciales SOL...';
@@ -243,42 +240,21 @@
         });
 
         const data = await res.json();
+        if (!data.ok) throw new Error(data.error || 'Error desconocido.');
 
-        if (!data.ok) {
-          throw new Error(data.error || 'Error desconocido.');
-        }
+        // Cerrar modal de loading y abrir popup.
+        modal.style.display   = 'none';
+        loading.style.display = 'none';
 
-        loadMsg.textContent = 'Cargando portal de SUNAT...';
-
-        // Guardar token para redirigir navegaciones internas de SUNAT.
-        const tokenMatch = data.proxy_url.match(/sunat-frame\/([a-f0-9-]{32,36})/);
-        if (tokenMatch) window._sunatToken = tokenMatch[1];
-
-        iframe.addEventListener('load', function onIframeLoad() {
-          try {
-            const src = iframe.src || '';
-            // Si el iframe navegó fuera del proxy (URL sin token válido de 32 chars)
-            if (
-              src.includes('sunat-frame') &&
-              !src.match(/sunat-frame\/[a-f0-9-]{32,36}(?:\/|$)/) &&
-              window._sunatToken
-            ) {
-              const subpath = src.split('sunat-frame/')[1] || '';
-              iframe.src = window.location.origin +
-                '/facturador/clients/sunat-frame/' + window._sunatToken +
-                '/r?url=' + encodeURIComponent('https://e-menu.sunat.gob.pe/cl-ti-itmenu/' + subpath);
-              return; // Esperar el siguiente onload
-            }
-          } catch (e) { /* cross-origin: ignorar */ }
-          loading.style.display = 'none';
-          iframe.style.display  = 'block';
-        });
-
-        iframe.src = data.proxy_url;
+        window.open(
+          data.proxy_url,
+          'sunat_popup',
+          'width=1280,height=900,scrollbars=yes,resizable=yes'
+        );
 
       } catch (err) {
-        loading.style.display           = 'none';
-        errorBox.style.display          = 'flex';
+        loading.style.display  = 'none';
+        errorBox.style.display = 'flex';
         document.getElementById('sunat-error-msg').textContent = err.message;
       }
     }
