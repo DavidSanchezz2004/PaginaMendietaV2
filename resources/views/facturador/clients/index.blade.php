@@ -214,22 +214,55 @@
     });
 
     async function abrirSUNAT(proxyUrl, razonSocial) {
-      const loadMsg  = document.getElementById('sunat-loading-msg');
-      const loading  = document.getElementById('sunat-loading');
-      const modal    = document.getElementById('sunat-modal');
       const errorBox = document.getElementById('sunat-error');
+      const modal    = document.getElementById('sunat-modal');
+      const loading  = document.getElementById('sunat-loading');
+      const loadMsg  = document.getElementById('sunat-loading-msg');
 
+      // Abrir el popup INMEDIATAMENTE en el mismo tick del click
+      // para que el browser no lo considere popup no autorizado.
+      const popup = window.open('', 'sunat_popup', 'width=1280,height=900,scrollbars=yes,resizable=yes');
+
+      // Si el browser bloqueó el popup, mostrar el modal con error.
+      if (!popup) {
+        modal.style.display    = 'flex';
+        loading.style.display  = 'none';
+        errorBox.style.display = 'flex';
+        document.getElementById('sunat-modal-title').textContent =
+          razonSocial ? `SUNAT — ${razonSocial}` : 'Portal SUNAT SOL';
+        document.getElementById('sunat-error-msg').textContent =
+          'El navegador bloqueó la ventana emergente. Permite popups para este sitio e inténtalo de nuevo.';
+        return;
+      }
+
+      // Mostrar pantalla de carga dentro del popup mientras se resuelve el fetch.
+      popup.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8">
+        <title>Conectando con SUNAT…</title>
+        <style>
+          body { margin:0; display:flex; align-items:center; justify-content:center;
+                 height:100vh; flex-direction:column; gap:16px;
+                 font-family:sans-serif; background:#f8fafc; color:#1a3a6b; }
+          .spinner { width:48px; height:48px; border:4px solid #e2e8f0;
+                     border-top-color:#1a3a6b; border-radius:50%;
+                     animation:spin .8s linear infinite; }
+          @keyframes spin { to { transform:rotate(360deg); } }
+        </style></head><body>
+        <div class="spinner"></div>
+        <strong>Iniciando sesión en SUNAT…</strong>
+        <span style="font-size:.85rem;color:#64748b;">Verificando credenciales SOL…</span>
+      </body></html>`);
+      popup.document.close();
+
+      // Mostrar también el modal pequeño de progreso en la ventana principal.
       modal.style.display    = 'flex';
       loading.style.display  = 'flex';
       document.getElementById('sunat-iframe').style.display  = 'none';
       errorBox.style.display = 'none';
       document.getElementById('sunat-modal-title').textContent =
         razonSocial ? `SUNAT — ${razonSocial}` : 'Portal SUNAT SOL';
-      loadMsg.textContent = 'Conectando con SUNAT...';
+      loadMsg.textContent = 'Verificando credenciales SOL…';
 
       try {
-        loadMsg.textContent = 'Verificando credenciales SOL...';
-
         const res = await fetch(proxyUrl, {
           method: 'POST',
           headers: {
@@ -242,17 +275,15 @@
         const data = await res.json();
         if (!data.ok) throw new Error(data.error || 'Error desconocido.');
 
-        // Cerrar modal de loading y abrir popup.
-        modal.style.display   = 'none';
-        loading.style.display = 'none';
+        // Redirigir la ventana ya abierta a la URL autenticada.
+        popup.location.href = data.proxy_url;
 
-        window.open(
-          data.proxy_url,
-          'sunat_popup',
-          'width=1280,height=900,scrollbars=yes,resizable=yes'
-        );
+        // Cerrar modal de progreso en la ventana principal.
+        modal.style.display = 'none';
 
       } catch (err) {
+        // Si hubo error, cerrar el popup vacío y mostrar el error en el modal.
+        popup.close();
         loading.style.display  = 'none';
         errorBox.style.display = 'flex';
         document.getElementById('sunat-error-msg').textContent = err.message;
