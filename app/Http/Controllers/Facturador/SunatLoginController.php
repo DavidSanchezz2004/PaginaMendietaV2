@@ -69,15 +69,7 @@ class SunatLoginController extends Controller
                 ], 422);
             }
 
-            // Reutilizar token vigente
-            if ($client->sunat_token && $client->sunat_token_expires_at?->isFuture()) {
-                return response()->json([
-                    'ok'  => true,
-                    'url' => "{$botUrl}/ext-inject/{$client->sunat_token}",
-                ]);
-            }
-
-            // Solicitar nuevo token al bot
+            // Siempre solicitar un token nuevo al bot
             $response = Http::timeout(30)
                 ->withHeaders([
                     'x-api-key'  => $botKey,
