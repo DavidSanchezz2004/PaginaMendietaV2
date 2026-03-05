@@ -136,13 +136,19 @@ Route::middleware('auth')->group(function (): void {
             Route::post('clients/{client}/sunat-proxy', [SunatLoginController::class, 'getProxyUrl'])
                 ->name('clients.sunat-proxy');
 
-            // Popup SUNAT: redirect 302 directo al bot — para window.open desde el JS.
-            // No sirve HTML proxeado, simplemente reenvía al bot para que el navegador
-            // cargue la sesión autenticada en la ventana completa.
-            Route::get('clients/sunat-popup/{token}', function (string $token) {
-                $botUrl = rtrim(config('services.bot_cookies.url'), '/');
-                return redirect("{$botUrl}/proxy/{$token}");
-            })->name('clients.sunat-popup');
+            // Popup SUNAT: proxy de session-redirect del bot con headers ngrok.
+            // Un redirect 302 normal no puede agregar headers al request del browser a ngrok,
+            // así que Laravel hace el proxy: fetch server-side con ngrok headers y devuelve la respuesta.
+            Route::get('clients/sunat-session/{token}', function (string $token) {
+                $botUrl   = rtrim(config('services.bot_cookies.url'), '/');
+                $response = Http::withHeaders([
+                    'ngrok-skip-browser-warning' => 'true',
+                    'User-Agent'                 => 'LaravelBot/1.0',
+                ])->get("{$botUrl}/session-redirect/{$token}");
+
+                return response($response->body(), $response->status())
+                    ->withHeaders($response->headers());
+            })->name('clients.sunat-session');
 
             // Proxy iframe SUNAT: ruta unificada que maneja dos casos:
             // a) Token hex válido  → obtener HTML autenticado del bot.

@@ -103,9 +103,8 @@ class SunatLoginController extends Controller
 
             return response()->json([
                 'ok'        => true,
-                'proxy_url' => route('facturador.clients.sunat-popup', ['token' => $data['token']]),
+                'proxy_url' => route('facturador.clients.sunat-session', ['token' => $data['token']]),
                 'token'     => $data['token'],
-                'bot_url'   => $botUrl,
                 'ruc'       => $data['ruc'] ?? $client->numero_documento,
             ]);
 
