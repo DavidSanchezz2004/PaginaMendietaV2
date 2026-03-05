@@ -43,9 +43,9 @@ class SunatLoginController extends Controller
     }
 
     /**
-     * Inicia el proceso de login SUNAT (asíncrono).
-     * Llama a POST /proxy/create → recibe token con status "pending".
-     * Devuelve { ok, token, status_url } para que el JS haga polling.
+     * Llama a POST /proxy/create → devuelve { ok, url } con la URL ext-inject.
+     * El bot responde inmediatamente con el token; la extensión Chrome espera
+     * el login y redirige a SUNAT por su cuenta.
      * GET /facturador/clients/{client}/abrir-sunat
      */
     public function abrirSunat(Client $client): JsonResponse
@@ -70,7 +70,6 @@ class SunatLoginController extends Controller
                 ], 422);
             }
 
-            // POST /proxy/create → respuesta inmediata con status "pending"
             $response = Http::timeout(30)
                 ->withHeaders([
                     'x-api-key'  => $botKey,
@@ -101,35 +100,13 @@ class SunatLoginController extends Controller
             ]);
 
             return response()->json([
-                'ok'         => true,
-                'token'      => $token,
-                'status_url' => route('facturador.clients.sunat-status', ['token' => $token]),
+                'ok'  => true,
+                'url' => "{$botUrl}/ext-inject/{$token}",
             ]);
 
         } catch (\Exception $e) {
             \Log::error('SunatBot error: ' . $e->getMessage());
             return response()->json(['ok' => false, 'error' => $e->getMessage()], 500);
         }
-    }
-
-    /**
-     * Proxea GET /proxy/status/{token} del bot con x-api-key.
-     * Devuelve el JSON tal cual: { status: "pending|ready|error", ext_inject_url?, error?, detalle? }
-     * GET /facturador/clients/sunat-status/{token}
-     */
-    public function sunatStatus(string $token): JsonResponse
-    {
-        $botUrl = rtrim(config('services.sunat_bot.url'), '/');
-        $botKey = config('services.sunat_bot.key');
-
-        $response = Http::timeout(10)
-            ->withHeaders([
-                'x-api-key'  => $botKey,
-                'User-Agent' => 'LaravelBot/1.0',
-                'Accept'     => 'application/json',
-            ])
-            ->get("{$botUrl}/proxy/status/{$token}");
-
-        return response()->json($response->json(), $response->status());
     }
 }

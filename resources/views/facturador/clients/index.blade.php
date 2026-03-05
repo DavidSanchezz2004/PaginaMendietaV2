@@ -212,7 +212,10 @@
       const modal    = document.getElementById('sunat-modal');
       const loading  = document.getElementById('sunat-loading');
       const errorBox = document.getElementById('sunat-error');
-      const loadMsg  = document.getElementById('sunat-loading-msg');
+
+      // Abrir popup AHORA (tick síncrono del click) para no ser bloqueado.
+      // Se redirigirá a la URL real una vez que llegue el token.
+      const popup = window.open('', '_blank');
 
       // Mostrar spinner
       modal.style.display    = 'flex';
@@ -220,57 +223,29 @@
       errorBox.style.display = 'none';
       document.getElementById('sunat-modal-title').textContent =
         razonSocial ? `SUNAT — ${razonSocial}` : 'Portal SUNAT SOL';
-      loadMsg.textContent = 'Iniciando sesión en SUNAT…';
-
-      function mostrarError(msg) {
-        loading.style.display  = 'none';
-        errorBox.style.display = 'flex';
-        document.getElementById('sunat-error-msg').textContent = msg;
-      }
+      document.getElementById('sunat-loading-msg').textContent = 'Iniciando sesión en SUNAT…';
 
       try {
-        // Paso 1: POST /proxy/create → token inmediato (status: pending)
         const res  = await fetch(abrirUrl, { headers: { 'Accept': 'application/json' } });
         const data = await res.json();
-        if (!data.ok) { mostrarError(data.error || 'Error desconocido.'); return; }
 
-        // Paso 2: polling a /sunat-status/{token} cada 3 segundos (máx 90s)
-        const statusUrl  = data.status_url;
-        const maxMs      = 90_000;
-        const intervalMs = 3_000;
-        const started    = Date.now();
-        let dots = 0;
-
-        while (true) {
-          if (Date.now() - started > maxMs) {
-            mostrarError('SUNAT tardó demasiado. Intenta de nuevo.');
-            return;
-          }
-
-          dots = (dots % 3) + 1;
-          loadMsg.textContent = 'Verificando credenciales SOL' + '.'.repeat(dots);
-
-          await new Promise(r => setTimeout(r, intervalMs));
-
-          const sr   = await fetch(statusUrl, { headers: { 'Accept': 'application/json' } });
-          const stat = await sr.json();
-
-          if (stat.status === 'ready') {
-            modal.style.display = 'none';
-            window.open(stat.ext_inject_url, '_blank');
-            return;
-          }
-
-          if (stat.status === 'error') {
-            mostrarError(stat.detalle || stat.error || 'El bot reportó un error.');
-            return;
-          }
-
-          // status === 'pending' → seguir esperando
+        if (!data.ok) {
+          popup && popup.close();
+          loading.style.display  = 'none';
+          errorBox.style.display = 'flex';
+          document.getElementById('sunat-error-msg').textContent = data.error || 'Error desconocido.';
+          return;
         }
 
+        // Redirigir el popup ya abierto a la URL ext-inject del bot
+        if (popup) popup.location.href = data.url;
+        modal.style.display = 'none';
+
       } catch (err) {
-        mostrarError(err.message);
+        popup && popup.close();
+        loading.style.display  = 'none';
+        errorBox.style.display = 'flex';
+        document.getElementById('sunat-error-msg').textContent = err.message;
       }
     }
 
