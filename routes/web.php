@@ -134,10 +134,13 @@ Route::middleware('auth')->group(function (): void {
             Route::get('clients/{client}/sunat-login', [SunatLoginController::class, 'redirect'])
                 ->name('clients.sunat-login');
 
-            // Devuelve { ok, url } para que el JS abra la pestaña de inyección.
-            // La extensión "SUNAT Session Injector" inyecta las cookies y redirige.
+            // Paso 1: inicia login asíncrono → devuelve { ok, token, status_url }
             Route::get('clients/{client}/abrir-sunat', [SunatLoginController::class, 'abrirSunat'])
                 ->name('clients.abrir-sunat');
+
+            // Paso 2: proxy de polling → proxea GET /proxy/status/{token} del bot con x-api-key
+            Route::get('clients/sunat-status/{token}', [SunatLoginController::class, 'sunatStatus'])
+                ->name('clients.sunat-status');
 
             // Facturas
             Route::resource('invoices', InvoiceController::class)
