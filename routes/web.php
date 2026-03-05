@@ -144,6 +144,7 @@ Route::middleware('auth')->group(function (): void {
                 $response = Http::withHeaders([
                     'ngrok-skip-browser-warning' => 'true',
                     'User-Agent'                 => 'LaravelBot/1.0',
+                    'x-api-key'                  => config('services.bot_cookies.key'),
                 ])->get("{$botUrl}/session-redirect/{$token}");
 
                 return response($response->body(), $response->status())
