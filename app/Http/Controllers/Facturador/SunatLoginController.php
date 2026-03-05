@@ -70,7 +70,7 @@ class SunatLoginController extends Controller
             }
 
             // Siempre solicitar un token nuevo al bot
-            $response = Http::timeout(30)
+            $response = Http::timeout(120)
                 ->withHeaders([
                     'x-api-key'  => $botKey,
                     'User-Agent' => 'LaravelBot/1.0',
