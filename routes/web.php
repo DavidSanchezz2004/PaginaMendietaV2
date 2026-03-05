@@ -136,11 +136,34 @@ Route::middleware('auth')->group(function (): void {
             Route::post('clients/{client}/sunat-proxy', [SunatLoginController::class, 'getProxyUrl'])
                 ->name('clients.sunat-proxy');
 
-            // Proxy iframe SUNAT: sirve el HTML del bot y reemplaza URLs absolutas
-            // del microservicio por rutas propias de Laravel para que el iframe
-            // pueda cargar CSS / JS / fuentes sin hacer peticiones directas a ngrok.
+            // Proxy iframe SUNAT: ruta unificada que maneja dos casos:
+            // a) Token hex válido  → obtener HTML autenticado del bot.
+            // b) Cualquier otra cosa → SUNAT navegó internamente sin token.
+            //    Devuelve JS que usa window.parent._sunatToken para reencaminar.
             Route::get('clients/sunat-frame/{token}', function (string $token) {
-                $botUrl     = rtrim(config('services.bot_cookies.url'), '/');
+                // b) Navegación interna de SUNAT (no es un token hex de 32-36 chars)
+                if (! preg_match('/^[a-f0-9-]{32,36}$/', $token)) {
+                    return response(
+                        '<!DOCTYPE html><html><head><meta charset="utf-8"></head><body><script>
+                        (function() {
+                            var t = window.parent && window.parent._sunatToken;
+                            if (t) {
+                                var seg  = location.pathname.split("sunat-frame/")[1] || "";
+                                var full = "https://e-menu.sunat.gob.pe/cl-ti-itmenu/" + seg + location.search;
+                                window.location.replace(
+                                    window.location.origin +
+                                    "/facturador/clients/sunat-frame/" + t +
+                                    "/r?url=" + encodeURIComponent(full)
+                                );
+                            }
+                        })();
+                        </script></body></html>',
+                        200
+                    )->header('Content-Type', 'text/html; charset=utf-8');
+                }
+
+                // a) Token válido: obtener HTML autenticado del bot.
+                $botUrl      = rtrim(config('services.bot_cookies.url'), '/');
                 $laravelBase = url('facturador/clients/sunat-resource');
 
                 $response = Http::withHeaders([
@@ -148,12 +171,11 @@ Route::middleware('auth')->group(function (): void {
                     'User-Agent'                 => 'LaravelBot/1.0',
                 ])->get("{$botUrl}/proxy/{$token}");
 
-                // Sustituir todas las URLs absolutas del bot por el proxy Laravel.
                 $html = str_replace($botUrl, $laravelBase, $response->body());
 
                 return response($html, 200)
                     ->header('Content-Type', 'text/html; charset=utf-8');
-            })->name('clients.sunat-frame');
+            })->where('token', '.*')->name('clients.sunat-frame');
 
             // Proxy de recursos del bot (CSS, JS, fuentes, imágenes).
             // Route::any para soportar POST (405 con GET solo).
