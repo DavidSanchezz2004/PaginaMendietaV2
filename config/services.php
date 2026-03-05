@@ -53,10 +53,10 @@ return [
         'threshold'  => env('RECAPTCHA_THRESHOLD', 0.5),
     ],
 
-    // Microservicio bot_cookies: autenticación automática en portales externos (SUNAT, etc.)
-    'bot_cookies' => [
-        'url' => env('BOT_COOKIES_URL', 'https://heliotypic-stealthily-carie.ngrok-free.dev'),
-        'key' => env('BOT_COOKIES_KEY'),
+    // Bot SUNAT: autenticación automática vía extensión Chrome
+    'sunat_bot' => [
+        'url' => env('SUNAT_BOT_URL', 'http://localhost:8001'),
+        'key' => env('SUNAT_API_KEY'),
     ],
 
 ];

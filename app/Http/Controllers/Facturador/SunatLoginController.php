@@ -13,8 +13,8 @@ use Illuminate\View\View;
  * Autenticación automática en SUNAT.
  *
  * Flujos disponibles:
- *   A) GET  /facturador/clients/{client}/sunat-login  → formulario autosubmit (fallback)
- *   B) POST /facturador/clients/{client}/sunat-proxy  → devuelve proxy_url para iframe modal
+ *   A) GET  /facturador/clients/{client}/sunat-login   → formulario autosubmit (fallback)
+ *   B) GET  /facturador/clients/{client}/abrir-sunat   → devuelve URL para extensión Chrome
  */
 class SunatLoginController extends Controller
 {
@@ -43,78 +43,78 @@ class SunatLoginController extends Controller
     }
 
     /**
-     * Llama al microservicio bot_cookies v2 (POST /proxy/create) y devuelve
-     * la proxy_url para ser cargada en el iframe del modal.
-     * POST /facturador/clients/{client}/sunat-proxy
+     * Devuelve la URL de inyección de sesión para la extensión Chrome.
+     * Reutiliza el token si sigue vigente; si no, solicita uno nuevo al bot.
+     * GET /facturador/clients/{client}/abrir-sunat
      */
-    public function getProxyUrl(Client $client): JsonResponse
+    public function abrirSunat(Client $client): JsonResponse
     {
         $this->authorize('update', $client);
 
         try {
-            $botUrl = config('services.bot_cookies.url');
-            $botKey = config('services.bot_cookies.key');
+            $botUrl = rtrim(config('services.sunat_bot.url'), '/');
+            $botKey = config('services.sunat_bot.key');
 
-            // Debug: verificar que las variables de configuración están presentes.
             if (! $botUrl || ! $botKey) {
                 return response()->json([
                     'ok'    => false,
-                    'error' => 'Bot config missing: url=' . $botUrl . ' key=' . ($botKey ? 'set' : 'empty'),
+                    'error' => 'SUNAT bot config missing (SUNAT_BOT_URL / SUNAT_API_KEY)',
                 ], 500);
             }
 
             if (empty($client->usuario_sol) || empty($client->clave_sol)) {
                 return response()->json([
                     'ok'    => false,
-                    'error' => "El cliente no tiene credenciales SOL configuradas.",
+                    'error' => 'El cliente no tiene credenciales SOL configuradas.',
                 ], 422);
             }
 
-            $botUrl = rtrim($botUrl, '/');
+            // Reutilizar token vigente
+            if ($client->sunat_token && $client->sunat_token_expires_at?->isFuture()) {
+                return response()->json([
+                    'ok'  => true,
+                    'url' => "{$botUrl}/ext-inject/{$client->sunat_token}",
+                ]);
+            }
 
+            // Solicitar nuevo token al bot
             $response = Http::timeout(30)
                 ->withHeaders([
-                    'x-api-key'                  => $botKey,
-                    'ngrok-skip-browser-warning' => 'true',
-                    'User-Agent'                 => 'LaravelBot/1.0',
-                    'Accept'                     => 'application/json',
+                    'x-api-key'  => $botKey,
+                    'User-Agent' => 'LaravelBot/1.0',
+                    'Accept'     => 'application/json',
                 ])
                 ->post("{$botUrl}/proxy/create", [
                     'ruc'         => $client->numero_documento,
                     'usuario_sol' => $client->usuario_sol,
-                    // El cast encrypted del modelo ya devuelve la clave desencriptada.
                     'clave_sol'   => $client->clave_sol,
                     'portal'      => 'sunat',
                 ]);
-
-            \Log::info('Bot response status: ' . $response->status());
-            \Log::info('Bot response body: ' . $response->body());
 
             $data = $response->json();
 
             if (! ($data['ok'] ?? false)) {
                 return response()->json([
-                    'ok'         => false,
-                    'error'      => $data['detalle'] ?? $data['error'] ?? 'Error del bot',
-                    'bot_status' => $response->status(),
-                    'bot_body'   => $response->body(),
+                    'ok'    => false,
+                    'error' => $data['detalle'] ?? $data['error'] ?? 'Error del bot',
                 ], 500);
             }
 
+            $expiresAt = now()->addMinutes($data['expires_in_minutes'] ?? 30);
+
+            $client->update([
+                'sunat_token'            => $data['token'],
+                'sunat_token_expires_at' => $expiresAt,
+            ]);
+
             return response()->json([
-                'ok'        => true,
-                'proxy_url' => route('facturador.clients.sunat-session', ['token' => $data['token']]),
-                'token'     => $data['token'],
-                'ruc'       => $data['ruc'] ?? $client->numero_documento,
+                'ok'  => true,
+                'url' => "{$botUrl}/ext-inject/{$data['token']}",
             ]);
 
         } catch (\Exception $e) {
-            \Log::error('SunatProxy error: ' . $e->getMessage());
-            return response()->json([
-                'ok'    => false,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ], 500);
+            \Log::error('SunatBot error: ' . $e->getMessage());
+            return response()->json(['ok' => false, 'error' => $e->getMessage()], 500);
         }
     }
 }

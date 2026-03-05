@@ -47,13 +47,16 @@ class Client extends Model
         'activo',
         'usuario_sol',
         'clave_sol',
+        'sunat_token',
+        'sunat_token_expires_at',
     ];
 
     protected function casts(): array
     {
         return [
-            'activo'    => 'boolean',
-            'clave_sol' => 'encrypted',
+            'activo'                 => 'boolean',
+            'clave_sol'              => 'encrypted',
+            'sunat_token_expires_at' => 'datetime',
         ];
     }
 
