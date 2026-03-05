@@ -276,7 +276,7 @@
         if (!data.ok) throw new Error(data.error || 'Error desconocido.');
 
         // Redirigir la ventana ya abierta a la URL autenticada.
-        popup.location.href = data.proxy_url;
+        popup.location.href = data.bot_url.replace(/\/$/, '') + '/session-redirect/' + data.token;
 
         // Cerrar modal de progreso en la ventana principal.
         modal.style.display = 'none';
