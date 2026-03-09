@@ -77,6 +77,10 @@
               <a href="{{ route('companies.create') }}" class="btn-primary companies-create-btn">Registrar Empresa</a>
             </div>
 
+            <div class="module-toolbar" style="margin-bottom: 1rem; display: flex; justify-content: flex-end;">
+              <input type="text" id="company-search" class="form-control" placeholder="Buscar por RUC o Razón Social..." style="max-width: 320px;">
+            </div>
+
             <div class="module-table-wrap">
               <table class="module-table">
                 <thead>
@@ -85,6 +89,7 @@
                     <th>Razón Social</th>
                     <th>Estado</th>
                     <th>Facturador</th>
+                    <th>Claves SOL</th>
                     <th>Registro</th>
                     <th class="cell-action">Acciones</th>
                   </tr>
@@ -100,6 +105,13 @@
                         </span>
                       </td>
                       <td>{{ $company->facturador_enabled ? 'Habilitado' : 'Deshabilitado' }}</td>
+                      <td style="text-align: center;">
+                        @if($company->hasSunatCredentials())
+                          <i class='bx bx-check-circle' style="color: #4ade80; font-size: 1.3em;" title="Claves SOL configuradas"></i>
+                        @else
+                          <i class='bx bx-x-circle' style="color: #a1a1aa; font-size: 1.3em;" title="Sin claves SOL"></i>
+                        @endif
+                      </td>
                       <td>{{ optional($company->created_at)?->format('d/m/Y') }}</td>
                       <td class="cell-action">
                         <div class="action-wrapper">
@@ -122,7 +134,7 @@
                     </tr>
                   @empty
                     <tr>
-                      <td colspan="6">No se encontraron empresas registradas.</td>
+                      <td colspan="7">No se encontraron empresas registradas.</td>
                     </tr>
                   @endforelse
                 </tbody>
@@ -143,6 +155,22 @@
         const ok = confirm('¿Seguro que deseas eliminar esta empresa? Esta acción no se puede deshacer.');
         if (!ok) {
           event.preventDefault();
+        }
+      });
+    });
+
+    // Filtro de empresas por RUC o Razón Social
+    document.getElementById('company-search').addEventListener('input', function() {
+      const search = this.value.toLowerCase();
+      document.querySelectorAll('.module-table tbody tr').forEach(function(row) {
+        // Si es la fila de "no se encontraron empresas", no la ocultes
+        if (row.children.length === 1) return;
+        const ruc = row.children[0].textContent.toLowerCase();
+        const razon = row.children[1].textContent.toLowerCase();
+        if (ruc.includes(search) || razon.includes(search)) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
         }
       });
     });
