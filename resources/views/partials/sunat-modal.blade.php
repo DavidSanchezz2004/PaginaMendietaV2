@@ -1,0 +1,108 @@
+{{-- Modal SUNAT: loading / error  ──────────────────────────────────────── --}}
+{{-- Se dispara con data-sunat-url + data-sunat-nombre en cualquier botón.    --}}
+{{-- Requiere el script incluido en @push('scripts') de la vista padre.       --}}
+
+<div id="sunat-modal" style="
+    display:none; position:fixed; inset:0; z-index:9999;
+    background:rgba(0,0,0,0.6); align-items:center; justify-content:center;">
+
+  <div style="
+      background:#fff; border-radius:16px; width:92vw; max-width:460px;
+      display:flex; flex-direction:column; overflow:hidden;
+      box-shadow:0 24px 64px rgba(0,0,0,0.3);">
+
+    {{-- Header --}}
+    <div style="display:flex; align-items:center; justify-content:space-between;
+                padding:14px 20px; background:#1a3a6b; color:#fff;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <i class='bx bx-shield-quarter' style="font-size:1.4rem;"></i>
+        <span style="font-weight:700; font-size:1rem;" id="sunat-modal-title">Portal SUNAT SOL</span>
+      </div>
+      <button onclick="cerrarSUNAT()" title="Cerrar" style="
+          background:rgba(255,255,255,0.15); border:none; color:#fff;
+          width:32px; height:32px; border-radius:8px; cursor:pointer;
+          font-size:1.1rem; display:flex; align-items:center; justify-content:center;">✕</button>
+    </div>
+
+    {{-- Estado: Cargando --}}
+    <div id="sunat-loading" style="display:flex; flex-direction:column;
+         align-items:center; justify-content:center; gap:16px; padding:40px; background:#f8fafc;">
+      <div style="width:48px; height:48px; border:4px solid #e2e8f0;
+           border-top-color:#1a3a6b; border-radius:50%;
+           animation:sunat-spin 0.8s linear infinite;"></div>
+      <p style="color:#1a3a6b; font-weight:700; font-size:1rem; margin:0;">Iniciando sesión en SUNAT...</p>
+      <p style="color:#64748b; font-size:.85rem; margin:0;" id="sunat-loading-msg">Verificando credenciales SOL…</p>
+    </div>
+
+    {{-- Estado: Error --}}
+    <div id="sunat-error" style="display:none; flex-direction:column;
+         align-items:center; justify-content:center; gap:12px; padding:40px; background:#f8fafc;">
+      <i class='bx bx-error-circle' style="font-size:3rem; color:#dc2626;"></i>
+      <p style="color:#dc2626; font-weight:700; margin:0; font-size:1rem;">Error al conectar con SUNAT</p>
+      <p style="color:#64748b; font-size:.85rem; margin:0; max-width:340px; text-align:center;" id="sunat-error-msg"></p>
+      <button onclick="cerrarSUNAT()" style="
+          margin-top:8px; padding:8px 20px; background:#1a3a6b;
+          color:#fff; border:none; border-radius:8px; cursor:pointer; font-weight:600;">Cerrar</button>
+    </div>
+
+  </div>
+</div>
+
+<style>
+  @keyframes sunat-spin { to { transform: rotate(360deg); } }
+</style>
+
+<script>
+  // ── SUNAT Modal JS (reutilizable) ────────────────────────────────────────
+  document.addEventListener('click', function (e) {
+    const btn = e.target.closest('[data-sunat-url]');
+    if (btn) abrirSUNAT(btn.dataset.sunatUrl, btn.dataset.sunatNombre);
+  });
+
+  async function abrirSUNAT(abrirUrl, razonSocial) {
+    const modal    = document.getElementById('sunat-modal');
+    const loading  = document.getElementById('sunat-loading');
+    const errorBox = document.getElementById('sunat-error');
+
+    const popup = window.open('', '_blank');
+
+    modal.style.display    = 'flex';
+    loading.style.display  = 'flex';
+    errorBox.style.display = 'none';
+    document.getElementById('sunat-modal-title').textContent =
+      razonSocial ? `SUNAT — ${razonSocial}` : 'Portal SUNAT SOL';
+    document.getElementById('sunat-loading-msg').textContent = 'Verificando credenciales SOL…';
+
+    try {
+      const res  = await fetch(abrirUrl, { headers: { 'Accept': 'application/json' } });
+      const data = await res.json();
+
+      if (!data.ok) {
+        popup && popup.close();
+        loading.style.display  = 'none';
+        errorBox.style.display = 'flex';
+        document.getElementById('sunat-error-msg').textContent = data.error || 'Error desconocido.';
+        return;
+      }
+
+      if (popup) popup.location.href = data.url;
+      modal.style.display = 'none';
+
+    } catch (err) {
+      popup && popup.close();
+      loading.style.display  = 'none';
+      errorBox.style.display = 'flex';
+      document.getElementById('sunat-error-msg').textContent = err.message;
+    }
+  }
+
+  function cerrarSUNAT() {
+    document.getElementById('sunat-modal').style.display = 'none';
+  }
+
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarSUNAT(); });
+  document.addEventListener('DOMContentLoaded', () => {
+    const modal = document.getElementById('sunat-modal');
+    if (modal) modal.addEventListener('click', e => { if (e.target === modal) cerrarSUNAT(); });
+  });
+</script>
