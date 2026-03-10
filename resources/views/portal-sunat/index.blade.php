@@ -339,54 +339,6 @@
             @endif
           @endforeach
 
-          {{-- ── Navegación Superior (Enlaces Rápidos) ────────────────── --}}
-          <nav class="ps-quick-nav" aria-label="Navegación Rápida">
-
-            <div class="ps-nav-group">
-              <span class="ps-nav-title">Bancos:</span>
-              <a href="https://bancaporinternet.bn.com.pe/BNWeb/Inicio" target="_blank" class="ps-nav-item">
-                <i class='bx bx-building-house ps-nav-ico'></i> Cuenta Detracción BN
-              </a>
-            </div>
-
-            <div class="ps-nav-divider"></div>
-
-            <div class="ps-nav-group">
-              <span class="ps-nav-title">SUNAT:</span>
-              <a href="https://ww1.sunat.gob.pe/ol-at-ittramitedoc/registro/iniciar" target="_blank" class="ps-nav-item">
-                <i class='bx bx-send ps-nav-ico'></i> Mesa de Partes
-              </a>
-              <a href="https://www.sunat.gob.pe/orientacion/cronogramas/2026/cObligacionMensual2026.html" target="_blank" class="ps-nav-item">
-                <i class='bx bx-calendar ps-nav-ico'></i> Cronograma '26
-              </a>
-              <a href="https://e-consultaruc.sunat.gob.pe/cl-ti-itmrconsruc/FrameCriterioBusquedaWeb.jsp" target="_blank" class="ps-nav-item">
-                <i class='bx bx-search ps-nav-ico'></i> Consulta RUC
-              </a>
-              <a href="https://ww1.sunat.gob.pe/xssecurity/SignOnVerification.htm?signonForwardAction=https%3A%2F%2Fww1.sunat.gob.pe%2Fol-ti-itrheemision%2Femisionrhe.do" target="_blank" class="ps-nav-item">
-                <i class='bx bx-file ps-nav-ico'></i> Emitir RH
-              </a>
-              <a href="https://ww1.sunat.gob.pe/xssecurity/SignOnVerification.htm?signonForwardAction=https%3A%2F%2Fww1.sunat.gob.pe%2Fol-ti-itrheemisionnce%2Femisionnce.do" target="_blank" class="ps-nav-item">
-                <i class='bx bx-file-blank ps-nav-ico'></i> Nota crédito RH
-              </a>
-              <a href="https://e-consulta.sunat.gob.pe/ol-ti-itconsvalicpe/ConsValiCpe.htm" target="_blank" class="ps-nav-item">
-                <i class='bx bx-check-shield ps-nav-ico'></i> Validar CPE
-              </a>
-            </div>
-
-            <div class="ps-nav-divider"></div>
-
-            <div class="ps-nav-group">
-              <span class="ps-nav-title">Otros:</span>
-              <a href="https://aplicativosweb6.sunafil.gob.pe/si.mesaVirtual/registro" target="_blank" class="ps-nav-item">
-                <i class='bx bx-inbox ps-nav-ico'></i> Mesa SUNAFIL
-              </a>
-              <a href="https://tribunalfiscal.pegasus.com.pe/" target="_blank" class="ps-nav-item">
-                <i class='bx bx-buildings ps-nav-ico'></i> Tribunal Fiscal
-              </a>
-            </div>
-
-          </nav>
-
           {{-- ── Contenido Principal ─────────────────────────────────── --}}
           <div class="placeholder-content module-card-wide">
               <div class="module-toolbar">

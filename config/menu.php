@@ -259,4 +259,27 @@ return [
             ],
         ],
     ],
+
+    // ── Sección Links de Interés (sidebar inferior) ─────────────────────────
+    // Cada grupo tiene: 'title' y 'links' (array de label, url, icon)
+    'external_links' => [
+        [
+            'title' => 'SUNAT',
+            'links' => [
+                ['label' => 'Mesa de Partes',   'url' => 'https://ww1.sunat.gob.pe/ol-at-ittramitedoc/registro/iniciar',                                                                                                                                                                                           'icon' => 'bx bx-send'],
+                ['label' => 'Cronograma 2026',  'url' => 'https://www.sunat.gob.pe/orientacion/cronogramas/2026/cObligacionMensual2026.html',                                                                                                                                                                    'icon' => 'bx bx-calendar'],
+                ['label' => 'Consulta RUC',     'url' => 'https://e-consultaruc.sunat.gob.pe/cl-ti-itmrconsruc/FrameCriterioBusquedaWeb.jsp',                                                                                                                                                                    'icon' => 'bx bx-search'],
+                ['label' => 'Emitir RH',        'url' => 'https://ww1.sunat.gob.pe/xssecurity/SignOnVerification.htm?signonForwardAction=https%3A%2F%2Fww1.sunat.gob.pe%2Fol-ti-itrheemision%2Femisionrhe.do',                                                                                               'icon' => 'bx bx-file'],
+                ['label' => 'Nota crédito RH',  'url' => 'https://ww1.sunat.gob.pe/xssecurity/SignOnVerification.htm?signonForwardAction=https%3A%2F%2Fww1.sunat.gob.pe%2Fol-ti-itrheemisionnce%2Femisionnce.do',                                                                                            'icon' => 'bx bx-file-blank'],
+                ['label' => 'Validar CPE',      'url' => 'https://e-consulta.sunat.gob.pe/ol-ti-itconsvalicpe/ConsValiCpe.htm',                                                                                                                                                                                    'icon' => 'bx bx-check-shield'],
+            ],
+        ],
+        [
+            'title' => 'Otros',
+            'links' => [
+                ['label' => 'Mesa SUNAFIL',    'url' => 'https://aplicativosweb6.sunafil.gob.pe/si.mesaVirtual/registro', 'icon' => 'bx bx-inbox'],
+                ['label' => 'Tribunal Fiscal', 'url' => 'https://tribunalfiscal.pegasus.com.pe/',                          'icon' => 'bx bx-buildings'],
+            ],
+        ],
+    ],
 ];

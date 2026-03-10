@@ -85,47 +85,23 @@
   @endforeach
 </ul>
 
-{{-- ── Links de interés (visible para todos los roles) ─────── --}}
-@php
-  $userRoleVal = auth()->user()?->role instanceof \App\Enums\RoleEnum
-    ? auth()->user()->role->value
-    : (string) auth()->user()?->role;
-@endphp
+{{-- ── Links de interés (leídos desde config/menu.php) ──────── --}}
 @if(auth()->check())
+@php $externalLinks = config('menu.external_links', []); @endphp
+@if(count($externalLinks))
 <div class="sidebar-section-links">
   <hr class="sidebar-divider" style="margin: .75rem 0;">
   <span class="menu-label">LINKS DE INTERÉS</span>
-
-  <div class="sidebar-links-group">
-    <span class="sidebar-links-title">SUNAT</span>
-    <a href="https://ww1.sunat.gob.pe/ol-at-ittramitedoc/registro/iniciar" target="_blank" rel="noopener noreferrer" class="sidebar-ext-link">
-      <i class='bx bx-send'></i> Mesa de Partes
-    </a>
-    <a href="https://www.sunat.gob.pe/orientacion/cronogramas/2026/cObligacionMensual2026.html" target="_blank" rel="noopener noreferrer" class="sidebar-ext-link">
-      <i class='bx bx-calendar'></i> Cronograma 2026
-    </a>
-    <a href="https://e-consultaruc.sunat.gob.pe/cl-ti-itmrconsruc/FrameCriterioBusquedaWeb.jsp" target="_blank" rel="noopener noreferrer" class="sidebar-ext-link">
-      <i class='bx bx-search'></i> Consulta RUC
-    </a>
-    <a href="https://ww1.sunat.gob.pe/xssecurity/SignOnVerification.htm?signonForwardAction=https%3A%2F%2Fww1.sunat.gob.pe%2Fol-ti-itrheemision%2Femisionrhe.do" target="_blank" rel="noopener noreferrer" class="sidebar-ext-link">
-      <i class='bx bx-file'></i> Emitir RH
-    </a>
-    <a href="https://ww1.sunat.gob.pe/xssecurity/SignOnVerification.htm?signonForwardAction=https%3A%2F%2Fww1.sunat.gob.pe%2Fol-ti-itrheemisionnce%2Femisionnce.do" target="_blank" rel="noopener noreferrer" class="sidebar-ext-link">
-      <i class='bx bx-file-blank'></i> Nota crédito RH
-    </a>
-    <a href="https://e-consulta.sunat.gob.pe/ol-ti-itconsvalicpe/ConsValiCpe.htm" target="_blank" rel="noopener noreferrer" class="sidebar-ext-link">
-      <i class='bx bx-check-shield'></i> Validar CPE
-    </a>
-  </div>
-
-  <div class="sidebar-links-group" style="margin-top:.6rem;">
-    <span class="sidebar-links-title">Otros</span>
-    <a href="https://aplicativosweb6.sunafil.gob.pe/si.mesaVirtual/registro" target="_blank" rel="noopener noreferrer" class="sidebar-ext-link">
-      <i class='bx bx-inbox'></i> Mesa SUNAFIL
-    </a>
-    <a href="https://tribunalfiscal.pegasus.com.pe/" target="_blank" rel="noopener noreferrer" class="sidebar-ext-link">
-      <i class='bx bx-buildings'></i> Tribunal Fiscal
-    </a>
-  </div>
+  @foreach($externalLinks as $idx => $group)
+    <div class="sidebar-links-group" {{ $idx > 0 ? 'style=margin-top:.6rem;' : '' }}>
+      <span class="sidebar-links-title">{{ $group['title'] }}</span>
+      @foreach($group['links'] as $link)
+        <a href="{{ $link['url'] }}" target="_blank" rel="noopener noreferrer" class="sidebar-ext-link">
+          <i class='{{ $link['icon'] }}'></i> {{ $link['label'] }}
+        </a>
+      @endforeach
+    </div>
+  @endforeach
 </div>
+@endif
 @endif
