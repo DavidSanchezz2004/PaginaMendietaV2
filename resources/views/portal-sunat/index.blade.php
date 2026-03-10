@@ -263,6 +263,78 @@
       background: #e2e8f0;
     }
 
+    /* ── Widget Cronograma ──────────────────────────────────────────────── */
+    .ps-crono-widget {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      flex-wrap: wrap;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-left: 4px solid #0f172a;
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+    .ps-crono-widget-icon { font-size: 2rem; color: #0f172a; flex-shrink: 0; }
+    .ps-crono-widget-info { flex: 1 1 160px; }
+    .ps-crono-widget-title {
+      display: block;
+      font-size: .72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: #64748b;
+      margin-bottom: .2rem;
+    }
+    .ps-crono-widget-period { font-size: 1rem; font-weight: 700; color: #0f172a; }
+    .ps-crono-stats-row { display: flex; gap: .65rem; flex-wrap: wrap; align-items: center; }
+    .ps-crono-stat {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-width: 62px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: .4rem .7rem;
+    }
+    .ps-crono-stat .num { font-size: 1.3rem; font-weight: 800; line-height: 1; }
+    .ps-crono-stat .lbl { font-size: .65rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: #64748b; margin-top: .15rem; }
+    .ps-crono-stat.declared .num { color: #166534; }
+    .ps-crono-stat.pending  .num { color: #92400e; }
+    .ps-crono-stat.total    .num { color: #0f172a; }
+    .ps-crono-progress { flex: 1 1 130px; display: flex; flex-direction: column; gap: .3rem; }
+    .ps-crono-progress-bar { height: 8px; background: #e2e8f0; border-radius: 999px; overflow: hidden; }
+    .ps-crono-progress-fill { height: 100%; background: #16a34a; border-radius: 999px; transition: width .4s; }
+    .ps-crono-progress-label { font-size: .72rem; color: #64748b; font-weight: 600; }
+    .ps-crono-widget-link {
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+      background: #0f172a;
+      color: #fff;
+      border-radius: 8px;
+      padding: .5rem 1rem;
+      font-size: .82rem;
+      font-weight: 700;
+      text-decoration: none;
+      white-space: nowrap;
+      flex-shrink: 0;
+      transition: background .15s;
+    }
+    .ps-crono-widget-link:hover { background: #1e293b; color: #fff; }
+    body.dark-mode .ps-crono-widget { background: var(--clr-bg-card, #1e293b); border-color: var(--clr-border-light, #334155); border-left-color: #3b82f6; }
+    body.dark-mode .ps-crono-widget-icon { color: #60a5fa; }
+    body.dark-mode .ps-crono-widget-period { color: var(--clr-text-main, #f8fafc); }
+    body.dark-mode .ps-crono-stat { background: var(--clr-bg-body, #0f172a); border-color: var(--clr-border-light, #334155); }
+    body.dark-mode .ps-crono-stat.declared .num { color: #4ade80; }
+    body.dark-mode .ps-crono-stat.pending  .num { color: #fbbf24; }
+    body.dark-mode .ps-crono-stat.total    .num { color: #f8fafc; }
+    body.dark-mode .ps-crono-progress-bar { background: #334155; }
+    body.dark-mode .ps-crono-widget-link { background: #3b82f6; }
+    body.dark-mode .ps-crono-widget-link:hover { background: #2563eb; }
+
     /* ── Dark Mode Enhancements ── */
     body.dark-mode .ps-quick-nav { background: var(--clr-bg-card, #1e293b); border-color: var(--clr-border-light, #334155); }
     body.dark-mode .ps-nav-title { color: #64748b; }
@@ -349,6 +421,44 @@
                 </p>
               </div>
             </div>
+
+            {{-- ── Resumen Cronograma ───────────────────────────────────── --}}
+            @if(isset($cronogramaStats) && $cronogramaStats)
+              @php
+                $meses = ['','Enero','Febrero','Marzo','Abril','Mayo','Junio',
+                              'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+              @endphp
+              <div class="ps-crono-widget">
+                <i class='bx bx-calendar-check ps-crono-widget-icon'></i>
+                <div class="ps-crono-widget-info">
+                  <span class="ps-crono-widget-title">Cronograma de declaraciones</span>
+                  <span class="ps-crono-widget-period">Período: {{ $meses[$cronogramaStats['month']] }} {{ $cronogramaStats['year'] }}</span>
+                </div>
+                <div class="ps-crono-stats-row">
+                  <div class="ps-crono-stat total">
+                    <span class="num">{{ $cronogramaStats['total'] }}</span>
+                    <span class="lbl">Total</span>
+                  </div>
+                  <div class="ps-crono-stat declared">
+                    <span class="num">{{ $cronogramaStats['declared'] }}</span>
+                    <span class="lbl">Declaradas</span>
+                  </div>
+                  <div class="ps-crono-stat pending">
+                    <span class="num">{{ $cronogramaStats['pending'] }}</span>
+                    <span class="lbl">Pendientes</span>
+                  </div>
+                </div>
+                <div class="ps-crono-progress">
+                  <div class="ps-crono-progress-bar">
+                    <div class="ps-crono-progress-fill" style="width: {{ $cronogramaStats['pct'] }}%"></div>
+                  </div>
+                  <span class="ps-crono-progress-label">{{ $cronogramaStats['pct'] }}% completado</span>
+                </div>
+                <a href="{{ route('obligaciones.cronograma.index', ['year' => $cronogramaStats['year'], 'month' => $cronogramaStats['month']]) }}" class="ps-crono-widget-link">
+                  Ver cronograma <i class='bx bx-right-arrow-alt'></i>
+                </a>
+              </div>
+            @endif
 
             {{-- ── Filtros ─────────────────────────────────────────────── --}}
             <form method="GET" action="{{ route('portal-sunat.index') }}" class="ps-filter-wrap">

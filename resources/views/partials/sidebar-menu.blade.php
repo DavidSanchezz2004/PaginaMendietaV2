@@ -51,18 +51,24 @@
               @endphp
 
               @if($canAccessChild)
-                @php
-                  $childActive = $isActive($child['active'] ?? []);
-                  $childRoute = $child['route'] ?? null;
-                  $href = ($childRoute && \Illuminate\Support\Facades\Route::has($childRoute)) ? route($childRoute) : '#';
-                @endphp
-
-                <li>
-                  <a href="{{ $href }}" class="submenu-link {{ $childActive ? 'active' : '' }}">
-                    <i class='{{ $child['icon'] ?? 'bx bx-dot' }}'></i>
-                    {{ $child['label'] }}
-                  </a>
-                </li>
+                @if(($child['type'] ?? '') === 'section')
+                  <li><span class="submenu-section-label">{{ $child['label'] }}</span></li>
+                @else
+                  @php
+                    $childActive = $isActive($child['active'] ?? []);
+                    $childUrl   = $child['url'] ?? null;
+                    $childRoute = $child['route'] ?? null;
+                    $href   = $childUrl ?? (($childRoute && \Illuminate\Support\Facades\Route::has($childRoute)) ? route($childRoute) : '#');
+                    $target = $child['target'] ?? '_self';
+                    $rel    = $target === '_blank' ? 'noopener noreferrer' : '';
+                  @endphp
+                  <li>
+                    <a href="{{ $href }}" target="{{ $target }}"@if($rel) rel="{{ $rel }}"@endif class="submenu-link {{ $childActive ? 'active' : '' }}">
+                      <i class='{{ $child['icon'] ?? 'bx bx-dot' }}'></i>
+                      {{ $child['label'] }}
+                    </a>
+                  </li>
+                @endif
               @endif
             @endforeach
           </ul>
@@ -84,24 +90,3 @@
     @endif
   @endforeach
 </ul>
-
-{{-- ── Links de interés (leídos desde config/menu.php) ──────── --}}
-@if(auth()->check())
-@php $externalLinks = config('menu.external_links', []); @endphp
-@if(count($externalLinks))
-<div class="sidebar-section-links">
-  <hr class="sidebar-divider" style="margin: .75rem 0;">
-  <span class="menu-label">LINKS DE INTERÉS</span>
-  @foreach($externalLinks as $idx => $group)
-    <div class="sidebar-links-group" {{ $idx > 0 ? 'style=margin-top:.6rem;' : '' }}>
-      <span class="sidebar-links-title">{{ $group['title'] }}</span>
-      @foreach($group['links'] as $link)
-        <a href="{{ $link['url'] }}" target="_blank" rel="noopener noreferrer" class="sidebar-ext-link">
-          <i class='{{ $link['icon'] }}'></i> {{ $link['label'] }}
-        </a>
-      @endforeach
-    </div>
-  @endforeach
-</div>
-@endif
-@endif

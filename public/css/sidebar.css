@@ -785,6 +785,18 @@ body.dark-mode .company-dropdown-footer a:hover {
     background-color: var(--clr-active-bg);
 }
 
+/* ── Etiqueta de sección en submenú ─────────────────────────── */
+.submenu-section-label {
+    display: block;
+    font-size: .68rem;
+    font-weight: 700;
+    color: var(--clr-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    padding: .5rem .75rem .2rem;
+    pointer-events: none;
+}
+
 /* ── LINKS DE INTERÉS (sidebar) ─────────────────────────── */
 .sidebar-section-links {
     padding: 0 1.25rem 1.5rem;

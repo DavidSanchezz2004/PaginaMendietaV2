@@ -5,6 +5,7 @@ namespace App\Http\Controllers\PortalSunat;
 use App\Enums\RoleEnum;
 use App\Http\Controllers\Controller;
 use App\Models\Company;
+use App\Models\ObligationDeclaration;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -51,10 +52,32 @@ class PortalSunatController extends Controller
             );
         }
 
+        // ── Resumen cronograma del período anterior (el que se está declarando ahora)
+        $cronogramaStats = null;
+        if ($role !== 'client') {
+            $cronoYear  = now()->month === 1 ? now()->year - 1 : now()->year;
+            $cronoMonth = now()->month === 1 ? 12 : now()->month - 1;
+            $allIds     = $companies->pluck('id');
+            $declared   = ObligationDeclaration::whereIn('company_id', $allIds)
+                ->where('period_year',  $cronoYear)
+                ->where('period_month', $cronoMonth)
+                ->count();
+            $cronoTotal = $companies->count();
+            $cronogramaStats = [
+                'year'     => $cronoYear,
+                'month'    => $cronoMonth,
+                'declared' => $declared,
+                'pending'  => max(0, $cronoTotal - $declared),
+                'total'    => $cronoTotal,
+                'pct'      => $cronoTotal > 0 ? round($declared / $cronoTotal * 100) : 0,
+            ];
+        }
+
         return view('portal-sunat.index', [
-            'companies' => $companies->values(),
-            'filters'   => ['q' => $q, 'last_digit' => $lastDigit],
-            'userRole'  => $role,
+            'companies'       => $companies->values(),
+            'filters'         => ['q' => $q, 'last_digit' => $lastDigit],
+            'userRole'        => $role,
+            'cronogramaStats' => $cronogramaStats,
         ]);
     }
 
