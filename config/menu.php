@@ -119,6 +119,15 @@ return [
                     'can' => 'viewAny',
                     'model' => \App\Models\Credential::class,
                 ],
+                [
+                    'label' => 'Cronograma SUNAT',
+                    'icon' => 'bx bx-calendar-check',
+                    'route' => 'obligaciones.cronograma.index',
+                    'active' => ['obligaciones.cronograma.*'],
+                    'enabled' => true,
+                    'can' => 'viewAny',
+                    'model' => \App\Models\Obligation::class,
+                ],
             ],
         ],
         [

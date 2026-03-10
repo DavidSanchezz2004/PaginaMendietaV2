@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Admin\AuditLogController;
+use App\Http\Controllers\Obligaciones\CronogramaController;
 use App\Http\Controllers\Company\ActiveCompanyController;
 use App\Http\Controllers\Company\CompanyController;
 use App\Http\Controllers\Configuration\CompanyFacturadorController;
@@ -97,6 +98,11 @@ Route::middleware('auth')->group(function (): void {
     // Obligaciones (Calendario)
     Route::resource('obligations', ObligationController::class)->except(['show']);
     Route::patch('obligations/{obligation}/complete', [ObligationController::class, 'markAsCompleted'])->name('obligations.complete');
+
+    // Cronograma de Obligaciones SUNAT
+    Route::get('/obligaciones/cronograma', [CronogramaController::class, 'index'])->name('obligaciones.cronograma.index');
+    Route::post('/obligaciones/cronograma/{company}/confirmar', [CronogramaController::class, 'confirm'])->name('obligaciones.cronograma.confirm');
+    Route::post('/obligaciones/cronograma/{company}/revertir', [CronogramaController::class, 'revert'])->name('obligaciones.cronograma.revert');
 
     // Instancias (Credenciales)
     Route::resource('credentials', CredentialController::class)->except(['show']);

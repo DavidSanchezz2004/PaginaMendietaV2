@@ -200,6 +200,103 @@
       white-space: nowrap;
     }
     .ps-btn-cred:hover { border-color: #2563eb; background: #eff6ff; color: #2563eb; }
+
+    /* ── Navegación Horizontal (Enlaces Rápidos) ───────────────────────── */
+    .ps-quick-nav {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.03);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 1rem 1.5rem;
+    }
+    .ps-nav-group {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      flex-wrap: wrap;
+    }
+    .ps-nav-title {
+      font-size: .75rem;
+      font-weight: 700;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      margin-right: .25rem;
+    }
+    .ps-nav-item {
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+      padding: .45rem .85rem;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      color: #475569;
+      text-decoration: none;
+      font-size: .8rem;
+      font-weight: 600;
+      transition: all .2s ease;
+      white-space: nowrap;
+    }
+    .ps-nav-item:hover {
+      background: #eff6ff;
+      border-color: #bfdbfe;
+      color: #1d4ed8;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 6px -1px rgba(37,99,235,0.08);
+    }
+    .ps-nav-ico {
+      font-size: 1.1rem;
+      color: #64748b;
+    }
+    .ps-nav-item:hover .ps-nav-ico {
+      color: #2563eb;
+    }
+    .ps-nav-divider {
+      width: 1px;
+      height: 24px;
+      background: #e2e8f0;
+    }
+
+    /* ── Dark Mode Enhancements ── */
+    body.dark-mode .ps-quick-nav { background: var(--clr-bg-card, #1e293b); border-color: var(--clr-border-light, #334155); }
+    body.dark-mode .ps-nav-title { color: #64748b; }
+    body.dark-mode .ps-nav-item { background: var(--clr-bg-body, #0f172a); border-color: var(--clr-border-light, #334155); color: #cbd5e1; }
+    body.dark-mode .ps-nav-item:hover { background: var(--clr-hover-bg, #1e293b); border-color: #475569; color: #f8fafc; }
+    body.dark-mode .ps-nav-item:hover .ps-nav-ico { color: #60a5fa; }
+    body.dark-mode .ps-nav-divider { background: var(--clr-border-light, #334155); }
+    body.dark-mode .ps-filter-wrap { background-color: var(--clr-bg-card, #1e293b); border-color: var(--clr-border-light, #334155); }
+    body.dark-mode .ps-filter-name label, body.dark-mode .ps-digit-label { color: #94a3b8; }
+    body.dark-mode .ps-search-group .form-input { background: var(--clr-bg-body, #0f172a); border-color: var(--clr-border-light, #334155); color: var(--clr-text-main, #f8fafc); }
+    body.dark-mode .ps-search-group .form-input::placeholder { color: #475569; }
+    body.dark-mode .ps-search-group .form-input:focus { box-shadow: 0 0 0 3px rgba(59,130,246,.25); }
+    body.dark-mode .digit-btn { background: var(--clr-bg-body, #0f172a); color: #cbd5e1; border-color: var(--clr-border-light, #334155); }
+    body.dark-mode .digit-btn.active { background: #f8fafc; color: #0f172a; border-color: #f8fafc; }
+    body.dark-mode .digit-btn:hover:not(.active) { background: var(--clr-hover-bg, #1e293b); color: #f8fafc; border-color: #475569; }
+    body.dark-mode .ps-btn-search { background: #f8fafc; color: #0f172a; border-color: #f8fafc; }
+    body.dark-mode .ps-btn-search:hover { background: #e2e8f0; }
+    body.dark-mode .ps-btn-clear { background: transparent; color: #cbd5e1; border-color: var(--clr-border-light, #475569); }
+    body.dark-mode .ps-btn-clear:hover { background: var(--clr-hover-bg, #1e293b); color: #fff; }
+    body.dark-mode .ps-table th { color: #94a3b8; border-bottom-color: var(--clr-border-light, #334155); }
+    body.dark-mode .ps-table td { border-bottom-color: var(--clr-border-light, #334155); }
+    body.dark-mode .ps-table tr:hover td { background: var(--clr-hover-bg, #1e293b); }
+    .ps-company-name { font-weight: 600; color: #0f172a; }
+    body.dark-mode .ps-company-name { color: var(--clr-text-main, #f8fafc); }
+    .ps-company-ruc { font-family: monospace; color: #475569; font-size: .88rem; }
+    body.dark-mode .ps-company-ruc { color: #94a3b8; }
+    .ps-subtitle { margin: .35rem 0 0; color: #6b7280; font-size: .92rem; }
+    body.dark-mode .ps-subtitle { color: #9ca3af; }
+    body.dark-mode .ps-chip.ok { background: rgba(22, 101, 52, 0.2); color: #4ade80; }
+    body.dark-mode .ps-chip.warn { background: rgba(146, 64, 14, 0.2); color: #fbbf24; }
+    body.dark-mode .ps-chip.off { background: rgba(185, 28, 28, 0.2); color: #f87171; }
+    body.dark-mode .ps-btn-sunat { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); box-shadow: 0 6px 18px rgba(37,99,235,.2); }
+    body.dark-mode .ps-btn-cred { background: var(--clr-bg-body, #0f172a); color: #e2e8f0; border-color: #475569; }
+    body.dark-mode .ps-btn-cred:hover { background: rgba(37, 99, 235, 0.1); border-color: #3b82f6; color: #60a5fa; }
   </style>
 @endpush
 
@@ -242,11 +339,60 @@
             @endif
           @endforeach
 
+          {{-- ── Navegación Superior (Enlaces Rápidos) ────────────────── --}}
+          <nav class="ps-quick-nav" aria-label="Navegación Rápida">
+
+            <div class="ps-nav-group">
+              <span class="ps-nav-title">Bancos:</span>
+              <a href="https://bancaporinternet.bn.com.pe/BNWeb/Inicio" target="_blank" class="ps-nav-item">
+                <i class='bx bx-building-house ps-nav-ico'></i> Cuenta Detracción BN
+              </a>
+            </div>
+
+            <div class="ps-nav-divider"></div>
+
+            <div class="ps-nav-group">
+              <span class="ps-nav-title">SUNAT:</span>
+              <a href="https://ww1.sunat.gob.pe/ol-at-ittramitedoc/registro/iniciar" target="_blank" class="ps-nav-item">
+                <i class='bx bx-send ps-nav-ico'></i> Mesa de Partes
+              </a>
+              <a href="https://www.sunat.gob.pe/orientacion/cronogramas/2026/cObligacionMensual2026.html" target="_blank" class="ps-nav-item">
+                <i class='bx bx-calendar ps-nav-ico'></i> Cronograma '26
+              </a>
+              <a href="https://e-consultaruc.sunat.gob.pe/cl-ti-itmrconsruc/FrameCriterioBusquedaWeb.jsp" target="_blank" class="ps-nav-item">
+                <i class='bx bx-search ps-nav-ico'></i> Consulta RUC
+              </a>
+              <a href="https://ww1.sunat.gob.pe/xssecurity/SignOnVerification.htm?signonForwardAction=https%3A%2F%2Fww1.sunat.gob.pe%2Fol-ti-itrheemision%2Femisionrhe.do" target="_blank" class="ps-nav-item">
+                <i class='bx bx-file ps-nav-ico'></i> Emitir RH
+              </a>
+              <a href="https://ww1.sunat.gob.pe/xssecurity/SignOnVerification.htm?signonForwardAction=https%3A%2F%2Fww1.sunat.gob.pe%2Fol-ti-itrheemisionnce%2Femisionnce.do" target="_blank" class="ps-nav-item">
+                <i class='bx bx-file-blank ps-nav-ico'></i> Nota crédito RH
+              </a>
+              <a href="https://e-consulta.sunat.gob.pe/ol-ti-itconsvalicpe/ConsValiCpe.htm" target="_blank" class="ps-nav-item">
+                <i class='bx bx-check-shield ps-nav-ico'></i> Validar CPE
+              </a>
+            </div>
+
+            <div class="ps-nav-divider"></div>
+
+            <div class="ps-nav-group">
+              <span class="ps-nav-title">Otros:</span>
+              <a href="https://aplicativosweb6.sunafil.gob.pe/si.mesaVirtual/registro" target="_blank" class="ps-nav-item">
+                <i class='bx bx-inbox ps-nav-ico'></i> Mesa SUNAFIL
+              </a>
+              <a href="https://tribunalfiscal.pegasus.com.pe/" target="_blank" class="ps-nav-item">
+                <i class='bx bx-buildings ps-nav-ico'></i> Tribunal Fiscal
+              </a>
+            </div>
+
+          </nav>
+
+          {{-- ── Contenido Principal ─────────────────────────────────── --}}
           <div class="placeholder-content module-card-wide">
-            <div class="module-toolbar">
+              <div class="module-toolbar">
               <div>
                 <h1>Portal SUNAT</h1>
-                <p style="margin:.35rem 0 0; color:#6b7280; font-size:.92rem;">
+                <p class="ps-subtitle">
                   Accede a SUNAT SOL directamente desde aquí. Configura las credenciales de cada empresa y abre la sesión con un clic.
                 </p>
               </div>
@@ -302,8 +448,8 @@
                 <tbody>
                   @forelse($companies as $company)
                     <tr>
-                      <td style="font-weight:600; color:#0f172a;">{{ $company->name }}</td>
-                      <td style="font-family:monospace; color:#475569; font-size:.88rem;">{{ $company->ruc }}</td>
+                      <td class="ps-company-name">{{ $company->name }}</td>
+                      <td class="ps-company-ruc">{{ $company->ruc }}</td>
                       <td>
                         <span class="ps-chip {{ $company->canUseSunatPortal() ? 'ok' : 'off' }}">
                           <i class='bx {{ $company->canUseSunatPortal() ? "bx-check-circle" : "bx-x-circle" }}'></i>
@@ -355,6 +501,7 @@
               {{ $companies->count() }} empresa(s) encontrada(s).
             </p>
           </div>
+          {{-- Fin Contenido Principal --}}
 
         </div>
       </main>

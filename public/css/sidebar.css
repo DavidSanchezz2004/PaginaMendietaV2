@@ -784,3 +784,53 @@ body.dark-mode .company-dropdown-footer a:hover {
 .main-content::-webkit-scrollbar-thumb:hover {
     background-color: var(--clr-active-bg);
 }
+
+/* ── LINKS DE INTERÉS (sidebar) ─────────────────────────── */
+.sidebar-section-links {
+    padding: 0 1.25rem 1.5rem;
+}
+
+.sidebar-links-group {
+    display: flex;
+    flex-direction: column;
+    gap: .15rem;
+}
+
+.sidebar-links-title {
+    font-size: .68rem;
+    font-weight: 700;
+    color: var(--clr-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    margin: .4rem 0 .25rem .25rem;
+    display: block;
+}
+
+.sidebar-ext-link {
+    display: flex;
+    align-items: center;
+    gap: .65rem;
+    padding: .42rem .75rem;
+    border-radius: 8px;
+    color: var(--clr-text-secondary);
+    text-decoration: none;
+    font-size: .82rem;
+    font-weight: 500;
+    transition: background .15s, color .15s, transform .15s;
+}
+
+.sidebar-ext-link i {
+    font-size: 1rem;
+    color: var(--clr-text-secondary);
+    transition: color .15s;
+}
+
+.sidebar-ext-link:hover {
+    background-color: var(--clr-hover-bg);
+    color: #ffffff;
+    transform: translateX(3px);
+}
+
+.sidebar-ext-link:hover i {
+    color: #ffffff;
+}
