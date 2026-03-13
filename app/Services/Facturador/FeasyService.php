@@ -101,6 +101,15 @@ class FeasyService
             ? $this->buildGrePayload($invoice, $company)
             : $this->buildPayload($invoice, $company);
 
+        // Debug: loguear payload de detracción para verificar nombres de campo
+        if (! empty($payload['informacion_detraccion'])) {
+            Log::channel('stack')->debug('[FeasyService] Payload informacion_detraccion', [
+                'invoice_id'            => $invoice->id,
+                'informacion_detraccion' => $payload['informacion_detraccion'],
+                'indicadores'           => $payload['indicadores'] ?? [],
+            ]);
+        }
+
         $result = $this->post($endpoint, $payload, $this->token);
 
         // Feasy devuelve 400 "registrado previamente y está aceptado" cuando el documento
@@ -333,6 +342,44 @@ class FeasyService
         if ($invoice->indicador_entrega_bienes && $invoice->informacion_entrega_bienes) {
             $payload['informacion_entrega_bienes'] = $invoice->informacion_entrega_bienes;
             $payload['indicadores'] = ['indicador_entrega_bienes' => true];
+        }
+
+        // ── Detracción SPOT (solo Factura tipo 01, monto > 700 PEN) ──────
+        if ($invoice->indicador_detraccion && $invoice->informacion_detraccion) {
+            $d = $invoice->informacion_detraccion;
+
+            $cuenta = trim((string) ($d['cuenta_banco_detraccion'] ?? ''));
+            if ($cuenta === '') {
+                throw new \RuntimeException(
+                    'La cuenta del Banco de la Nación es obligatoria para comprobantes sujetos a detracción SPOT (cac:PayeeFinancialAccount/cbc:ID).'
+                );
+            }
+
+            $payload['informacion_detraccion'] = [
+                'monto_detraccion'              => round((float) ($d['monto_detraccion'] ?? 0), 2),
+                'porcentaje_detraccion'         => (float) ($d['porcentaje_detraccion'] ?? 0),
+                'codigo_bbss_sujeto_detraccion' => $d['codigo_bbss_sujeto_detraccion'] ?? '',
+                'cuenta_banco_detraccion'       => $cuenta,
+                'codigo_medio_pago_detraccion'  => $d['codigo_medio_pago_detraccion'] ?? '001',
+            ];
+            // Merge con indicadores existentes (no sobreescribir entrega_bienes)
+            $payload['indicadores'] = array_merge(
+                $payload['indicadores'] ?? [],
+                ['indicador_detraccion' => true]
+            );
+        }
+
+        // ── Información adicional (campos libres SUNAT) ───────────────────
+        // Aplica a Factura (01), Boleta (03) y comprobantes con SPOT.
+        // Solo se incluye si hay al menos un campo con valor no vacío.
+        if (! empty($invoice->informacion_adicional)) {
+            $adicional = array_filter(
+                $invoice->informacion_adicional,
+                fn ($v) => $v !== null && $v !== ''
+            );
+            if (! empty($adicional)) {
+                $payload['informacion_adicional'] = $adicional;
+            }
         }
 
         return $payload;

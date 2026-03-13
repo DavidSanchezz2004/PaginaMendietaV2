@@ -29,6 +29,7 @@ use App\Repositories\Eloquent\UserRepository;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Pagination\Paginator;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -55,6 +56,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Usar paginador Bootstrap (no Tailwind) ya que el proyecto no usa Tailwind CSS
+        Paginator::useBootstrap();
+
         // EasyPanel suele terminar TLS en proxy inverso. Esto evita Mixed Content
         // al generar asset()/url() en HTTP cuando el sitio público va en HTTPS.
         if (app()->environment('production') || request()->header('x-forwarded-proto') === 'https') {

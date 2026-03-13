@@ -6,6 +6,28 @@
   <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
   <link rel="stylesheet" href="{{ asset('css/sidebar.css') }}">
   <link rel="stylesheet" href="{{ asset('css/dashboard.css') }}">
+  <style>
+    .form-control {
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 0.55rem 1rem;
+      font-size: 1rem;
+      background: #f9fafb;
+      color: #374151;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+      transition: border-color 0.2s, box-shadow 0.2s;
+      outline: none;
+    }
+    .form-control:focus {
+      border-color: #1a6b57;
+      box-shadow: 0 4px 12px rgba(26,107,87,0.08);
+      background: #fff;
+    }
+    .form-control::placeholder {
+      color: #9ca3af;
+      font-weight: 400;
+    }
+  </style>
 @endpush
 
 @section('content')

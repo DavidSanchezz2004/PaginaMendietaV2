@@ -37,6 +37,8 @@ class Company extends Model
         'direccion_fiscal',
         'feasy_token',       // encrypted
         'facturador_enabled',
+        // Información adicional enviada a Feasy al emitir (valores por empresa)
+        'informacion_adicional_config',
         // ── Credenciales SOL (Portal SUNAT) ───────────────────────────────
         'usuario_sol',
         'clave_sol',         // encrypted
@@ -50,9 +52,10 @@ class Company extends Model
     protected function casts(): array
     {
         return [
-            'facturador_enabled' => 'boolean',
-            'feasy_token'        => 'encrypted',
-            'clave_sol'          => 'encrypted',
+            'facturador_enabled'          => 'boolean',
+            'feasy_token'                 => 'encrypted',
+            'clave_sol'                   => 'encrypted',
+            'informacion_adicional_config' => 'array',
         ];
     }
 

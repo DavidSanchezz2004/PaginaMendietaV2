@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Facturador\StoreInvoiceRequest;
 use App\Models\Invoice;
 use App\Models\InvoicePayment;
+use App\Models\SpotDetraccion;
 use App\Services\Facturador\ClientService;
 use App\Services\Facturador\InvoiceService;
 use App\Services\Facturador\ProductService;
@@ -83,7 +84,9 @@ class InvoiceController extends Controller
                                     ->toArray(),
         ];
 
-        return view('facturador.invoices.index', compact('invoices', 'filters', 'stats'));
+        $company = \App\Models\Company::findOrFail(session('company_id'));
+
+        return view('facturador.invoices.index', compact('invoices', 'filters', 'stats', 'company'));
     }
 
     public function create(): View
@@ -93,8 +96,9 @@ class InvoiceController extends Controller
         $clients     = $this->clientService->allActive();
         $products    = $this->productService->allActive();
         $suggestions = $this->invoiceService->getDocumentSuggestions();
+        $spotDetracciones = SpotDetraccion::activos()->get();
 
-        return view('facturador.invoices.create', compact('clients', 'products', 'suggestions'));
+        return view('facturador.invoices.create', compact('clients', 'products', 'suggestions', 'spotDetracciones'));
     }
 
     public function store(StoreInvoiceRequest $request): RedirectResponse
@@ -145,6 +149,14 @@ class InvoiceController extends Controller
 
         // user_id se inyecta desde el usuario autenticado (no del input)
         $validated['user_id'] = $request->user()->id;
+
+        // ── Re-calcular monto_detraccion server-side para integridad ──────
+        if (! empty($validated['indicador_detraccion']) && ! empty($validated['informacion_detraccion'])) {
+            $d        = $validated['informacion_detraccion'];
+            $pct      = (float) ($d['porcentaje_detraccion'] ?? 0);
+            $total    = (float) ($validated['monto_total'] ?? 0);
+            $validated['informacion_detraccion']['monto_detraccion'] = round($total * $pct / 100, 2);
+        }
 
         $invoice = $this->invoiceService->create($validated, $items);
 

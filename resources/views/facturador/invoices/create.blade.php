@@ -7,8 +7,24 @@
   <link rel="stylesheet" href="{{ asset('css/sidebar.css') }}">
   <link rel="stylesheet" href="{{ asset('css/dashboard.css') }}">
   <style>
+      .items-table-wrapper {
+        width: 100%;
+        overflow-x: auto !important;
+        display: block;
+        padding-bottom: 0.5rem;
+        background: transparent;
+      }
+      .items-table {
+        min-width: 1200px;
+        width: 100%;
+      }
+      .invoice-create-grid > div:first-child {
+        overflow: visible !important;
+      }
     .invoice-create-grid { display:grid; grid-template-columns: 1fr 320px; gap:1.5rem; align-items:start; }
-    .invoice-create-grid > div:first-child { min-width:0; overflow:hidden; }
+    .invoice-create-grid > div:first-child { min-width:0; overflow:auto; }
+    /* Permitir scroll horizontal en la tabla de ítems */
+    .items-table-wrapper { overflow-x:auto; }
     @media (max-width:960px) { .invoice-create-grid { grid-template-columns:1fr; } }
     .items-table { width:100%; border-collapse:collapse; font-size:.85rem; }
     .items-table th { background:#f9fafb; padding:.5rem .6rem; text-align:left; font-weight:600; border-bottom:1px solid #e5e7eb; white-space:nowrap; }
@@ -18,6 +34,21 @@
     .totals-row { display:flex; justify-content:space-between; margin-bottom:.5rem; font-size:.9rem; }
     .totals-row.grand { font-size:1.1rem; font-weight:700; color:#1a6b57; border-top:1px solid #e5e7eb; padding-top:.75rem; margin-top:.5rem; }
     .form-section-title { font-weight:600; font-size:.95rem; color:#374151; margin:1.25rem 0 .75rem; padding-bottom:.4rem; border-bottom:1px solid #e5e7eb; }
+
+    /* ── Detracción SPOT ──────────────────────────────────────────────── */
+    .detrac-box { background:#fffbeb; border:1px solid #fde68a; border-left:4px solid #f59e0b; border-radius:10px; padding:1rem 1.1rem; margin-top:1rem; }
+    .detrac-box-off { background:#f9fafb; border:1px solid #e5e7eb; border-left:4px solid #d1d5db; border-radius:10px; padding:.75rem 1.1rem; margin-top:1rem; cursor:pointer; }
+    .detrac-box-off:hover { border-left-color:#f59e0b; background:#fffdf0; }
+    .detrac-toggle-row { display:flex; align-items:center; gap:.6rem; }
+    .detrac-toggle-row label { font-weight:600; font-size:.9rem; color:#78350f; cursor:pointer; }
+    .detrac-fields { margin-top:.85rem; display:flex; flex-direction:column; gap:.6rem; }
+    .detrac-fields .form-group { margin:0; }
+    .detrac-fields label { font-size:.78rem; }
+    .detrac-monto-row { display:flex; align-items:center; gap:.5rem; background:#fef3c7; border:1px solid #fde68a; border-radius:8px; padding:.5rem .85rem; margin-top:.5rem; }
+    .detrac-monto-row .lbl { font-size:.78rem; font-weight:600; color:#78350f; flex:1; }
+    .detrac-monto-row .val { font-size:1.1rem; font-weight:800; color:#92400e; font-family:monospace; }
+    .detrac-alert { display:flex; align-items:center; gap:.4rem; font-size:.78rem; color:#78350f; margin-top:.5rem; }
+    .detrac-alert i { color:#f59e0b; font-size:1rem; }
   </style>
 @endpush
 
@@ -143,6 +174,52 @@
                       </select>
                     </div>
 
+                    {{-- ══ CUOTAS (visible solo cuando forma_pago = Crédito) ══ --}}
+                    <div id="cuotas-section"
+                         style="grid-column:1/-1; display:{{ old('forma_pago') == '2' ? 'block' : 'none' }}; margin-top:.2rem;">
+                      <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:.5rem; padding:.9rem 1rem;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:.7rem;">
+                          <span style="font-weight:600; font-size:.9rem; color:#166534;">
+                            <i class='bx bx-calendar-check' style="vertical-align:middle;"></i>
+                            Plan de Cuotas
+                          </span>
+                          <div style="display:flex; gap:.5rem; align-items:center;">
+                            <span style="font-size:.78rem; color:#64748b;">Suma cuotas:</span>
+                            <strong id="cuotas-suma" style="font-size:.88rem; color:#166534;">S/ 0.00</strong>
+                          </div>
+                        </div>
+
+                        <div id="cuotas-body" style="display:flex; flex-direction:column; gap:.4rem;">
+                          @foreach(old('lista_cuotas', []) as $ci => $cuota)
+                            <div class="cuota-row" style="display:flex; gap:.5rem; align-items:center;">
+                              <span style="flex:0 0 24px; text-align:center; font-size:.78rem; color:#94a3b8; font-weight:600;">{{ $ci + 1 }}</span>
+                              <input type="date" name="lista_cuotas[{{ $ci }}][fecha_pago]"
+                                class="form-input cuota-fecha"
+                                style="flex:1; font-size:.85rem;"
+                                value="{{ $cuota['fecha_pago'] ?? '' }}"
+                                placeholder="Fecha de pago">
+                              <input type="number" name="lista_cuotas[{{ $ci }}][monto]"
+                                class="form-input cuota-monto"
+                                style="flex:1; font-size:.85rem;"
+                                step="0.01" min="0.01"
+                                value="{{ $cuota['monto'] ?? '' }}"
+                                placeholder="Monto S/">
+                              <button type="button" class="btn-action-icon cuota-remove" title="Quitar cuota">
+                                <i class='bx bx-trash'></i>
+                              </button>
+                            </div>
+                          @endforeach
+                        </div>
+
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:.7rem;">
+                          <button type="button" id="cuota-add" class="btn-secondary" style="font-size:.82rem; padding:.3rem .8rem;">
+                            <i class='bx bx-plus'></i> Agregar cuota
+                          </button>
+                          <span style="font-size:.76rem; color:#9ca3af;">Máx. 12 cuotas. La suma debe igualar el monto total del comprobante.</span>
+                        </div>
+                      </div>
+                    </div>
+
                     <div class="form-group non-gre-field">
                       <label>IGV % *</label>
                       <select name="porcentaje_igv" id="igv-pct" class="form-input" required>
@@ -234,8 +311,8 @@
                     </button>
                   </div>
 
-                  <div style="overflow-x:auto;">
-                    <table class="items-table" id="items-table">
+                  <div class="items-table-wrapper">
+                    <table class="items-table" id="items-table" style="min-width:950px;">
                       <thead>
                         <tr>
                           <th style="min-width:170px;">Producto/Servicio</th>
@@ -348,6 +425,86 @@
                     <input type="hidden" name="monto_total_inafecto"  id="h-inafecto"  value="{{ old('monto_total_inafecto', 0) }}">
                     <input type="hidden" name="monto_total_igv"       id="h-igv"       value="{{ old('monto_total_igv', 0) }}">
                     <input type="hidden" name="monto_total"           id="h-total"     value="{{ old('monto_total', 0) }}">
+
+                    {{-- ── Detracción SPOT ─────────────────────────────── --}}
+                    <div id="detrac-wrapper" style="display:none;">
+                      <input type="hidden" name="indicador_detraccion" value="0" id="h-detrac-indicator">
+
+                      {{-- Caja colapsada (toggle apagado) --}}
+                      <div id="detrac-box-off" class="detrac-box-off" onclick="toggleDetrac(true)">
+                        <div class="detrac-toggle-row">
+                          <i class='bx bx-transfer-alt' style="color:#d97706; font-size:1.1rem;"></i>
+                          <label>Operación sujeta a detracción (SPOT)</label>
+                          <span style="margin-left:auto; font-size:.75rem; color:#92400e; font-weight:600;">Click para activar</span>
+                        </div>
+                      </div>
+
+                      {{-- Caja expandida (toggle encendido) --}}
+                      <div id="detrac-box-on" class="detrac-box" style="display:none;">
+                        <div class="detrac-toggle-row" style="margin-bottom:.1rem;">
+                          <i class='bx bx-transfer-alt' style="color:#d97706; font-size:1.1rem;"></i>
+                          <label style="color:#78350f;">Detracción SPOT activa</label>
+                          <button type="button" onclick="toggleDetrac(false)" style="margin-left:auto; font-size:.75rem; background:none; border:none; color:#92400e; cursor:pointer; font-weight:600;">✕ Quitar</button>
+                        </div>
+
+                        <div class="detrac-fields">
+                          <div class="form-group">
+                            <label>Bien / Servicio sujeto a detracción *</label>
+                            <select name="informacion_detraccion[codigo_bbss_sujeto_detraccion]"
+                                    id="detrac-codigo" class="form-input" onchange="onDetracCodigoChange(this)">
+                              <option value="">— Seleccionar código SUNAT —</option>
+                              @foreach($spotDetracciones as $spot)
+                                <option value="{{ $spot->codigo }}"
+                                  data-pct="{{ $spot->porcentaje }}"
+                                  {{ old('informacion_detraccion.codigo_bbss_sujeto_detraccion') === $spot->codigo ? 'selected' : '' }}>
+                                  {{ $spot->codigo }} — {{ $spot->descripcion }} ({{ $spot->porcentaje }}%)
+                                </option>
+                              @endforeach
+                            </select>
+                          </div>
+
+                          <div class="form-group">
+                            <label>% Detracción</label>
+                            <input type="number" name="informacion_detraccion[porcentaje_detraccion]"
+                                   id="detrac-pct" class="form-input" min="0" max="100" step="0.01"
+                                   value="{{ old('informacion_detraccion.porcentaje_detraccion', 0) }}"
+                                   oninput="recalcDetrac()">
+                          </div>
+
+                          <div class="form-group">
+                            <label>Cuenta Banco de la Nación *</label>
+                            <input type="text" name="informacion_detraccion[cuenta_banco_detraccion]"
+                                   id="detrac-cuenta" class="form-input" maxlength="20"
+                                   placeholder="Ej: 00-000-123456"
+                                   value="{{ old('informacion_detraccion.cuenta_banco_detraccion') }}">
+                          </div>
+
+                          <div class="form-group">
+                            <label>Medio de pago detracción</label>
+                            <select name="informacion_detraccion[codigo_medio_pago_detraccion]" class="form-input">
+                              <option value="001" {{ old('informacion_detraccion.codigo_medio_pago_detraccion','001') == '001' ? 'selected' : '' }}>001 — Depósito en cuenta</option>
+                              <option value="002" {{ old('informacion_detraccion.codigo_medio_pago_detraccion') == '002' ? 'selected' : '' }}>002 — Giro</option>
+                              <option value="003" {{ old('informacion_detraccion.codigo_medio_pago_detraccion') == '003' ? 'selected' : '' }}>003 — Transferencia de fondos</option>
+                              <option value="004" {{ old('informacion_detraccion.codigo_medio_pago_detraccion') == '004' ? 'selected' : '' }}>004 — Orden de pago</option>
+                              <option value="005" {{ old('informacion_detraccion.codigo_medio_pago_detraccion') == '005' ? 'selected' : '' }}>005 — Tarjeta de débito</option>
+                            </select>
+                          </div>
+
+                          {{-- Monto calculado (solo visual + hidden) --}}
+                          <input type="hidden" name="informacion_detraccion[monto_detraccion]"
+                                 id="h-detrac-monto" value="{{ old('informacion_detraccion.monto_detraccion', 0) }}">
+                          <div class="detrac-monto-row">
+                            <span class="lbl"><i class='bx bx-calculator' style="vertical-align:middle;"></i> Monto a detraer:</span>
+                            <span class="val" id="lbl-detrac-monto">S/ 0.00</span>
+                          </div>
+
+                          <div class="detrac-alert">
+                            <i class='bx bx-info-circle'></i>
+                            El comprador debe depositar este monto en la cuenta de detracciones del Banco de la Nación <strong>antes o durante el pago</strong>.
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
                   {{-- Panel GRE: destinatario + puntos + vehículos --}}
@@ -591,6 +748,15 @@ function recalcTotals() {
   document.getElementById('h-inafecto').value  = inafecto.toFixed(2);
   document.getElementById('h-igv').value       = igvSum.toFixed(2);
   document.getElementById('h-total').value     = totalGeneral.toFixed(2);
+
+  // ── Detracción: mostrar/ocultar bloque y recalcular ─────────────────
+  updateDetracWrapper(totalGeneral);
+  recalcDetrac();
+
+  // ── Si hay cuotas activas, redistribuir automáticamente ─────────────
+  if (typeof cuotasDistribuir === 'function' && document.getElementById('forma-pago-select')?.value === '2') {
+    cuotasDistribuir();
+  }
 }
 
 function bindRowEvents(row) {
@@ -710,5 +876,190 @@ function toggleFechaVencimiento() {
 }
 document.getElementById('forma-pago-select')?.addEventListener('change', toggleFechaVencimiento);
 toggleFechaVencimiento();
+
+// ── Detracción SPOT ────────────────────────────────────────────────────
+// El bloque solo es visible cuando: tipo=01 (Factura) y total > 700 PEN.
+function updateDetracWrapper(total) {
+  const tipo    = document.getElementById('tipo-doc-select')?.value;
+  const moneda  = document.querySelector('select[name="codigo_moneda"]')?.value || 'PEN';
+  const wrapper = document.getElementById('detrac-wrapper');
+  if (!wrapper) return;
+  const visible = (tipo === '01' && moneda === 'PEN' && total > 700);
+  wrapper.style.display = visible ? '' : 'none';
+  // Si se oculta, desactivar detracción automáticamente
+  if (!visible) toggleDetrac(false);
+}
+
+function toggleDetrac(activate) {
+  const boxOff    = document.getElementById('detrac-box-off');
+  const boxOn     = document.getElementById('detrac-box-on');
+  const indicator = document.getElementById('h-detrac-indicator');
+  if (!boxOff || !boxOn) return;
+  boxOff.style.display = activate ? 'none' : '';
+  boxOn.style.display  = activate ? '' : 'none';
+  if (indicator) indicator.value = activate ? '1' : '0';
+  if (activate) recalcDetrac();
+}
+
+function onDetracCodigoChange(sel) {
+  const pct = parseFloat(sel.options[sel.selectedIndex]?.dataset?.pct || '0');
+  const pctInput = document.getElementById('detrac-pct');
+  if (pctInput) { pctInput.value = pct; }
+  recalcDetrac();
+}
+
+function recalcDetrac() {
+  const active = document.getElementById('h-detrac-indicator')?.value === '1';
+  if (!active) return;
+  const total = parseFloat(document.getElementById('h-total')?.value || '0');
+  const pct   = parseFloat(document.getElementById('detrac-pct')?.value || '0');
+  const monto = Math.round(total * pct / 100 * 100) / 100;
+  const lbl   = document.getElementById('lbl-detrac-monto');
+  const hid   = document.getElementById('h-detrac-monto');
+  if (lbl) lbl.textContent = 'S/ ' + monto.toFixed(2);
+  if (hid) hid.value = monto.toFixed(2);
+}
+
+// Actualizar visibilidad al cambiar tipo de doc o moneda
+document.getElementById('tipo-doc-select')?.addEventListener('change', () => {
+  const total = parseFloat(document.getElementById('h-total')?.value || '0');
+  updateDetracWrapper(total);
+});
+document.querySelector('select[name="codigo_moneda"]')?.addEventListener('change', () => {
+  const total = parseFloat(document.getElementById('h-total')?.value || '0');
+  updateDetracWrapper(total);
+});
+
+// Restaurar estado si hay old() (repoblado tras error de validación)
+@if(old('indicador_detraccion'))
+  document.addEventListener('DOMContentLoaded', () => {
+    const total = parseFloat(document.getElementById('h-total')?.value || '0');
+    updateDetracWrapper(total);
+    toggleDetrac(true);
+    recalcDetrac();
+  });
+@endif
+
+// Validación pre-submit: cuenta BN obligatoria si hay detracción activa
+document.getElementById('invoice-form')?.addEventListener('submit', function(e) {
+  if (document.getElementById('h-detrac-indicator')?.value === '1') {
+    const cuenta = document.getElementById('detrac-cuenta')?.value?.trim();
+    const codigo = document.getElementById('detrac-codigo')?.value;
+    if (!cuenta) {
+      e.preventDefault();
+      alert('⚠️ Detracción SPOT: ingrese la cuenta del Banco de la Nación antes de guardar.');
+      document.getElementById('detrac-cuenta')?.focus();
+      return;
+    }
+    if (!codigo) {
+      e.preventDefault();
+      alert('⚠️ Detracción SPOT: seleccione el código del bien o servicio sujeto a detracción.');
+      return;
+    }
+  }
+});
+
+// ── Cuotas de crédito ─────────────────────────────────────────────────────
+const MAX_CUOTAS = 12;
+const formaPagoSel = document.getElementById('forma-pago-select');
+const cuotasSection = document.getElementById('cuotas-section');
+const cuotasBody   = document.getElementById('cuotas-body');
+const cuotasSuma   = document.getElementById('cuotas-suma');
+
+function cuotasCount() { return cuotasBody.querySelectorAll('.cuota-row').length; }
+
+function cuotasUpdateSuma() {
+  let total = 0;
+  cuotasBody.querySelectorAll('.cuota-monto').forEach(inp => {
+    const v = parseFloat(inp.value);
+    if (!isNaN(v)) total += v;
+  });
+  cuotasSuma.textContent = 'S/ ' + total.toFixed(2);
+}
+
+function cuotasDistribuir() {
+  const total = parseFloat(document.getElementById('h-total')?.value || '0');
+  const rows  = cuotasBody.querySelectorAll('.cuota-row');
+  if (!rows.length) return;
+
+  // ── Distribuir montos ────────────────────────────────────────────────
+  if (total > 0) {
+    const base  = Math.floor(total / rows.length * 100) / 100;
+    const resto = Math.round((total - base * rows.length) * 100) / 100;
+    rows.forEach((row, i) => {
+      const inp = row.querySelector('.cuota-monto');
+      if (inp) inp.value = (i === rows.length - 1 ? (base + resto).toFixed(2) : base.toFixed(2));
+    });
+  }
+
+  // ── Auto-rellenar fechas desde fecha_vencimiento + N meses ───────────
+  const fechaVenc = document.querySelector('[name="fecha_vencimiento"]')?.value;
+  if (fechaVenc) {
+    const base = new Date(fechaVenc + 'T00:00:00');
+    if (!isNaN(base)) {
+      rows.forEach((row, i) => {
+        const inp = row.querySelector('.cuota-fecha');
+        if (inp && !inp.value) { // solo si está vacío
+          const d = new Date(base);
+          d.setMonth(d.getMonth() + i);
+          inp.value = d.toISOString().slice(0, 10);
+        }
+      });
+    }
+  }
+
+  cuotasUpdateSuma();
+}
+
+function cuotasRenumber() {
+  cuotasBody.querySelectorAll('.cuota-row').forEach((row, i) => {
+    const lbl = row.querySelector('span');
+    if (lbl) lbl.textContent = (i + 1);
+    // Renombrar inputs con índice correcto
+    const fecha = row.querySelector('.cuota-fecha');
+    const monto = row.querySelector('.cuota-monto');
+    if (fecha) fecha.name = `lista_cuotas[${i}][fecha_pago]`;
+    if (monto) monto.name = `lista_cuotas[${i}][monto]`;
+  });
+}
+
+function cuotasAddRow() {
+  if (cuotasCount() >= MAX_CUOTAS) { alert('Máximo ' + MAX_CUOTAS + ' cuotas.'); return; }
+  const i = cuotasCount();
+  const row = document.createElement('div');
+  row.className = 'cuota-row';
+  row.style.cssText = 'display:flex; gap:.5rem; align-items:center;';
+  row.innerHTML = `
+    <span style="flex:0 0 24px; text-align:center; font-size:.78rem; color:#94a3b8; font-weight:600;">${i+1}</span>
+    <input type="date" name="lista_cuotas[${i}][fecha_pago]" class="form-input cuota-fecha" style="flex:1; font-size:.85rem;">
+    <input type="number" name="lista_cuotas[${i}][monto]" class="form-input cuota-monto" style="flex:1; font-size:.85rem;" step="0.01" min="0.01" placeholder="Monto S/">
+    <button type="button" class="btn-action-icon cuota-remove" title="Quitar cuota"><i class='bx bx-trash'></i></button>`;
+  cuotasBody.appendChild(row);
+  row.querySelector('.cuota-remove').addEventListener('click', () => { row.remove(); cuotasRenumber(); cuotasDistribuir(); });
+  row.querySelector('.cuota-monto').addEventListener('input', cuotasUpdateSuma);
+  cuotasDistribuir();
+}
+
+// Ligar botones y montos existentes (cargados desde old())
+cuotasBody.querySelectorAll('.cuota-row').forEach((row, i) => {
+  row.querySelector('.cuota-remove')?.addEventListener('click', () => { row.remove(); cuotasRenumber(); cuotasUpdateSuma(); });
+  row.querySelector('.cuota-monto')?.addEventListener('input', cuotasUpdateSuma);
+});
+
+document.getElementById('cuota-add')?.addEventListener('click', cuotasAddRow);
+
+// Mostrar/ocultar sección según forma_pago
+formaPagoSel?.addEventListener('change', function () {
+  if (this.value === '2') {
+    cuotasSection.style.display = 'block';
+    if (cuotasCount() === 0) cuotasAddRow(); // agregar 1 fila vacía al abrir
+    cuotasDistribuir(); // rellenar monto con el total actual
+  } else {
+    cuotasSection.style.display = 'none';
+  }
+});
+
+// Inicializar suma en carga
+cuotasUpdateSuma();
 </script>
 @endpush

@@ -788,12 +788,12 @@ body.dark-mode .company-dropdown-footer a:hover {
 /* ── Etiqueta de sección en submenú ─────────────────────────── */
 .submenu-section-label {
     display: block;
-    font-size: .68rem;
+    font-size: 0.68rem;
     font-weight: 700;
     color: var(--clr-text-secondary);
     text-transform: uppercase;
-    letter-spacing: .08em;
-    padding: .5rem .75rem .2rem;
+    letter-spacing: 0.08em;
+    padding: 0.5rem 0.75rem 0.2rem;
     pointer-events: none;
 }
 
@@ -805,36 +805,39 @@ body.dark-mode .company-dropdown-footer a:hover {
 .sidebar-links-group {
     display: flex;
     flex-direction: column;
-    gap: .15rem;
+    gap: 0.15rem;
 }
 
 .sidebar-links-title {
-    font-size: .68rem;
+    font-size: 0.68rem;
     font-weight: 700;
     color: var(--clr-text-secondary);
     text-transform: uppercase;
-    letter-spacing: .08em;
-    margin: .4rem 0 .25rem .25rem;
+    letter-spacing: 0.08em;
+    margin: 0.4rem 0 0.25rem 0.25rem;
     display: block;
 }
 
 .sidebar-ext-link {
     display: flex;
     align-items: center;
-    gap: .65rem;
-    padding: .42rem .75rem;
+    gap: 0.65rem;
+    padding: 0.42rem 0.75rem;
     border-radius: 8px;
     color: var(--clr-text-secondary);
     text-decoration: none;
-    font-size: .82rem;
+    font-size: 0.82rem;
     font-weight: 500;
-    transition: background .15s, color .15s, transform .15s;
+    transition:
+        background 0.15s,
+        color 0.15s,
+        transform 0.15s;
 }
 
 .sidebar-ext-link i {
     font-size: 1rem;
     color: var(--clr-text-secondary);
-    transition: color .15s;
+    transition: color 0.15s;
 }
 
 .sidebar-ext-link:hover {

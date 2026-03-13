@@ -116,6 +116,37 @@ class StoreInvoiceRequest extends FormRequest
             'gre_conductores.*.numero_licencia'         => ['nullable', 'string', 'max:20'],
             'gre_conductores.*.indicador_principal'     => ['nullable', 'boolean'],
 
+            // ── Detracción SPOT ────────────────────────────────────────────
+            // Solo aplica a Facturas (01) con monto total > S/ 700.
+            'indicador_detraccion'                                 => ['boolean'],
+            'informacion_detraccion'                               => ['nullable', 'array'],
+            'informacion_detraccion.codigo_bbss_sujeto_detraccion' => ['required_if:indicador_detraccion,1', 'nullable', 'string', 'max:5'],
+            'informacion_detraccion.porcentaje_detraccion'         => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'informacion_detraccion.monto_detraccion'              => ['nullable', 'numeric', 'min:0'],
+            'informacion_detraccion.cuenta_banco_detraccion'       => ['required_if:indicador_detraccion,1', 'nullable', 'string', 'max:20'],
+            'informacion_detraccion.codigo_medio_pago_detraccion'  => ['nullable', 'string', 'max:5'],
+
+            // ── Información Adicional (campos libres SUNAT) ───────────────
+            // Aplica a Factura (01), Boleta (03) y comprobantes con SPOT.
+            // Hasta 10 campos clave-valor definidos por la empresa.
+            'informacion_adicional'                                => ['nullable', 'array', 'max:10'],
+            'informacion_adicional.informacion_adicional_1'        => ['nullable', 'string', 'max:500'],
+            'informacion_adicional.informacion_adicional_2'        => ['nullable', 'string', 'max:500'],
+            'informacion_adicional.informacion_adicional_3'        => ['nullable', 'string', 'max:500'],
+            'informacion_adicional.informacion_adicional_4'        => ['nullable', 'string', 'max:500'],
+            'informacion_adicional.informacion_adicional_5'        => ['nullable', 'string', 'max:500'],
+            'informacion_adicional.informacion_adicional_6'        => ['nullable', 'string', 'max:500'],
+            'informacion_adicional.informacion_adicional_7'        => ['nullable', 'string', 'max:500'],
+            'informacion_adicional.informacion_adicional_8'        => ['nullable', 'string', 'max:500'],
+            'informacion_adicional.informacion_adicional_9'        => ['nullable', 'string', 'max:500'],
+            'informacion_adicional.informacion_adicional_10'       => ['nullable', 'string', 'max:500'],
+
+            // ── Cuotas de crédito (forma_pago = 2) ───────────────────────
+            // Solo se exigen cuando el comprobante es a crédito.
+            'lista_cuotas'                => ['nullable', 'array', 'max:12'],
+            'lista_cuotas.*.fecha_pago'   => ['nullable', 'required_if:forma_pago,2', 'date_format:Y-m-d'],
+            'lista_cuotas.*.monto'        => ['nullable', 'required_if:forma_pago,2', 'numeric', 'min:0.01'],
+
             // ── Items ──────────────────────────────────────────────────────
             'items'                           => ['required', 'array', 'min:1'],
             'items.*.codigo_interno'          => ['required', 'string', 'max:50'],
@@ -179,6 +210,8 @@ class StoreInvoiceRequest extends FormRequest
             'items.min'                => 'Debe agregar al menos un ítem.',
             'monto_total.min'          => 'El monto total debe ser mayor a 0.',
             'gre_vehiculos.min'        => 'Debe registrar al menos un vehículo.',
+            'informacion_detraccion.cuenta_banco_detraccion.required_if'       => 'La cuenta del Banco de la Nación es obligatoria para comprobantes con detracción SPOT.',
+            'informacion_detraccion.codigo_bbss_sujeto_detraccion.required_if' => 'El código del bien o servicio (SUNAT) es obligatorio para comprobantes con detracción SPOT.',
         ];
     }
 }

@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Obligaciones;
 use App\Enums\RoleEnum;
 use App\Http\Controllers\Controller;
 use App\Models\Company;
+use App\Models\User;
 use App\Models\ObligationDeclaration;
+use App\Models\CompanyUser;
 use App\Services\Company\CompanyManagementService;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
@@ -46,9 +48,38 @@ class CronogramaController extends Controller
         // Filtros adicionales
         $filterSearch = (string) $request->get('q', '');
         $filterStatus = (string) $request->get('status', '');
+        $filterDigit  = (string) $request->get('digit', '');
+        $filterAssignedTo = (string) $request->get('assigned_to', '');
+        $filterView  = (string) $request->get('view', 'active'); // active | archived | all
 
         // Empresas visibles según rol (reutiliza la lógica existente)
         $companies = $companyManagementService->listUserCompanies($user);
+
+        // IDs de empresas archivadas para este usuario (para filtros y vista)
+        $hiddenCompanyIds = CompanyUser::query()
+            ->where('user_id', $user->id)
+            ->where('hidden_in_dashboard', true)
+            ->pluck('company_id');
+
+        // Vista de empresas según archivado (solo admin/supervisor)
+        if (in_array($userRole, ['admin', 'supervisor'], true)) {
+            $companies = $companies->filter(function (Company $company) use ($hiddenCompanyIds, $filterView) {
+                $isHidden = $hiddenCompanyIds->contains($company->id);
+
+                if ($filterView === 'archived') {
+                    return $isHidden;
+                }
+                if ($filterView === 'active') {
+                    return ! $isHidden;
+                }
+
+                // 'all'
+                return true;
+            });
+        }
+
+        // Cargar relación de usuarios asignados para poder filtrar y mostrar
+        $companies->each(fn (Company $company) => $company->loadMissing('users', 'companyUsers'));
 
         // Aplicar filtro de búsqueda
         if ($filterSearch !== '') {
@@ -56,6 +87,24 @@ class CronogramaController extends Controller
                 str_contains(mb_strtolower($c->name), mb_strtolower($filterSearch)) ||
                 str_contains($c->ruc, $filterSearch)
             );
+        }
+
+        // Filtro por último dígito de RUC
+        if ($filterDigit !== '') {
+            $companies = $companies->filter(function (Company $company) use ($filterDigit) {
+                $lastDigit = substr($company->ruc, -1);
+
+                return $lastDigit === $filterDigit;
+            });
+        }
+
+        // Filtro por usuario asignado a la empresa
+        if ($filterAssignedTo !== '') {
+            $assignedUserId = (int) $filterAssignedTo;
+
+            $companies = $companies->filter(function (Company $company) use ($assignedUserId) {
+                return $company->users->contains('id', $assignedUserId);
+            });
         }
 
         // Cargar declaraciones ya confirmadas para el período
@@ -98,12 +147,23 @@ class CronogramaController extends Controller
 
         $rows = $rows->values();
 
+        // Listado de usuarios asignados a las empresas visibles (para el combo de filtro)
+        $assignedUsers = User::query()
+            ->whereHas('companies', fn ($q) => $q->whereIn('companies.id', $companyIds))
+            ->orderBy('name')
+            ->get();
+
         return view('obligaciones.cronograma.index', [
             'rows'          => $rows,
             'year'          => $year,
             'month'         => $month,
             'filterSearch'  => $filterSearch,
             'filterStatus'  => $filterStatus,
+            'filterDigit'   => $filterDigit,
+            'filterAssignedTo' => $filterAssignedTo,
+            'filterView'    => $filterView,
+            'hiddenCompanyIds' => $hiddenCompanyIds,
+            'assignedUsers' => $assignedUsers,
             'totalDeclared' => $rows->where('declared', true)->count(),
             'totalPending'  => $rows->where('declared', false)->count(),
         ]);

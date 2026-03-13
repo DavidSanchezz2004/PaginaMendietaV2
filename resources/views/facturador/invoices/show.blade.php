@@ -257,6 +257,49 @@
               </table>
             </div>
 
+            {{-- ── Detracción SPOT ─────────────────────────────────────────── --}}
+            @if($invoice->indicador_detraccion && $invoice->informacion_detraccion)
+              @php $det = $invoice->informacion_detraccion; @endphp
+              <div class="info-card" style="border-left:4px solid #f59e0b; margin-top:1.25rem;">
+                <h3><i class='bx bx-transfer-alt'></i> Detracción SPOT</h3>
+                <div class="show-grid">
+                  <div>
+                    <div class="dl-row">
+                      <dt>Código bien/servicio</dt>
+                      <dd><strong>{{ $det['codigo_bbss_sujeto_detraccion'] ?? '—' }}</strong></dd>
+                    </div>
+                    <div class="dl-row">
+                      <dt>Porcentaje detracción</dt>
+                      <dd>{{ $det['porcentaje_detraccion'] ?? 0 }}%</dd>
+                    </div>
+                    <div class="dl-row">
+                      <dt>Monto detracción</dt>
+                      <dd><strong style="font-size:1.05rem; color:#b45309;">
+                        {{ $invoice->codigo_moneda }} {{ number_format($det['monto_detraccion'] ?? 0, 2) }}
+                      </strong></dd>
+                    </div>
+                  </div>
+                  <div>
+                    <div class="dl-row">
+                      <dt>Cuenta Banco de la Nación</dt>
+                      <dd><span style="font-family:monospace;">{{ $det['cuenta_banco_detraccion'] ?? '—' }}</span></dd>
+                    </div>
+                    <div class="dl-row">
+                      <dt>Código medio de pago</dt>
+                      <dd>{{ $det['codigo_medio_pago_detraccion'] ?? '—' }}</dd>
+                    </div>
+                    <div class="dl-row">
+                      <dt>TOTAL – Detracción</dt>
+                      <dd><strong style="color:var(--clr-active-bg, #1a6b57);">
+                        {{ $invoice->codigo_moneda }}
+                        {{ number_format($invoice->monto_total - ($det['monto_detraccion'] ?? 0), 2) }}
+                      </strong><small style="color:#6b7280;"> (neto a cobrar)</small></dd>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            @endif
+
             {{-- Trazabilidad Feasy / SUNAT --}}
             <div class="info-card">
               <h3 style="display:flex; align-items:center; gap:.75rem; justify-content: space-between; flex-wrap: wrap;">

@@ -42,6 +42,7 @@ class Invoice extends Model
         'hora_emision',
         'fecha_vencimiento',
         'forma_pago',
+        'lista_cuotas',         // cuotas de crédito (JSON) requeridas por Feasy cuando forma_pago=2
         'codigo_tipo_documento',
         'serie_documento',
         'numero_documento',
@@ -65,6 +66,11 @@ class Invoice extends Model
         'monto_total',
         'informacion_entrega_bienes',
         'indicador_entrega_bienes',
+        // SPOT (Detracción)
+        'indicador_detraccion',
+        'informacion_detraccion',
+        // Información Adicional (campos libres SUNAT, aplica a 01/03/SPOT)
+        'informacion_adicional',
         // GRE (Guía de Remisión Electrónica) — tipo documento "09"
         'codigo_motivo_traslado',
         'descripcion_motivo_traslado',
@@ -103,6 +109,13 @@ class Invoice extends Model
             'hora_emision'               => 'datetime:H:i:s',
             'informacion_entrega_bienes' => 'array',
             'indicador_entrega_bienes'   => 'boolean',
+            // SPOT
+            'indicador_detraccion'       => 'boolean',
+            'informacion_detraccion'     => 'array',
+            // Cuotas de crédito
+            'lista_cuotas'              => 'array',
+            // Información adicional
+            'informacion_adicional'      => 'array',
             'gre_punto_partida'          => 'array',
             'gre_punto_llegada'          => 'array',
             'gre_destinatario'           => 'array',

@@ -6,15 +6,24 @@ use App\Enums\RoleEnum;
 use App\Http\Controllers\Controller;
 use App\Models\Company;
 use App\Models\ObligationDeclaration;
+use App\Models\CompanyUser;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class PortalSunatController extends Controller
 {
+    /** Portales válidos expuestos al frontend */
+    private const PORTALES = [
+        'sunat'       => 'Menú SOL',
+        'declaracion' => 'Declaración y Pago',
+        // 'sunafil' => disponible en el bot pero no expuesto al frontend
+    ];
+
     /**
      * Lista todas las empresas disponibles para el usuario según su rol.
      * GET /portal-sunat
@@ -25,13 +34,44 @@ class PortalSunatController extends Controller
         abort_if(! $user, 403);
 
         $role = $user->role instanceof RoleEnum ? $user->role->value : (string) $user->role;
+        $view = (string) $request->query('view', 'active'); // active | archived | all
 
-        // ADMIN ve todas; el resto solo las que tienen asignadas
-        if ($role === 'admin') {
-            $companies = Company::orderBy('name')->get();
+        // Lista de empresas ocultas para este usuario (para filtros y vista)
+        $hiddenCompanyIds = CompanyUser::query()
+            ->where('user_id', $user->id)
+            ->where('hidden_in_dashboard', true)
+            ->pluck('company_id');
+
+        // ADMIN y SUPERVISOR: ven todas las empresas, con opción de ver solo archivadas.
+        if (in_array($role, ['admin', 'supervisor'], true)) {
+            $companiesQuery = Company::query();
+
+            if ($view === 'archived') {
+                $companiesQuery->whereIn('id', $hiddenCompanyIds);
+            } elseif ($view === 'active') {
+                if ($hiddenCompanyIds->isNotEmpty()) {
+                    $companiesQuery->whereNotIn('id', $hiddenCompanyIds);
+                }
+            }
+
+            $companies = $companiesQuery
+                ->orderBy('name')
+                ->get();
         } else {
-            $companies = $user->companies()
-                ->wherePivot('status', 'active')
+            // Otros roles: solo empresas asignadas y activas, respetando ocultas.
+            $companiesQuery = $user->companies()
+                ->wherePivot('status', 'active');
+
+            if ($view === 'archived') {
+                $companiesQuery->where('company_user.hidden_in_dashboard', true);
+            } elseif ($view === 'active') {
+                $companiesQuery->where(function ($q) {
+                    $q->where('company_user.hidden_in_dashboard', false)
+                      ->orWhereNull('company_user.hidden_in_dashboard');
+                });
+            }
+
+            $companies = $companiesQuery
                 ->orderBy('name')
                 ->get();
         }
@@ -74,11 +114,60 @@ class PortalSunatController extends Controller
         }
 
         return view('portal-sunat.index', [
-            'companies'       => $companies->values(),
-            'filters'         => ['q' => $q, 'last_digit' => $lastDigit],
-            'userRole'        => $role,
-            'cronogramaStats' => $cronogramaStats,
+            'companies'        => $companies->values(),
+            'filters'          => ['q' => $q, 'last_digit' => $lastDigit, 'view' => $view],
+            'userRole'         => $role,
+            'cronogramaStats'  => $cronogramaStats,
+            'hiddenCompanyIds' => $hiddenCompanyIds,
         ]);
+    }
+
+    public function hideForUser(Request $request, Company $company): RedirectResponse
+    {
+        $user = $request->user();
+        abort_if(! $user, 403);
+
+        $role = $user->role instanceof RoleEnum ? $user->role->value : (string) $user->role;
+        abort_if(! in_array($role, ['admin', 'supervisor'], true), 403);
+
+        $now = now();
+
+        DB::table('company_user')->updateOrInsert(
+            ['user_id' => $user->id, 'company_id' => $company->id],
+            [
+                'role'                => $role,
+                'status'              => 'active',
+                'hidden_in_dashboard' => true,
+                'updated_at'          => $now,
+                'created_at'          => $now,
+            ]
+        );
+
+        return back()->with('success', "Empresa «{$company->name}» archivada para tu vista.");
+    }
+
+    public function unhideForUser(Request $request, Company $company): RedirectResponse
+    {
+        $user = $request->user();
+        abort_if(! $user, 403);
+
+        $role = $user->role instanceof RoleEnum ? $user->role->value : (string) $user->role;
+        abort_if(! in_array($role, ['admin', 'supervisor'], true), 403);
+
+        $now = now();
+
+        DB::table('company_user')->updateOrInsert(
+            ['user_id' => $user->id, 'company_id' => $company->id],
+            [
+                'role'                => $role,
+                'status'              => 'active',
+                'hidden_in_dashboard' => false,
+                'updated_at'          => $now,
+                'created_at'          => $now,
+            ]
+        );
+
+        return back()->with('success', "Empresa «{$company->name}» restaurada en tu vista.");
     }
 
     /**
@@ -115,7 +204,6 @@ class PortalSunatController extends Controller
 
         $company->update($update);
 
-        // Si viene desde la edición de empresa, redirigir de vuelta allí
         $redirectTo = $request->input('redirect_back');
         if ($redirectTo === 'companies.edit') {
             return redirect()
@@ -129,12 +217,28 @@ class PortalSunatController extends Controller
     }
 
     /**
-     * Llama al bot SUNAT y devuelve la URL de inyección para la extensión Chrome.
-     * GET /portal-sunat/{company}/abrir
+     * Abre el portal SUNAT o SUNAFIL para una empresa vía el bot de cookies.
+     *
+     * El bot hace login con Playwright, captura las cookies de sesión y las
+     * expone a través de un token. La extensión Chrome hace polling al bot,
+     * recoge las cookies y las inyecta en el navegador del usuario para que
+     * SUNAT/SUNAFIL lo reconozca como autenticado.
+     *
+     * GET /portal-sunat/{company}/abrir?portal=sunat|declaracion|sunafil
+     *     (portal por defecto: 'sunat')
      */
     public function open(Request $request, Company $company): JsonResponse
     {
         abort_if(! $request->user(), 403);
+
+        // Validar portal recibido (default: sunat para backwards-compat)
+        $portal = $request->query('portal', 'sunat');
+        if (! array_key_exists($portal, self::PORTALES)) {
+            return response()->json([
+                'ok'    => false,
+                'error' => "Portal inválido. Valores permitidos: " . implode(', ', array_keys(self::PORTALES)),
+            ], 422);
+        }
 
         if (! $company->canUseSunatPortal()) {
             return response()->json([
@@ -161,35 +265,58 @@ class PortalSunatController extends Controller
                 ], 500);
             }
 
+            // Cada portal tiene su alias dedicado en el bot
+            $endpoint = match ($portal) {
+                'declaracion' => "{$botUrl}/declaracion/proxy/create",
+                'sunafil'     => "{$botUrl}/sunafil/proxy/create",
+                default       => "{$botUrl}/proxy/create",  // sunat
+            };
+
             $response = Http::timeout(30)
                 ->withHeaders([
                     'x-api-key'  => $botKey,
                     'User-Agent' => 'LaravelBot/1.0',
                     'Accept'     => 'application/json',
                 ])
-                ->post("{$botUrl}/proxy/create", [
+                ->post($endpoint, [
                     'ruc'         => $company->ruc,
                     'usuario_sol' => $company->usuario_sol,
                     'clave_sol'   => $company->clave_sol,
-                    'portal'      => 'sunat',
+                    'portal'      => $portal,
                 ]);
 
             $data = $response->json();
 
             if (! ($data['ok'] ?? false)) {
+                Log::warning("PortalSunat::open [{$portal}] bot error", [
+                    'company' => $company->id,
+                    'ruc'     => $company->ruc,
+                    'error'   => $data['error']   ?? null,
+                    'detalle' => $data['detalle']  ?? null,
+                ]);
+
                 return response()->json([
                     'ok'    => false,
                     'error' => $data['detalle'] ?? $data['error'] ?? 'Error del bot.',
                 ], 500);
             }
 
+            Log::info("PortalSunat::open [{$portal}] login iniciado", [
+                'company' => $company->id,
+                'ruc'     => $company->ruc,
+                'token'   => substr($data['token'] ?? '', 0, 8) . '...',
+            ]);
+
             return response()->json([
-                'ok'  => true,
-                'url' => "{$botUrl}/ext-inject/{$data['token']}",
+                'ok'     => true,
+                'portal' => $portal,
+                'url'    => "{$botUrl}/ext-inject/{$data['token']}",
             ]);
 
         } catch (\Exception $e) {
-            Log::error('PortalSunat::open error: ' . $e->getMessage());
+            Log::error("PortalSunat::open [{$portal}] exception: " . $e->getMessage(), [
+                'company' => $company->id,
+            ]);
 
             return response()->json(['ok' => false, 'error' => $e->getMessage()], 500);
         }

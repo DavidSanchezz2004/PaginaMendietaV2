@@ -7,6 +7,7 @@ use App\Http\Controllers\Company\ActiveCompanyController;
 use App\Http\Controllers\Company\CompanyController;
 use App\Http\Controllers\Configuration\CompanyFacturadorController;
 use App\Http\Controllers\Configuration\FeasyConfigController;
+use App\Http\Controllers\Configuration\InformacionAdicionalConfigController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Facturador\ClientController;
 use App\Http\Controllers\Facturador\FacturadorController;
@@ -55,6 +56,8 @@ Route::middleware('auth')->group(function (): void {
 		Route::get('/{company}/credenciales',         [PortalSunatController::class, 'credentials'])       ->name('credentials');
 		Route::put('/{company}/credenciales',         [PortalSunatController::class, 'updateCredentials']) ->name('credentials.update');
 		Route::get('/{company}/abrir',                [PortalSunatController::class, 'open'])              ->name('open');
+        Route::post('/{company}/ocultar',             [PortalSunatController::class, 'hideForUser'])      ->name('hide');
+        Route::post('/{company}/mostrar',             [PortalSunatController::class, 'unhideForUser'])    ->name('unhide');
 	});
 	Route::get('/usuarios', [CompanyUserController::class, 'index'])->name('users.index');
 	Route::get('/usuarios/crear', [CompanyUserController::class, 'create'])->name('users.create');
@@ -181,12 +184,17 @@ Route::middleware('auth')->group(function (): void {
                 ->name('invoices.payments.store');
             Route::delete('invoices/{invoice}/payments/{payment}', [InvoiceController::class, 'destroyPayment'])
                 ->name('invoices.payments.destroy');
+
+            // ── Configuración: Información Adicional (valores enviados a Feasy) ──
+            Route::put('configuracion/informacion-adicional', [InformacionAdicionalConfigController::class, 'update'])
+                ->name('config.informacion-adicional.update');
         });
 
     // ── Configuración del Facturador por empresa (solo admin interno) ──────
     // No requiere facturador.enabled (es la ruta PARA habilitarlo/deshabilitarlo)
     Route::put('/configuracion/companies/{company}/facturador', [CompanyFacturadorController::class, 'update'])
         ->name('configuracion.companies.facturador.update');
+
 
     // ── Token Feasy global (una cuenta, todas las empresas) ───────────────
     Route::get('/configuracion/feasy',  [FeasyConfigController::class, 'edit'])

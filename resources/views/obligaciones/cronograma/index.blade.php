@@ -3,6 +3,62 @@
 @section('title', 'Cronograma de Obligaciones | Portal Mendieta')
 
 @push('styles')
+<style>
+/* Responsive Cronograma Obligaciones */
+.cronograma-filtros {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.cronograma-filtros > * {
+  min-width: 120px;
+}
+.cronograma-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+.cronograma-table {
+  min-width: 800px;
+  width: 100%;
+}
+@media (max-width: 1400px) and (min-width: 901px) {
+  .cronograma-filtros {
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+  }
+  .cronograma-table {
+    min-width: 700px;
+    font-size: 1rem;
+  }
+}
+@media (max-width: 900px) {
+  .cronograma-filtros {
+    flex-direction: column;
+    gap: 0.7rem;
+  }
+  .cronograma-filtros > * {
+    width: 100%;
+    min-width: 0;
+  }
+  .cronograma-table-wrap {
+    overflow-x: auto;
+    margin-bottom: 1rem;
+  }
+  .cronograma-table {
+    min-width: 600px;
+    font-size: 0.95rem;
+  }
+}
+@media (max-width: 600px) {
+  .cronograma-filtros {
+    padding: 0.5rem;
+  }
+  .cronograma-table {
+    min-width: 400px;
+    font-size: 0.9rem;
+  }
+}
+</style>
   <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
   <link rel="stylesheet" href="{{ asset('css/sidebar.css') }}">
   <link rel="stylesheet" href="{{ asset('css/dashboard.css') }}">
@@ -60,8 +116,82 @@
     }
     .cron-btn-primary { background: #0f172a; color: #fff; border-color: #0f172a; }
     .cron-btn-primary:hover { background: #1e293b; }
-    .cron-btn-outline { background: #fff; color: #475569; border-color: #cbd5e1; text-decoration: none; }
-    .cron-btn-outline:hover { background: #f1f5f9; border-color: #94a3b8; color: #1e293b; }
+    .cron-btn-outline {
+      background: #fff;
+      color: #475569;
+      border-color: #cbd5e1;
+      text-decoration: none;
+    }
+    .cron-btn-outline:hover {
+      background: #f1f5f9;
+      border-color: #94a3b8;
+      color: #1e293b;
+    }
+
+    /* ── Toggle vista (Activas / Archivadas) ───────────────────────────── */
+    .cron-view-toggle {
+      display: inline-flex;
+      padding: .18rem;
+      border-radius: 999px;
+      background: #e5e7eb;
+      gap: .15rem;
+    }
+    .cron-view-toggle .cron-view-btn {
+      border-radius: 999px;
+      padding: .3rem .85rem;
+      font-size: .8rem;
+      border: none;
+      background: transparent;
+      color: #4b5563;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .15s, color .15s;
+    }
+    .cron-view-toggle .cron-view-btn.is-active {
+      background: #0f172a;
+      color: #fff;
+    }
+
+    /* ── Botonera dígitos RUC ───────────────────────────────────────────── */
+    .cron-digit-filter {
+      display: flex;
+      flex-direction: column;
+      gap: .4rem;
+      min-width: 260px;
+    }
+    .cron-digit-label {
+      font-size: .75rem;
+      font-weight: 700;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+    .cron-digit-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .4rem;
+    }
+    .cron-digit-btn {
+      padding: .35rem .75rem;
+      border-radius: 999px;
+      border: 1px solid #cbd5e1;
+      background: #fff;
+      font-size: .8rem;
+      font-weight: 600;
+      color: #475569;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .cron-digit-btn:hover {
+      background: #e5edff;
+      border-color: #94a3b8;
+      color: #1e293b;
+    }
+    .cron-digit-btn.is-active {
+      background: #0f172a;
+      border-color: #0f172a;
+      color: #fff;
+    }
 
     /* ── Stats ──────────────────────────────────────────────────────── */
     .cron-period-title {
@@ -169,6 +299,22 @@
     body.dark-mode .cron-btn-revert { background: transparent; color: #94a3b8; border-color: #475569; }
     body.dark-mode .cron-btn-revert:hover { border-color: #ef4444; color: #f87171; }
     body.dark-mode .cron-confirmed-info { color: #94a3b8; }
+    
+    /* Ajustes específicos para laptops (medio) */
+    @media (max-width: 1400px) and (min-width: 901px) {
+      /* Reducir ancho del sidebar para ganar espacio al contenido */
+      .sidebar-premium { width: 220px; }
+      /* Compactar paddings del main para mostrar más contenido */
+      .main-content { padding: 1.25rem; }
+      .placeholder-content { padding: 2rem; }
+      /* Filtros más compactos */
+      .cron-filter-wrap { padding: 0.8rem; gap: .6rem; }
+      .cron-filter-group { min-width: 130px; }
+      /* Tabla más compacta */
+      .cron-table th, .cron-table td { padding: .5rem .8rem; }
+      .cron-table { font-size: .88rem; }
+      .cron-table { min-width: 650px; }
+    }
   </style>
 @endpush
 
@@ -267,6 +413,22 @@
                 <label>Buscar empresa</label>
                 <input type="text" name="q" class="cron-input" value="{{ $filterSearch }}" placeholder="Nombre o RUC…">
               </div>
+              <div class="cron-digit-filter">
+                <span class="cron-digit-label">Filtrar por último dígito RUC</span>
+                <div class="cron-digit-buttons">
+                  @php $currentDigit = (string)($filterDigit ?? ''); @endphp
+                  <button type="submit" name="digit" value=""
+                          class="cron-digit-btn {{ $currentDigit === '' ? 'is-active' : '' }}">
+                    Todos
+                  </button>
+                  @for($d = 0; $d <= 9; $d++)
+                    <button type="submit" name="digit" value="{{ $d }}"
+                            class="cron-digit-btn {{ $currentDigit === (string)$d ? 'is-active' : '' }}">
+                      {{ $d }}
+                    </button>
+                  @endfor
+                </div>
+              </div>
               <div class="cron-filter-group">
                 <label>Estado</label>
                 <select name="status" class="cron-input">
@@ -274,6 +436,31 @@
                   <option value="pendiente"  {{ $filterStatus === 'pendiente'  ? 'selected' : '' }}>Pendiente</option>
                   <option value="declarado"  {{ $filterStatus === 'declarado'  ? 'selected' : '' }}>Declarado</option>
                 </select>
+              </div>
+              <div class="cron-filter-group">
+                <label>Asignado a</label>
+                <select name="assigned_to" class="cron-input">
+                  <option value="" {{ ($filterAssignedTo ?? '') === '' ? 'selected' : '' }}>Todos</option>
+                  @foreach($assignedUsers as $user)
+                    <option value="{{ $user->id }}" {{ (string)($filterAssignedTo ?? '') === (string)$user->id ? 'selected' : '' }}>
+                      {{ $user->name }}
+                    </option>
+                  @endforeach
+                </select>
+              </div>
+              @php $currentView = $filterView ?? 'active'; @endphp
+              <div class="cron-filter-group">
+                <label>Vista</label>
+                <div class="cron-view-toggle">
+                  <button type="submit" name="view" value="active"
+                          class="cron-view-btn {{ $currentView === 'active' ? 'is-active' : '' }}">
+                    Activas
+                  </button>
+                  <button type="submit" name="view" value="archived"
+                          class="cron-view-btn {{ $currentView === 'archived' ? 'is-active' : '' }}">
+                    Archivadas
+                  </button>
+                </div>
               </div>
               <div class="cron-filter-group" style="justify-content: flex-end;">
                 <label style="visibility:hidden;">Buscar</label>
@@ -300,6 +487,7 @@
                     <th style="text-align:center;">Último dígito</th>
                     <th>Fecha de vencimiento</th>
                     <th>Estado declaración</th>
+                    <th>Asignado a</th>
                     <th>Acción</th>
                   </tr>
                 </thead>
@@ -308,6 +496,10 @@
                     @php
                       /** @var \App\Models\Company $company */
                       $company = $row['company'];
+                      $authUser = auth()->user();
+                      $authRole = $authUser?->role?->value ?? '';
+                      $hiddenIds = ($hiddenCompanyIds ?? collect());
+                      $isHidden  = $hiddenIds->contains($company->id);
                     @endphp
                     <tr>
                       <td style="font-weight:600;">{{ $company->name }}</td>
@@ -336,30 +528,54 @@
                         @endif
                       </td>
                       <td>
-                        @if(! $row['declared'])
-                          <form method="POST" action="{{ route('obligaciones.cronograma.confirm', $company) }}">
-                            @csrf
-                            <input type="hidden" name="year"  value="{{ $year }}">
-                            <input type="hidden" name="month" value="{{ $month }}">
-                            <button type="submit" class="cron-btn-confirm">
-                              <i class='bx bx-check'></i> Confirmar declaración
-                            </button>
-                          </form>
+                        @php
+                          $assignedNames = $company->users->pluck('name')->all();
+                        @endphp
+                        @if(! empty($assignedNames))
+                          {{ implode(', ', $assignedNames) }}
                         @else
-                          <form method="POST" action="{{ route('obligaciones.cronograma.revert', $company) }}">
-                            @csrf
-                            <input type="hidden" name="year"  value="{{ $year }}">
-                            <input type="hidden" name="month" value="{{ $month }}">
-                            <button type="submit" class="cron-btn-revert">
-                              <i class='bx bx-undo'></i> Revertir
-                            </button>
-                          </form>
+                          <span style="color:#94a3b8; font-size:.8rem;">Sin asignar</span>
                         @endif
+                      </td>
+                      <td>
+                        <div style="display:flex; flex-direction:column; gap:.35rem;">
+                          @if(! $row['declared'])
+                            <form method="POST" action="{{ route('obligaciones.cronograma.confirm', $company) }}">
+                              @csrf
+                              <input type="hidden" name="year"  value="{{ $year }}">
+                              <input type="hidden" name="month" value="{{ $month }}">
+                              <button type="submit" class="cron-btn-confirm">
+                                <i class='bx bx-check'></i> Confirmar declaración
+                              </button>
+                            </form>
+                          @else
+                            <form method="POST" action="{{ route('obligaciones.cronograma.revert', $company) }}">
+                              @csrf
+                              <input type="hidden" name="year"  value="{{ $year }}">
+                              <input type="hidden" name="month" value="{{ $month }}">
+                              <button type="submit" class="cron-btn-revert">
+                                <i class='bx bx-undo'></i> Revertir
+                              </button>
+                            </form>
+                          @endif
+
+                          @if(in_array($authRole, ['admin', 'supervisor'], true))
+                            <form method="POST" action="{{ $isHidden
+                                  ? route('portal-sunat.unhide', $company)
+                                  : route('portal-sunat.hide', $company) }}">
+                              @csrf
+                              <button type="submit" class="cron-btn-revert" style="border-style:dashed;">
+                                <i class='bx {{ $isHidden ? "bx-show" : "bx-low-vision" }}'></i>
+                                {{ $isHidden ? 'Mostrar en mi lista' : 'Ocultar para mí' }}
+                              </button>
+                            </form>
+                          @endif
+                        </div>
                       </td>
                     </tr>
                   @empty
                     <tr>
-                      <td colspan="6" style="text-align:center; color:#94a3b8; padding:2rem;">
+                      <td colspan="7" style="text-align:center; color:#94a3b8; padding:2rem;">
                         <i class='bx bx-calendar-x' style="font-size:2rem; display:block; margin-bottom:.5rem;"></i>
                         No se encontraron empresas con esos filtros.
                       </td>

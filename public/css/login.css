@@ -1,20 +1,20 @@
 :root {
     /* Paleta Corporativa Oficial Mendieta */
-    --color-primary: #053D38;       /* Verde oscuro oficial */
-    --color-primary-light: #34675C; /* Verde medio oficial */
-    --color-accent: #A3CCAA;        /* Verde claro oficial / Acento */
-    --color-text-dark: #13140E;     /* Negro oficial */
-    --color-text-gray: #6B7280;     
-    --color-bg-form: #FFFFFF;
-    --color-bg-input: #F9FAFB;
-    --color-border: #B2C8C1;        /* Gris verdoso claro para bordes */
+    --color-primary: #053d38; /* Verde oscuro oficial */
+    --color-primary-light: #34675c; /* Verde medio oficial */
+    --color-accent: #a3ccaa; /* Verde claro oficial / Acento */
+    --color-text-dark: #13140e; /* Negro oficial */
+    --color-text-gray: #6b7280;
+    --color-bg-form: #ffffff;
+    --color-bg-input: #f9fafb;
+    --color-border: #b2c8c1; /* Gris verdoso claro para bordes */
 }
 
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    font-family: "Plus Jakarta Sans", system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
@@ -60,7 +60,7 @@ body {
     width: auto;
     object-fit: contain;
     /* Convertimos el logo a oscuro para que se vea perfectamente sobre el fondo blanco */
-    filter: brightness(0); 
+    filter: brightness(0);
 }
 
 .auth-header {
@@ -126,16 +126,16 @@ body {
 }
 
 .input-field input::placeholder {
-    color: #9CA3AF;
+    color: #9ca3af;
     font-weight: 400;
 }
 
 /* Estado Focus: sube sombras y activa el color principal */
 .input-field input:focus {
     outline: none;
-    background-color: #FFFFFF;
+    background-color: #ffffff;
     border-bottom-color: var(--color-primary);
-    box-shadow: 0 4px 15px rgba(0,0,0,0.04);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
 }
 
 .btn-toggle {
@@ -193,7 +193,7 @@ body {
 }
 
 .custom-checkbox input:checked + .checkmark::after {
-    content: '';
+    content: "";
     width: 4px;
     height: 9px;
     border: solid white;
@@ -227,7 +227,7 @@ body {
     justify-content: space-between;
     align-items: center;
     background-color: var(--color-primary);
-    color: #FFFFFF;
+    color: #ffffff;
     border: none;
     /* Sin border-radius para aspecto arquitectónico y serio */
     padding: 1.15rem 1.5rem;
@@ -264,7 +264,7 @@ body {
 
 .auth-footer p {
     font-size: 0.8rem;
-    color: #9CA3AF;
+    color: #9ca3af;
     line-height: 1.5;
 }
 
@@ -277,7 +277,6 @@ body {
 .auth-footer a:hover {
     color: var(--color-text-dark);
 }
-
 
 /* =========================================
    LADO DERECHO: BRANDING (The Statement)
@@ -314,7 +313,7 @@ body {
     position: relative;
     z-index: 2;
     max-width: 600px;
-    color: #FFFFFF;
+    color: #ffffff;
 }
 
 .accent-line {
@@ -389,23 +388,87 @@ body {
     }
 }
 
+/* Mejoras para laptops y pantallas medianas */
+@media (max-width: 1366px) and (min-width: 1025px) {
+    .auth-form-section {
+        width: 55%;
+        padding: 2.5rem 2rem;
+    }
+    .auth-brand-section {
+        width: 45%;
+        padding: 3rem 3% 3rem 2%;
+    }
+    .brand-content-wrapper h2 {
+        font-size: 2.2rem;
+    }
+    .auth-form-container {
+        max-width: 370px;
+    }
+    .logo-wrapper {
+        left: 2rem;
+        top: 2rem;
+    }
+}
+
 @media (max-width: 850px) {
     .auth-layout {
         flex-direction: column;
     }
-    
+
     .auth-form-section {
         width: 100%;
         padding: 4rem 2rem;
         min-height: 100vh;
     }
-    
+
     /* En móvil ocultamos el statement derecho y priorizamos solo el login */
     .auth-brand-section {
-        display: none; 
+        display: none;
     }
-    
+
     .auth-form-container {
         margin-top: -10vh; /* Centrar un poco mejor verticalmente */
+    }
+    /* Mejoras móviles */
+    .logo-wrapper {
+        position: static;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-bottom: 2rem;
+        top: unset;
+        left: unset;
+    }
+    .brand-logo-img {
+        height: 60px;
+        margin: 0 auto;
+        display: block;
+    }
+    .auth-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    .auth-header h1 {
+        font-size: 1.4rem;
+    }
+    .auth-header p {
+        font-size: 0.95rem;
+    }
+    .auth-form-container {
+        max-width: 100%;
+        width: 100%;
+        margin: 0 auto;
+        padding: 0;
+    }
+    .luxury-form {
+        gap: 1rem;
+    }
+    .btn-submit {
+        font-size: 0.95rem;
+        padding: 1rem 1rem;
+    }
+    .auth-footer {
+        margin-top: 2rem;
+        padding-top: 1rem;
     }
 }

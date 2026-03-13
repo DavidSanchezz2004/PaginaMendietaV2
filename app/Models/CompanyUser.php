@@ -22,6 +22,7 @@ class CompanyUser extends Pivot
         'company_id',
         'role',
         'status',
+        'hidden_in_dashboard',
     ];
 
     /**
@@ -33,6 +34,7 @@ class CompanyUser extends Pivot
     {
         return [
             'role' => RoleEnum::class,
+            'hidden_in_dashboard' => 'boolean',
         ];
     }
 

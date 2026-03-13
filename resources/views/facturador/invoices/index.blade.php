@@ -378,6 +378,69 @@
             @endif
           </div>
 
+          {{-- ── Configuración: Información Adicional ─────────────────────── --}}
+          <div class="placeholder-content module-card-wide">
+            <div class="module-toolbar" style="margin-bottom:1rem;">
+              <div>
+                <h2 style="margin:0; font-size:1.05rem; display:flex; align-items:center; gap:.5rem;">
+                  <i class='bx bx-info-circle' style="color:var(--clr-active-bg,#1a6b57);"></i>
+                  Información Adicional (Feasy)
+                </h2>
+                <p style="margin:.3rem 0 0; color:#64748b; font-size:.88rem;">
+                  Estos valores se envían automáticamente en el bloque <code>informacion_adicional</code>
+                  del JSON a SUNAT/Feasy al emitir cualquier Factura, Boleta o comprobante con SPOT.<br>
+                  Los <strong>nombres</strong> de los campos se configuran en el portal web de Feasy
+                  (<em>Configuración → Campos Adicionales</em>).
+                </p>
+              </div>
+            </div>
+
+            <form method="POST" action="{{ route('facturador.config.informacion-adicional.update') }}" class="module-form">
+              @csrf
+              @method('PUT')
+
+              @php
+                $configAdicional = $company->informacion_adicional_config ?? [];
+                // Garantizar al menos 1 fila visible por UX
+                $slots = max(1, count($configAdicional));
+                $configValues = array_values($configAdicional);
+              @endphp
+
+              <div id="ia-body" style="display:flex; flex-direction:column; gap:.5rem;">
+                @for($i = 0; $i < $slots; $i++)
+                  <div class="ia-row" style="display:flex; gap:.5rem; align-items:center;">
+                    <span style="flex:0 0 160px; font-size:.82rem; color:#64748b; font-weight:600; white-space:nowrap;">
+                      informacion_adicional_{{ $i + 1 }}
+                    </span>
+                    <input type="text"
+                      name="informacion_adicional[]"
+                      class="form-input"
+                      style="flex:1; font-size:.88rem;"
+                      placeholder="Valor (dejar vacío para no enviar)"
+                      value="{{ old("informacion_adicional.$i", $configValues[$i] ?? '') }}">
+                    <button type="button" class="btn-action-icon ia-remove" title="Quitar fila">
+                      <i class='bx bx-trash'></i>
+                    </button>
+                  </div>
+                @endfor
+              </div>
+
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-top:.85rem;">
+                <button type="button" id="ia-add" class="btn-secondary" style="font-size:.83rem; padding:.35rem .9rem;">
+                  <i class='bx bx-plus'></i> Agregar campo
+                </button>
+                <button type="submit" class="btn-primary" style="font-size:.88rem;">
+                  <i class='bx bx-save'></i> Guardar configuración
+                </button>
+              </div>
+
+              <p style="font-size:.76rem; color:#9ca3af; margin-top:.6rem;">
+                <i class='bx bx-shield-quarter' style="vertical-align:middle;"></i>
+                Máximo 10 campos. Los campos vacíos se omiten del JSON enviado.
+              </p>
+            </form>
+          </div>
+
         </div>
       </main>
     </section>
@@ -439,5 +502,40 @@
         });
       });
     });
+    // ── Información Adicional — tabla dinámica (Feasy) ──────────────────
+    const MAX_IA = 10;
+    function iaCount() { return document.querySelectorAll('#ia-body .ia-row').length; }
+
+    function iaRenumber() {
+      document.querySelectorAll('#ia-body .ia-row').forEach((row, i) => {
+        const lbl = row.querySelector('span');
+        if (lbl) lbl.textContent = 'informacion_adicional_' + (i + 1);
+      });
+    }
+
+    function iaAddRow() {
+      if (iaCount() >= MAX_IA) { alert('Máximo ' + MAX_IA + ' campos permitidos.'); return; }
+      const n = iaCount() + 1;
+      const row = document.createElement('div');
+      row.className = 'ia-row';
+      row.style.cssText = 'display:flex; gap:.5rem; align-items:center;';
+      row.innerHTML = `
+        <span style="flex:0 0 160px; font-size:.82rem; color:#64748b; font-weight:600; white-space:nowrap;">
+          informacion_adicional_${n}
+        </span>
+        <input type="text" name="informacion_adicional[]" class="form-input"
+          style="flex:1; font-size:.88rem;" placeholder="Valor (dejar vacío para no enviar)">
+        <button type="button" class="btn-action-icon ia-remove" title="Quitar fila">
+          <i class='bx bx-trash'></i>
+        </button>`;
+      document.getElementById('ia-body').appendChild(row);
+      row.querySelector('.ia-remove').addEventListener('click', () => { row.remove(); iaRenumber(); });
+    }
+
+    // Ligar botones quitar a filas existentes (las del server-side Blade)
+    document.querySelectorAll('#ia-body .ia-remove').forEach(btn => {
+      btn.addEventListener('click', function() { this.closest('.ia-row').remove(); iaRenumber(); });
+    });
+    document.getElementById('ia-add')?.addEventListener('click', iaAddRow);
   </script>
 @endpush

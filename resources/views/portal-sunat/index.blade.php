@@ -183,6 +183,26 @@
       white-space: nowrap;
     }
     .ps-btn-sunat:hover { transform: translateY(-1px); box-shadow: 0 10px 24px rgba(26,58,107,.25); }
+
+    /* Botón Declaración y Pago — verde oscuro para diferenciarlo */
+    .ps-btn-declaracion {
+      display: inline-flex;
+      align-items: center;
+      gap: .38rem;
+      background: linear-gradient(135deg, #14532d 0%, #16a34a 100%);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: .5rem .85rem;
+      font-size: .82rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 6px 18px rgba(20,83,45,.2);
+      transition: transform .15s, box-shadow .15s;
+      white-space: nowrap;
+    }
+    .ps-btn-declaracion:hover { transform: translateY(-1px); box-shadow: 0 10px 24px rgba(20,83,45,.25); }
+
     .ps-btn-cred {
       display: inline-flex;
       align-items: center;
@@ -367,6 +387,7 @@
     body.dark-mode .ps-chip.warn { background: rgba(146, 64, 14, 0.2); color: #fbbf24; }
     body.dark-mode .ps-chip.off { background: rgba(185, 28, 28, 0.2); color: #f87171; }
     body.dark-mode .ps-btn-sunat { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); box-shadow: 0 6px 18px rgba(37,99,235,.2); }
+    body.dark-mode .ps-btn-declaracion { background: linear-gradient(135deg, #15803d 0%, #16a34a 100%); box-shadow: 0 6px 18px rgba(21,128,61,.2); }
     body.dark-mode .ps-btn-cred { background: var(--clr-bg-body, #0f172a); color: #e2e8f0; border-color: #475569; }
     body.dark-mode .ps-btn-cred:hover { background: rgba(37, 99, 235, 0.1); border-color: #3b82f6; color: #60a5fa; }
   </style>
@@ -413,11 +434,11 @@
 
           {{-- ── Contenido Principal ─────────────────────────────────── --}}
           <div class="placeholder-content module-card-wide">
-              <div class="module-toolbar">
+            <div class="module-toolbar">
               <div>
                 <h1>Portal SUNAT</h1>
                 <p class="ps-subtitle">
-                  Accede a SUNAT SOL directamente desde aquí. Configura las credenciales de cada empresa y abre la sesión con un clic.
+                  Accede a SUNAT SOL y Declaración y Pago directamente desde aquí. Configura las credenciales de cada empresa y abre la sesión con un clic.
                 </p>
               </div>
             </div>
@@ -480,7 +501,7 @@
 
               <div class="ps-digit-section">
                 <span class="ps-digit-label">Filtrar por último dígito RUC</span>
-                <div class="ps-digit-row">
+                <div class="ps-digit-row" style="margin-bottom:.5rem;">
                   <button type="submit" name="last_digit" value=""
                     class="digit-btn {{ $filters['last_digit'] === '' ? 'active' : '' }}">
                     Todos
@@ -491,6 +512,19 @@
                       {{ $d }}
                     </button>
                   @endfor
+                </div>
+
+                @php $currentView = $filters['view'] ?? 'active'; @endphp
+                <span class="ps-digit-label">Vista de empresas</span>
+                <div class="ps-digit-row">
+                  <button type="submit" name="view" value="active"
+                    class="digit-btn {{ $currentView === 'active' ? 'active' : '' }}">
+                    Activas
+                  </button>
+                  <button type="submit" name="view" value="archived"
+                    class="digit-btn {{ $currentView === 'archived' ? 'active' : '' }}">
+                    Archivadas
+                  </button>
                 </div>
               </div>
             </form>
@@ -526,15 +560,28 @@
                       </td>
                       <td>
                         <div class="ps-actions">
-                          {{-- Abrir SUNAT (todos los roles si la empresa está activa y tiene creds) --}}
                           @if($company->canUseSunatPortal() && $company->hasSunatCredentials())
+
+                            {{-- Botón Menú SOL --}}
                             <button type="button"
                               class="ps-btn-sunat"
                               data-sunat-url="{{ route('portal-sunat.open', $company) }}"
+                              data-sunat-portal="sunat"
                               data-sunat-nombre="{{ $company->name }}"
-                              title="Abrir SUNAT SOL">
-                              <i class='bx bx-shield-quarter'></i> Abrir SUNAT
+                              title="Abrir Menú SOL">
+                              <i class='bx bx-shield-quarter'></i> Menú SOL
                             </button>
+
+                            {{-- Botón Declaración y Pago --}}
+                            <button type="button"
+                              class="ps-btn-declaracion"
+                              data-sunat-url="{{ route('portal-sunat.open', $company) }}?portal=declaracion"
+                              data-sunat-portal="declaracion"
+                              data-sunat-nombre="{{ $company->name }}"
+                              title="Abrir Declaración y Pago">
+                              <i class='bx bx-receipt'></i> Declaración y Pago
+                            </button>
+
                           @endif
 
                           {{-- Editar credenciales (NO auxiliar) --}}
@@ -544,6 +591,24 @@
                               {{ $company->hasSunatCredentials() ? 'Editar credenciales' : 'Configurar' }}
                             </a>
                           @endcan
+
+                          @php
+                            $authUser = auth()->user();
+                            $authRole = $authUser?->role?->value ?? '';
+                            $hiddenIds = ($hiddenCompanyIds ?? collect());
+                            $isHidden  = $hiddenIds->contains($company->id);
+                          @endphp
+                          @if(in_array($authRole, ['admin', 'supervisor'], true))
+                            <form method="POST" action="{{ $isHidden
+                                  ? route('portal-sunat.unhide', $company)
+                                  : route('portal-sunat.hide', $company) }}">
+                              @csrf
+                              <button type="submit" class="ps-btn-cred" style="border-style:dashed;">
+                                <i class='bx {{ $isHidden ? "bx-show" : "bx-low-vision" }}'></i>
+                                {{ $isHidden ? 'Mostrar en mi lista' : 'Ocultar para mí' }}
+                              </button>
+                            </form>
+                          @endif
                         </div>
                       </td>
                     </tr>
