@@ -383,6 +383,30 @@
     body.dark-mode .ps-company-ruc { color: #94a3b8; }
     .ps-subtitle { margin: .35rem 0 0; color: #6b7280; font-size: .92rem; }
     body.dark-mode .ps-subtitle { color: #9ca3af; }
+
+    /* ── Aviso Declaración y Pago ───────────────────────────────────────── */
+    .ps-dec-banner {
+      margin-top: .75rem;
+      padding: .6rem .85rem;
+      border-radius: .75rem;
+      background: #ecfdf3;
+      border: 1px solid #bbf7d0;
+      display: inline-flex;
+      align-items: flex-start;
+      gap: .55rem;
+      font-size: .82rem;
+      color: #14532d;
+      max-width: 640px;
+    }
+    .ps-dec-banner i {
+      font-size: 1.2rem;
+      margin-top: .05rem;
+    }
+    body.dark-mode .ps-dec-banner {
+      background: rgba(22,163,74,.18);
+      border-color: rgba(74,222,128,.65);
+      color: #bbf7d0;
+    }
     body.dark-mode .ps-chip.ok { background: rgba(22, 101, 52, 0.2); color: #4ade80; }
     body.dark-mode .ps-chip.warn { background: rgba(146, 64, 14, 0.2); color: #fbbf24; }
     body.dark-mode .ps-chip.off { background: rgba(185, 28, 28, 0.2); color: #f87171; }
@@ -440,6 +464,14 @@
                 <p class="ps-subtitle">
                   Accede a SUNAT SOL y Declaración y Pago directamente desde aquí. Configura las credenciales de cada empresa y abre la sesión con un clic.
                 </p>
+                <div class="ps-dec-banner">
+                  <i class='bx bx-info-circle'></i>
+                  <p style="margin:0;">
+                    Para <strong>Declaración y Pago</strong> se abrirá una nueva pestaña de SUNAT.
+                    Cuando cargue el portal, solo haz clic en el botón <strong>“Ingresar”</strong>
+                    para continuar con la sesión ya preparada con los credenciales SOL.
+                  </p>
+                </div>
               </div>
             </div>
 
