@@ -307,17 +307,10 @@ class PortalSunatController extends Controller
                 'token'   => substr($data['token'] ?? '', 0, 8) . '...',
             ]);
 
-            // Para declaracion: usar el proxy reverso del bot (la sesión itmenu2
-            // está ligada a la IP del bot, no se puede transferir por cookies).
-            // Para sunat/sunafil: usar ext-inject (inyección de cookies en el browser).
-            $openUrl = ($portal === 'declaracion')
-                ? "{$botUrl}/proxy/{$data['token']}"
-                : "{$botUrl}/ext-inject/{$data['token']}";
-
             return response()->json([
                 'ok'     => true,
                 'portal' => $portal,
-                'url'    => $openUrl,
+                'url'    => "{$botUrl}/ext-inject/{$data['token']}",
             ]);
 
         } catch (\Exception $e) {
