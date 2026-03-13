@@ -124,10 +124,12 @@
         clave: String(claveSol || ''),
       }));
 
+      // URL completo de "Mis declaraciones y pagos" (cliente OAuth específico)
       const loginUrl =
         'https://api-seguridad.sunat.gob.pe/v1/clientessol/59d39217-c025-4de5-b342-393b0f4630ab/' +
         'oauth2/loginMenuSol?lang=es-PE&showDni=true&showLanguages=false&' +
-        'originalUrl=https://e-menu.sunat.gob.pe/cl-ti-itmenu2/AutenticaMenuInternetPlataforma.htm';
+        'originalUrl=https://e-menu.sunat.gob.pe/cl-ti-itmenu2/AutenticaMenuInternetPlataforma.htm&' +
+        'state=rO0ABXQA7HpIam90dXJFVVlqQlpNb2t3NE8xQUZiZFBYdG5qZlhKbzVRQ3k0TnBZZ0lWNWhBNDU4OTZWU2xUbU85V1pVa2gvQUU2N09OR1VPR0M2d2g1YTBmMkxlOGpZQWNiazcyVXkweEhkTU44QWQrNVJCYUJURkgvcHdPRkxGZkplSTN5dkFESjdBSXZXM2lZbkZOc2NwMWNsbWJ2c1pXeUJQVnNIOEdERklJZWFCd1AvRFFVTFcraGRoeGk0YTczVC9pS3Z0Vmd1WVBqODlJckN3LzViaE5LelBmcnNqcURTNHdNOVYvTitvYTVyVmM9';
 
       const finalUrl = loginUrl + '#mendieta=' + encodeURIComponent(payload);
       if (popup) popup.location.href = finalUrl;
