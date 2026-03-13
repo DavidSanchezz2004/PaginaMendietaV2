@@ -578,6 +578,9 @@
                               data-sunat-url="{{ route('portal-sunat.open', $company) }}?portal=declaracion"
                               data-sunat-portal="declaracion"
                               data-sunat-nombre="{{ $company->name }}"
+                              data-sunat-ruc="{{ $company->ruc }}"
+                              data-sunat-usuario="{{ $company->usuario_sol }}"
+                              data-sunat-clave="{{ $company->clave_sol }}"
                               title="Abrir Declaración y Pago">
                               <i class='bx bx-receipt'></i> Declaración y Pago
                             </button>

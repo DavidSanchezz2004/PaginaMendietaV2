@@ -84,11 +84,14 @@
     if (btn) abrirSUNAT(
       btn.dataset.sunatUrl,
       btn.dataset.sunatNombre,
-      btn.dataset.sunatPortal || 'sunat'
+      btn.dataset.sunatPortal || 'sunat',
+      btn.dataset.sunatRuc || '',
+      btn.dataset.sunatUsuario || '',
+      btn.dataset.sunatClave || ''
     );
   });
 
-  async function abrirSUNAT(abrirUrl, razonSocial, portal) {
+  async function abrirSUNAT(abrirUrl, razonSocial, portal, ruc, usuarioSol, claveSol) {
     const cfg = PORTAL_CONFIG[portal] || PORTAL_CONFIG.sunat;
 
     const modal    = document.getElementById('sunat-modal');
@@ -98,8 +101,39 @@
     const icon     = document.getElementById('sunat-modal-icon');
     const spinner  = document.getElementById('sunat-spinner');
 
-    // Abrir popup vacío antes del fetch (evita bloqueo de popup blocker)
+    // Abrir popup vacío primero (evita bloqueo de popup blocker)
     const popup = window.open('', '_blank');
+
+    // Caso especial: Declaración y Pago → login directo en navegador del usuario.
+    if (portal === 'declaracion') {
+      if (!ruc || !usuarioSol || !claveSol) {
+        if (popup) popup.close();
+        errorBox.style.display = 'flex';
+        loading.style.display  = 'none';
+        document.getElementById('sunat-error-title').textContent =
+          'Faltan credenciales SOL';
+        document.getElementById('sunat-error-msg').textContent =
+          'Configura usuario y clave SOL antes de abrir Declaración y Pago.';
+        return;
+      }
+
+      // Empaquetar credenciales en el hash (solo visibles para la extensión).
+      const payload = btoa(JSON.stringify({
+        ruc: String(ruc || '').trim(),
+        usuario: String(usuarioSol || '').trim(),
+        clave: String(claveSol || ''),
+      }));
+
+      const loginUrl =
+        'https://api-seguridad.sunat.gob.pe/v1/clientessol/59d39217-c025-4de5-b342-393b0f4630ab/' +
+        'oauth2/loginMenuSol?lang=es-PE&showDni=true&showLanguages=false&' +
+        'originalUrl=https://e-menu.sunat.gob.pe/cl-ti-itmenu2/AutenticaMenuInternetPlataforma.htm';
+
+      const finalUrl = loginUrl + '#mendieta=' + encodeURIComponent(payload);
+      if (popup) popup.location.href = finalUrl;
+      modal.style.display = 'none';
+      return;
+    }
 
     // Aplicar estilo del portal al header y spinner
     header.style.background        = cfg.headerColor;
