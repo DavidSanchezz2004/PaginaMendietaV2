@@ -5,7 +5,36 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="csrf-token" content="{{ csrf_token() }}">
 
+  @php
+    $metaTitle = trim($__env->yieldContent('title', 'Portal Mendieta | Estudio Contable'));
+    $metaDescription = trim($__env->yieldContent('meta_description', 'Plataforma integral para gestión contable, tributaria y financiera. Accede a tus empresas, comprobantes y obligaciones en un solo lugar.'));
+    $metaImage = trim($__env->yieldContent('meta_image', asset('images/logoMendieta.png')));
+    $metaUrl = url()->current();
+  @endphp
+
   <title>@yield('title', 'Estudio Contable Mendieta')</title>
+
+  <meta name="description" content="{{ $metaDescription }}">
+  <meta name="robots" content="index,follow">
+
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="es_PE">
+  <meta property="og:site_name" content="Portal Mendieta">
+  <meta property="og:title" content="{{ $metaTitle }}">
+  <meta property="og:description" content="{{ $metaDescription }}">
+  <meta property="og:url" content="{{ $metaUrl }}">
+  <meta property="og:image" content="{{ $metaImage }}">
+
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="{{ $metaTitle }}">
+  <meta name="twitter:description" content="{{ $metaDescription }}">
+  <meta name="twitter:image" content="{{ $metaImage }}">
+
+  <link rel="icon" type="image/x-icon" href="{{ asset('images/favicon.ico') }}">
+  <link rel="icon" type="image/svg+xml" href="{{ asset('images/favicon.svg') }}">
+  <link rel="icon" type="image/png" sizes="96x96" href="{{ asset('images/favicon-96x96.png') }}">
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('images/apple-touch-icon.png') }}">
+  <link rel="manifest" href="{{ asset('images/site.webmanifest') }}">
 
   {{-- Fuentes globales --}}
   <link rel="preconnect" href="https://fonts.googleapis.com">

@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('title', 'Login  | Mendieta Estudio Contable')
+@section('meta_description', 'Acceso seguro al Portal Mendieta para clientes y equipo interno. Gestiona facturación, obligaciones y documentos tributarios en un solo panel.')
 
 @push('styles')
   {{-- Fuente específica del login --}}
