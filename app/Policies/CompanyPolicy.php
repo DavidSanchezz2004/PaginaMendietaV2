@@ -126,4 +126,3 @@ class CompanyPolicy
             ->exists();
     }
 }
-

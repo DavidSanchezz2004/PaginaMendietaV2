@@ -178,7 +178,7 @@ class PortalSunatController extends Controller
     {
         $this->authorize('updateSunatCredentials', $company);
 
-        return view('portal-sunat.credentials', [
+        return view('portal-sunat.credentials-form', [
             'company' => $company,
         ]);
     }
