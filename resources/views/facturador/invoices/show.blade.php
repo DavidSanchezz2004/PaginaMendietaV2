@@ -253,23 +253,47 @@
                     <td colspan="7" style="text-align:right; font-weight:800; color:var(--clr-text-main, #111827); font-size:1.05rem;">TOTAL ({{ $invoice->codigo_moneda }})</td>
                     <td colspan="2" style="text-align:right; font-weight:800; font-size:1.2rem; color:var(--clr-active-bg, #1a6b57);">{{ number_format($invoice->monto_total, 2) }}</td>
                   </tr>
+                  @if($invoice->indicador_detraccion && $invoice->informacion_detraccion)
+                    @php $detFoot = $invoice->informacion_detraccion; @endphp
+                  <tr>
+                    <td colspan="7" style="text-align:right; color:#b45309; font-size:.88rem;">
+                      Detracción ({{ $detFoot['porcentaje_detraccion'] ?? 0 }}%)
+                    </td>
+                    <td colspan="2" style="text-align:right; font-size:.9rem; font-weight:600; color:#b45309;">
+                      – {{ number_format($detFoot['monto_detraccion'] ?? 0, 2) }}
+                    </td>
+                  </tr>
+                  <tr style="background:rgba(16,185,129,.05);">
+                    <td colspan="7" style="text-align:right; font-weight:800; color:var(--clr-active-bg, #1a6b57); font-size:1rem;">
+                      Monto neto pendiente de pago
+                    </td>
+                    <td colspan="2" style="text-align:right; font-weight:800; font-size:1.1rem; color:var(--clr-active-bg, #1a6b57);">
+                      {{ number_format($invoice->monto_total - ($detFoot['monto_detraccion'] ?? 0), 2) }}
+                    </td>
+                  </tr>
+                  @endif
                 </tfoot>
               </table>
             </div>
 
             {{-- ── Detracción SPOT ─────────────────────────────────────────── --}}
             @if($invoice->indicador_detraccion && $invoice->informacion_detraccion)
-              @php $det = $invoice->informacion_detraccion; @endphp
+              @php
+                $det  = $invoice->informacion_detraccion;
+                $neto = $invoice->monto_total - ($det['monto_detraccion'] ?? 0);
+                $mediosPagoDet = ['001' => 'Depósito en cuenta', '002' => 'Giro', '003' => 'Transferencia de fondos', '004' => 'Orden de pago'];
+                $descMedioDet  = ($mediosPagoDet[$det['codigo_medio_pago_detraccion'] ?? ''] ?? ($det['codigo_medio_pago_detraccion'] ?? '—'));
+              @endphp
               <div class="info-card" style="border-left:4px solid #f59e0b; margin-top:1.25rem;">
-                <h3><i class='bx bx-transfer-alt'></i> Detracción SPOT</h3>
+                <h3><i class='bx bx-transfer-alt'></i> Información de la Detracción (SPOT)</h3>
                 <div class="show-grid">
                   <div>
                     <div class="dl-row">
-                      <dt>Código bien/servicio</dt>
+                      <dt>Bien o Servicio</dt>
                       <dd><strong>{{ $det['codigo_bbss_sujeto_detraccion'] ?? '—' }}</strong></dd>
                     </div>
                     <div class="dl-row">
-                      <dt>Porcentaje detracción</dt>
+                      <dt>Porcentaje de detracción</dt>
                       <dd>{{ $det['porcentaje_detraccion'] ?? 0 }}%</dd>
                     </div>
                     <div class="dl-row">
@@ -281,21 +305,64 @@
                   </div>
                   <div>
                     <div class="dl-row">
-                      <dt>Cuenta Banco de la Nación</dt>
+                      <dt>Nro. Cta. Banco de la Nación</dt>
                       <dd><span style="font-family:monospace;">{{ $det['cuenta_banco_detraccion'] ?? '—' }}</span></dd>
                     </div>
                     <div class="dl-row">
-                      <dt>Código medio de pago</dt>
-                      <dd>{{ $det['codigo_medio_pago_detraccion'] ?? '—' }}</dd>
+                      <dt>Medio de pago</dt>
+                      <dd>{{ $det['codigo_medio_pago_detraccion'] ?? '—' }} — {{ $descMedioDet }}</dd>
                     </div>
                     <div class="dl-row">
-                      <dt>TOTAL – Detracción</dt>
-                      <dd><strong style="color:var(--clr-active-bg, #1a6b57);">
-                        {{ $invoice->codigo_moneda }}
-                        {{ number_format($invoice->monto_total - ($det['monto_detraccion'] ?? 0), 2) }}
-                      </strong><small style="color:#6b7280;"> (neto a cobrar)</small></dd>
+                      <dt>Monto neto pendiente de pago</dt>
+                      <dd><strong style="color:var(--clr-active-bg, #1a6b57); font-size:1.05rem;">
+                        {{ $invoice->codigo_moneda }} {{ number_format($neto, 2) }}
+                      </strong></dd>
                     </div>
                   </div>
+                </div>
+              </div>
+            @endif
+
+            {{-- ── Cuotas de crédito ───────────────────────────────────────── --}}
+            @if($invoice->forma_pago == 2 && !empty($invoice->lista_cuotas))
+              <div class="info-card" style="border-left:4px solid #6366f1; margin-top:1.25rem;">
+                <h3><i class='bx bx-calendar-check'></i> Información de Cuotas</h3>
+                <div class="module-table-wrap">
+                  <table class="module-table">
+                    <thead>
+                      <tr>
+                        <th style="width:60px;">#</th>
+                        <th>Fecha de pago</th>
+                        <th style="text-align:right;">Monto</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @foreach($invoice->lista_cuotas as $idx => $cuota)
+                        <tr>
+                          <td style="color:#9ca3af; font-weight:600;">{{ $idx + 1 }}</td>
+                          <td>
+                            @php
+                              try { $fc = \Carbon\Carbon::parse($cuota['fecha_pago'])->format('d/m/Y'); }
+                              catch(\Exception $e) { $fc = $cuota['fecha_pago'] ?? '—'; }
+                            @endphp
+                            {{ $fc }}
+                          </td>
+                          <td style="text-align:right; font-weight:700; color:var(--clr-active-bg, #1a6b57);">
+                            {{ $invoice->codigo_moneda }} {{ number_format($cuota['monto'] ?? 0, 2) }}
+                          </td>
+                        </tr>
+                      @endforeach
+                    </tbody>
+                    <tfoot>
+                      <tr>
+                        <td colspan="2" style="text-align:right; font-weight:700; font-size:.9rem;">Total cuotas:</td>
+                        <td style="text-align:right; font-weight:800; font-size:1rem; color:var(--clr-active-bg, #1a6b57);">
+                          {{ $invoice->codigo_moneda }}
+                          {{ number_format(collect($invoice->lista_cuotas)->sum('monto'), 2) }}
+                        </td>
+                      </tr>
+                    </tfoot>
+                  </table>
                 </div>
               </div>
             @endif
@@ -303,7 +370,7 @@
             {{-- Trazabilidad Feasy / SUNAT --}}
             <div class="info-card">
               <h3 style="display:flex; align-items:center; gap:.75rem; justify-content: space-between; flex-wrap: wrap;">
-                <span><i class='bx bx-check-shield'></i> Trazabilidad SUNAT / Feasy</span>
+                <span><i class='bx bx-check-shield'></i> Trazabilidad SUNAT</span>
                 <span class="invoice-badge {{ $invoice->estado_feasy->isAccepted() ? 'badge-sent' : 'badge-draft' }}">
                   {{ $invoice->estado_feasy->label() }}
                 </span>
@@ -493,8 +560,31 @@
               <div style="font-size:.85rem; color:#6b7280;">Op. Gravadas: <strong>{{ number_format($invoice->monto_total_gravado, 2) }}</strong></div>
               <div style="font-size:.85rem; color:#6b7280;">IGV ({{ $invoice->porcentaje_igv }}%): <strong>{{ number_format($invoice->monto_total_igv, 2) }}</strong></div>
               <div style="font-size:1.1rem; font-weight:800; color:#1a6b57;">TOTAL {{ $invoice->codigo_moneda }}: {{ number_format($invoice->monto_total, 2) }}</div>
+              @if($invoice->indicador_detraccion && $invoice->informacion_detraccion)
+                @php $detPrev = $invoice->informacion_detraccion; $netoPrev = $invoice->monto_total - ($detPrev['monto_detraccion'] ?? 0); @endphp
+              <div style="font-size:.9rem; color:#b45309;">Detracci&oacute;n ({{ $detPrev['porcentaje_detraccion'] ?? 0 }}%): <strong>&minus; {{ number_format($detPrev['monto_detraccion'] ?? 0, 2) }}</strong></div>
+              <div style="font-size:1rem; font-weight:800; color:#1a6b57; border-top:1px dashed #d1fae5; padding-top:.3rem;">Neto a cobrar: {{ number_format($netoPrev, 2) }}</div>
+              @endif
             </div>
-            <p style="margin-top:.75rem; font-size:.8rem; color:#9ca3af; text-align:center;">Esta acción enviará el comprobante a SUNAT vía Feasy. <strong>No se puede deshacer.</strong></p>
+            @if($invoice->forma_pago == 2 && !empty($invoice->lista_cuotas))
+            <div style="margin-top:.75rem; border:1px solid #e0e7ff; border-radius:8px; overflow:hidden;">
+              <div style="background:#eef2ff; padding:.4rem .75rem; font-size:.75rem; font-weight:700; color:#4f46e5; text-transform:uppercase; letter-spacing:.04em;">
+                Cuotas de cr&eacute;dito
+              </div>
+              @foreach($invoice->lista_cuotas as $idx => $cuota)
+                @php try { $fc = \Carbon\Carbon::parse($cuota['fecha_pago'])->format('d/m/Y'); } catch(\Exception $e) { $fc = $cuota['fecha_pago'] ?? '—'; } @endphp
+              <div style="display:flex; justify-content:space-between; padding:.3rem .75rem; font-size:.82rem; border-top:1px solid #e0e7ff; {{ $loop->even ? 'background:#f5f3ff;' : '' }}">
+                <span style="color:#6b7280;">Cuota {{ $idx + 1 }} &mdash; {{ $fc }}</span>
+                <strong style="color:#4f46e5;">{{ $invoice->codigo_moneda }} {{ number_format($cuota['monto'] ?? 0, 2) }}</strong>
+              </div>
+              @endforeach
+              <div style="display:flex; justify-content:space-between; padding:.35rem .75rem; font-size:.83rem; border-top:2px solid #c7d2fe; background:#e0e7ff;">
+                <span style="font-weight:700; color:#4f46e5;">Total cuotas</span>
+                <strong style="color:#4f46e5;">{{ $invoice->codigo_moneda }} {{ number_format(collect($invoice->lista_cuotas)->sum('monto'), 2) }}</strong>
+              </div>
+            </div>
+            @endif
+            <p style="margin-top:.75rem; font-size:.8rem; color:#9ca3af; text-align:center;">Esta acción enviará el comprobante a SUNAT. <strong>No se puede deshacer.</strong></p>
           </div>`,
         showCancelButton: true,
         confirmButtonText: '<i class="bx bx-send"></i> Confirmar y emitir',

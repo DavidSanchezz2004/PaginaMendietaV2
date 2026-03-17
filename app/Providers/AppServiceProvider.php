@@ -4,10 +4,12 @@ namespace App\Providers;
 
 use App\Models\Client;
 use App\Models\Company;
+use App\Models\CreditDebitNote;
 use App\Models\Invoice;
 use App\Models\Product;
 use App\Policies\ClientPolicy;
 use App\Policies\CompanyPolicy;
+use App\Policies\CreditDebitNotePolicy;
 use App\Policies\InvoicePolicy;
 use App\Policies\ProductPolicy;
 use App\Repositories\Contracts\ClientRepositoryInterface;
@@ -72,5 +74,6 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Product::class, ProductPolicy::class);
         Gate::policy(Client::class, ClientPolicy::class);
         Gate::policy(Invoice::class, InvoicePolicy::class);
+        Gate::policy(CreditDebitNote::class, CreditDebitNotePolicy::class);
     }
 }

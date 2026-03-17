@@ -156,6 +156,44 @@ class InvoiceController extends Controller
             $pct      = (float) ($d['porcentaje_detraccion'] ?? 0);
             $total    = (float) ($validated['monto_total'] ?? 0);
             $validated['informacion_detraccion']['monto_detraccion'] = round($total * $pct / 100, 2);
+
+            // ── Auto-llenar SIEMPRE campos adicionales con info de SPOT ──────────────────
+            // Feasy requiere estos campos con SPOT activo
+            $validated['informacion_adicional'] = $validated['informacion_adicional'] ?? [];
+            
+            // Campo 1: SIEMPRE va la cuenta de detracción
+            $validated['informacion_adicional']['informacion_adicional_1'] = $d['cuenta_banco_detraccion'] ?? '';
+            
+            // Campo 2: SIEMPRE va información completa de la detracción con saltos de línea
+            $montoDet = $validated['informacion_detraccion']['monto_detraccion'];
+            $neto     = round($total - $montoDet, 2);
+            $codigoBien = $d['codigo_bbss_sujeto_detraccion'] ?? '';
+            $codigoMedio = $d['codigo_medio_pago_detraccion'] ?? '001';
+            
+            // Buscar descripciones
+            $bienServ = SpotDetraccion::where('codigo', $codigoBien)->first();
+            $descBien = $bienServ?->descripcion ?? "Código $codigoBien";
+            // Remover el porcentaje entre paréntesis (ej: "(9%)")
+            $descBien = preg_replace('/\s*\(\d+%\)$/', '', $descBien);
+            
+            // Array de medios de pago
+            $mediosPago = [
+                '001' => '001 - Deposito en cuenta',
+                '002' => '002 - Transferencia de fondos',
+                '003' => '003 - Transferencia de fondos',
+            ];
+            $descMedio = $mediosPago[$codigoMedio] ?? "Código $codigoMedio";
+            
+            // Construir información COMPLETA con saltos de línea
+            $validated['informacion_adicional']['informacion_adicional_2'] =
+                "Leyenda:\n" .
+                "Operacion sujeta al Sistema de Pago de Obligaciones Tributarias con el Gobierno Central\n" .
+                "Bien o Servicio: $codigoBien - $descBien\n" .
+                "Porcentaje de detraccion: " . number_format($pct, 0) . "%\n" .
+                "Monto detraccion: PEN " . number_format($montoDet, 2, '.', ',') . "\n" .
+                "Nro. Cta. Banco de la Nacion: " . ($d['cuenta_banco_detraccion'] ?? '') . "\n" .
+                "Medio de pago: $descMedio\n" .
+                "Monto neto pendiente de pago: PEN " . number_format($neto, 2, '.', ',');
         }
 
         $invoice = $this->invoiceService->create($validated, $items);

@@ -12,6 +12,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Facturador\ClientController;
 use App\Http\Controllers\Facturador\FacturadorController;
 use App\Http\Controllers\Facturador\InvoiceController;
+use App\Http\Controllers\Facturador\CreditDebitNoteController;
 use App\Http\Controllers\Facturador\ProductController;
 use App\Http\Controllers\Facturador\SunatLoginController;
 use App\Http\Controllers\FinalDocumentController;
@@ -184,6 +185,16 @@ Route::middleware('auth')->group(function (): void {
                 ->name('invoices.payments.store');
             Route::delete('invoices/{invoice}/payments/{payment}', [InvoiceController::class, 'destroyPayment'])
                 ->name('invoices.payments.destroy');
+
+            // Notas de Crédito y Débito (oculto temporalmente)
+            // Route::resource('credit-debit-notes', CreditDebitNoteController::class)
+            //     ->except(['edit', 'update']);
+            // Route::post('credit-debit-notes/{creditDebitNote}/emit',    [CreditDebitNoteController::class, 'emit'])
+            //     ->name('credit_debit_notes.emit');
+            // Route::post('credit-debit-notes/{creditDebitNote}/consult', [CreditDebitNoteController::class, 'consult'])
+            //     ->name('credit_debit_notes.consult');
+            // Route::get('credit-debit-notes/{creditDebitNote}/xml',      [CreditDebitNoteController::class, 'downloadXml'])
+            //     ->name('credit_debit_notes.xml');
 
             // ── Configuración: Información Adicional (valores enviados a Feasy) ──
             Route::put('configuracion/informacion-adicional', [InformacionAdicionalConfigController::class, 'update'])

@@ -184,7 +184,7 @@ return [
                     'model' => \App\Models\Invoice::class,
                 ],
                 [
-                    'label' => 'Productos',
+                    'label' => 'Productos/Servicios',
                     'icon' => 'bx bx-box',
                     'route' => 'facturador.products.index',
                     'active' => ['facturador.products.*'],
@@ -209,6 +209,15 @@ return [
                     'enabled' => true,
                     'can' => 'viewAny',
                     'model' => \App\Models\Invoice::class,
+                ],
+                [
+                    'label' => 'Notas Crédito/Débito',
+                    'icon' => 'bx bx-file-blank',
+                    'route' => 'facturador.credit-debit-notes.index',
+                    'active' => ['facturador.credit-debit-notes.*'],
+                    'enabled' => false, // Oculto temporalmente
+                    'can' => 'viewAny',
+                    'model' => \App\Models\CreditDebitNote::class,
                 ],
                 [
                     'label' => 'Config. Feasy',
@@ -270,7 +279,12 @@ return [
                 ['label' => 'Consulta RUC',    'url' => 'https://e-consultaruc.sunat.gob.pe/cl-ti-itmrconsruc/FrameCriterioBusquedaWeb.jsp',                                                                                                                                                         'icon' => 'bx bx-search',       'target' => '_blank', 'enabled' => true, 'active' => []],
                 ['label' => 'Emitir RH',       'url' => 'https://ww1.sunat.gob.pe/xssecurity/SignOnVerification.htm?signonForwardAction=https%3A%2F%2Fww1.sunat.gob.pe%2Fol-ti-itrheemision%2Femisionrhe.do',                                                                                      'icon' => 'bx bx-file',         'target' => '_blank', 'enabled' => true, 'active' => []],
                 ['label' => 'Nota crédito RH', 'url' => 'https://ww1.sunat.gob.pe/xssecurity/SignOnVerification.htm?signonForwardAction=https%3A%2F%2Fww1.sunat.gob.pe%2Fol-ti-itrheemisionnce%2Femisionnce.do',                                                                                   'icon' => 'bx bx-file-blank',   'target' => '_blank', 'enabled' => true, 'active' => []],
-                ['label' => 'Validar CPE',     'url' => 'https://e-consulta.sunat.gob.pe/ol-ti-itconsvalicpe/ConsValiCpe.htm',                                                                                                                                                                      'icon' => 'bx bx-check-shield', 'target' => '_blank', 'enabled' => true, 'active' => []],
+                ['label' => 'Validar CPE',          'url' => 'https://e-consulta.sunat.gob.pe/ol-ti-itconsvalicpe/ConsValiCpe.htm',                                                                                                                                                                                                              'icon' => 'bx bx-check-shield',  'target' => '_blank', 'enabled' => true, 'active' => []],
+                ['label' => 'Tipo de Cambio 2026',  'url' => 'https://e-consulta.sunat.gob.pe/cl-at-ittipcam/tcS01Alias',                                                                                                                                                                                                                    'icon' => 'bx bx-dollar-circle', 'target' => '_blank', 'enabled' => true, 'active' => []],
+                ['label' => 'Renta Anual Personas', 'url' => 'https://api-seguridad.sunat.gob.pe/v1/clientessol/03590141-c69c-438c-a36a-8ee2a3ad9747/oauth2/login?originalUrl=https://e-renta.sunat.gob.pe/loader/recaudaciontributaria/declaracionpago/formularios', 'icon' => 'bx bx-user-circle',    'target' => '_blank', 'enabled' => true, 'active' => []],
+                ['label' => 'Renta Anual Empresas', 'url' => 'https://api-seguridad.sunat.gob.pe/v1/clientessol/03590141-c69c-438c-a36a-8ee2a3ad9747/oauth2/login?originalUrl=https://e-renta.sunat.gob.pe/loader/recaudaciontributaria/declaracionpago/formularios', 'icon' => 'bx bx-buildings',      'target' => '_blank', 'enabled' => true, 'active' => []],
+                ['label' => 'Cronograma LE',        'url' => 'https://www.sunat.gob.pe/orientacion/cronogramas/cronoRegistroC-V-2026.html',                                                                                                                                                                                                  'icon' => 'bx bx-book-open',     'target' => '_blank', 'enabled' => true, 'active' => []],
+                ['label' => 'Cronograma Renta 2025','url' => 'https://www.sunat.gob.pe/orientacion/cronogramas/2026/cRenta2025.html',                                                                                                                                                                                                        'icon' => 'bx bx-calendar-event','target' => '_blank', 'enabled' => true, 'active' => []],
                 ['type' => 'section', 'label' => 'Otros', 'enabled' => true],
                 ['label' => 'Mesa SUNAFIL',    'url' => 'https://aplicativosweb6.sunafil.gob.pe/si.mesaVirtual/registro', 'icon' => 'bx bx-inbox',     'target' => '_blank', 'enabled' => true, 'active' => []],
                 ['label' => 'Tribunal Fiscal', 'url' => 'https://tribunalfiscal.pegasus.com.pe/',                         'icon' => 'bx bx-buildings', 'target' => '_blank', 'enabled' => true, 'active' => []],

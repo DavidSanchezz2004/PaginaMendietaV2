@@ -427,8 +427,10 @@
                     <input type="hidden" name="monto_total"           id="h-total"     value="{{ old('monto_total', 0) }}">
 
                     {{-- ── Detracción SPOT ─────────────────────────────── --}}
+                    {{-- Campo indicador SIEMPRE presente (fuera de contenedor oculto) --}}
+                    <input type="hidden" name="indicador_detraccion" value="0" id="h-detrac-indicator">
+
                     <div id="detrac-wrapper" style="display:none;">
-                      <input type="hidden" name="indicador_detraccion" value="0" id="h-detrac-indicator">
 
                       {{-- Caja colapsada (toggle apagado) --}}
                       <div id="detrac-box-off" class="detrac-box-off" onclick="toggleDetrac(true)">
@@ -472,11 +474,12 @@
                           </div>
 
                           <div class="form-group">
-                            <label>Cuenta Banco de la Nación *</label>
+                            <label>Cuenta Banco de la Nación * <small style="color:#888;font-weight:normal;">(11 dígitos)</small></label>
                             <input type="text" name="informacion_detraccion[cuenta_banco_detraccion]"
-                                   id="detrac-cuenta" class="form-input" maxlength="20"
-                                   placeholder="Ej: 00-000-123456"
-                                   value="{{ old('informacion_detraccion.cuenta_banco_detraccion') }}">
+                                   id="detrac-cuenta" class="form-input" maxlength="11"
+                                   inputmode="numeric" autocomplete="off"
+                                   placeholder="Ej: 00001545000"
+                                   value="{{ preg_replace('/[^0-9]/', '', old('informacion_detraccion.cuenta_banco_detraccion', '')) }}">
                           </div>
 
                           <div class="form-group">
@@ -505,6 +508,7 @@
                         </div>
                       </div>
                     </div>
+
                   </div>
 
                   {{-- Panel GRE: destinatario + puntos + vehículos --}}
@@ -634,9 +638,7 @@ function updateDocCodes() {
   }
 
   const ordenCompra = document.getElementById('numero_orden_compra');
-  if (ordenCompra && ! ordenCompra.dataset.userEdited && ! ordenCompra.value) {
-    ordenCompra.value = 'OC-' + serie + '-' + numPad;
-  }
+  // N° Orden Compra es opcional, no se auto-rellena
 }
 
 // Solo auto-fill si no es un repoblado de old() (i.e. primer render)
@@ -738,11 +740,17 @@ function recalcTotals() {
     else if (afecto === '40') { gravado   += total; }
   });
   const totalGeneral = gravado + igvSum + exonerado + inafecto;
-  document.getElementById('lbl-gravado').textContent   = gravado.toFixed(2);
-  document.getElementById('lbl-exonerado').textContent = exonerado.toFixed(2);
-  document.getElementById('lbl-inafecto').textContent  = inafecto.toFixed(2);
-  document.getElementById('lbl-igv').textContent       = igvSum.toFixed(2);
-  document.getElementById('lbl-total').textContent     = totalGeneral.toFixed(2);
+  
+  // Obtener símbolo de moneda
+  const moneda = document.querySelector('select[name="codigo_moneda"]')?.value || 'PEN';
+  const simbolos = { 'PEN': 'S/ ', 'USD': '$ ', 'EUR': '€ ' };
+  const simbolo = simbolos[moneda] || moneda + ' ';
+  
+  document.getElementById('lbl-gravado').textContent   = simbolo + gravado.toFixed(2);
+  document.getElementById('lbl-exonerado').textContent = simbolo + exonerado.toFixed(2);
+  document.getElementById('lbl-inafecto').textContent  = simbolo + inafecto.toFixed(2);
+  document.getElementById('lbl-igv').textContent       = simbolo + igvSum.toFixed(2);
+  document.getElementById('lbl-total').textContent     = simbolo + totalGeneral.toFixed(2);
   document.getElementById('h-gravado').value   = gravado.toFixed(2);
   document.getElementById('h-exonerado').value = exonerado.toFixed(2);
   document.getElementById('h-inafecto').value  = inafecto.toFixed(2);
@@ -898,7 +906,16 @@ function toggleDetrac(activate) {
   boxOff.style.display = activate ? 'none' : '';
   boxOn.style.display  = activate ? '' : 'none';
   if (indicator) indicator.value = activate ? '1' : '0';
-  if (activate) recalcDetrac();
+  if (activate) {
+    recalcDetrac(); // recalcDetrac ya llama a cuotasDistribuir internamente
+  } else {
+    // Al desactivar: resetear monto detracción y recalcular cuotas con total completo
+    const hid = document.getElementById('h-detrac-monto');
+    if (hid) hid.value = '0';
+    if (document.getElementById('forma-pago-select')?.value === '2') {
+      cuotasDistribuir();
+    }
+  }
 }
 
 function onDetracCodigoChange(sel) {
@@ -908,16 +925,34 @@ function onDetracCodigoChange(sel) {
   recalcDetrac();
 }
 
+// Devuelve la base real sobre la que se calculan las cuotas:
+// Si hay detracción activa → Total - Detracción (neto a cobrar)
+// Si no → Total
+function getBaseParaCuotas() {
+  const total  = parseFloat(document.getElementById('h-total')?.value || '0');
+  const active = document.getElementById('h-detrac-indicator')?.value === '1';
+  if (active) {
+    const monto = parseFloat(document.getElementById('h-detrac-monto')?.value || '0');
+    return Math.round((total - monto) * 100) / 100;
+  }
+  return total;
+}
+
 function recalcDetrac() {
   const active = document.getElementById('h-detrac-indicator')?.value === '1';
   if (!active) return;
   const total = parseFloat(document.getElementById('h-total')?.value || '0');
   const pct   = parseFloat(document.getElementById('detrac-pct')?.value || '0');
   const monto = Math.round(total * pct / 100 * 100) / 100;
+  const neto  = Math.round((total - monto) * 100) / 100;
   const lbl   = document.getElementById('lbl-detrac-monto');
   const hid   = document.getElementById('h-detrac-monto');
   if (lbl) lbl.textContent = 'S/ ' + monto.toFixed(2);
   if (hid) hid.value = monto.toFixed(2);
+  // Recalcular cuotas con el neto si están activas
+  if (document.getElementById('forma-pago-select')?.value === '2') {
+    cuotasDistribuir();
+  }
 }
 
 // Actualizar visibilidad al cambiar tipo de doc o moneda
@@ -928,6 +963,7 @@ document.getElementById('tipo-doc-select')?.addEventListener('change', () => {
 document.querySelector('select[name="codigo_moneda"]')?.addEventListener('change', () => {
   const total = parseFloat(document.getElementById('h-total')?.value || '0');
   updateDetracWrapper(total);
+  recalcTotals(); // Actualizar símbolos de moneda en totales
 });
 
 // Restaurar estado si hay old() (repoblado tras error de validación)
@@ -940,6 +976,36 @@ document.querySelector('select[name="codigo_moneda"]')?.addEventListener('change
   });
 @endif
 
+// ── Cuenta Banco de la Nación: solo dígitos, exactamente 11 ──────────────
+(function () {
+  const cuentaInput = document.getElementById('detrac-cuenta');
+  if (!cuentaInput) return;
+
+  function soloDigitos(input) {
+    const pos    = input.selectionStart;
+    const antes  = input.value;
+    const limpio = antes.replace(/[^0-9]/g, '').slice(0, 11);
+    if (antes !== limpio) {
+      input.value = limpio;
+      // Restaurar cursor aproximado
+      const diff = antes.length - limpio.length;
+      input.setSelectionRange(Math.max(0, pos - diff), Math.max(0, pos - diff));
+    }
+  }
+
+  cuentaInput.addEventListener('input',   function () { soloDigitos(this); });
+  cuentaInput.addEventListener('paste',   function () { setTimeout(() => soloDigitos(this), 0); });
+  cuentaInput.addEventListener('keydown', function (e) {
+    // Permitir: retroceso, supr, flechas, tab, ctrl/cmd combos
+    const allow = ['Backspace','Delete','ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Tab','Home','End'];
+    if (allow.includes(e.key) || e.ctrlKey || e.metaKey) return;
+    // Bloquear si no es dígito
+    if (!/^[0-9]$/.test(e.key)) { e.preventDefault(); return; }
+    // Bloquear si ya tiene 11 dígitos y no hay selección
+    if (this.value.length >= 11 && this.selectionStart === this.selectionEnd) e.preventDefault();
+  });
+})();
+
 // Validación pre-submit: cuenta BN obligatoria si hay detracción activa
 document.getElementById('invoice-form')?.addEventListener('submit', function(e) {
   if (document.getElementById('h-detrac-indicator')?.value === '1') {
@@ -948,6 +1014,12 @@ document.getElementById('invoice-form')?.addEventListener('submit', function(e) 
     if (!cuenta) {
       e.preventDefault();
       alert('⚠️ Detracción SPOT: ingrese la cuenta del Banco de la Nación antes de guardar.');
+      document.getElementById('detrac-cuenta')?.focus();
+      return;
+    }
+    if (cuenta.length !== 11) {
+      e.preventDefault();
+      alert('⚠️ La cuenta del Banco de la Nación debe tener exactamente 11 dígitos.');
       document.getElementById('detrac-cuenta')?.focus();
       return;
     }
@@ -978,7 +1050,7 @@ function cuotasUpdateSuma() {
 }
 
 function cuotasDistribuir() {
-  const total = parseFloat(document.getElementById('h-total')?.value || '0');
+  const total = getBaseParaCuotas(); // neto si hay detracción, total si no
   const rows  = cuotasBody.querySelectorAll('.cuota-row');
   if (!rows.length) return;
 

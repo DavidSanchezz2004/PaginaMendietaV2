@@ -71,3 +71,17 @@
     </section>
   </div>
 @endsection
+
+@push('scripts')
+<script>
+  document.getElementById('valor_unitario').addEventListener('input', function () {
+    const val = parseFloat(this.value);
+    const precio = document.getElementById('precio_unitario');
+    if (!isNaN(val) && val >= 0) {
+      precio.value = (val * 1.18).toFixed(2);
+    } else {
+      precio.value = '';
+    }
+  });
+</script>
+@endpush

@@ -345,8 +345,21 @@ class FeasyService
         }
 
         // ── Detracción SPOT (solo Factura tipo 01, monto > 700 PEN) ──────
+        // DEBUG: Loguear estado de detracción ANTES de procesar
+        Log::channel('stack')->debug('[FeasyService] Estado detracción ANTES de procesar', [
+            'invoice_id'                => $invoice->id,
+            'indicador_detraccion'      => $invoice->indicador_detraccion,
+            'informacion_detraccion'    => $invoice->informacion_detraccion,
+            'tipo'                      => gettype($invoice->informacion_detraccion),
+        ]);
+
         if ($invoice->indicador_detraccion && $invoice->informacion_detraccion) {
             $d = $invoice->informacion_detraccion;
+
+            Log::channel('stack')->debug('[FeasyService] Procesando detracción', [
+                'invoice_id' => $invoice->id,
+                'data'       => $d,
+            ]);
 
             $cuenta = trim((string) ($d['cuenta_banco_detraccion'] ?? ''));
             if ($cuenta === '') {
@@ -367,6 +380,40 @@ class FeasyService
                 $payload['indicadores'] ?? [],
                 ['indicador_detraccion' => true]
             );
+
+            Log::channel('stack')->debug('[FeasyService] Detracción ENVIADA en payload', [
+                'invoice_id'                => $invoice->id,
+                'informacion_detraccion'    => $payload['informacion_detraccion'],
+                'indicadores'               => $payload['indicadores'],
+            ]);
+        } else {
+            Log::channel('stack')->debug('[FeasyService] Detracción NO PROCESADA', [
+                'invoice_id'                => $invoice->id,
+                'indicador_detraccion'      => $invoice->indicador_detraccion,
+                'informacion_detraccion'    => $invoice->informacion_detraccion,
+                'indicador_truthy'          => (bool) $invoice->indicador_detraccion,
+                'info_truthy'               => (bool) $invoice->informacion_detraccion,
+            ]);
+        }
+
+        // ── Información de crédito (cuotas, forma_pago = 2) ───────────────
+        // Feasy requiere lista_cuotas cuando forma_pago = '2' (Crédito).
+        if ((string) $invoice->forma_pago === '2' && ! empty($invoice->lista_cuotas)) {
+            $cuotas = is_array($invoice->lista_cuotas) 
+                ? $invoice->lista_cuotas 
+                : json_decode($invoice->lista_cuotas, true);
+            
+            if (is_array($cuotas) && count($cuotas) > 0) {
+                $payload['informacion_credito'] = [
+                    'lista_cuotas' => array_map(function (array $cuota, int $index) {
+                        return [
+                            'correlativo' => $index + 1,
+                            'fecha_pago'  => (string) ($cuota['fecha_pago'] ?? ''),
+                            'monto'       => round((float) ($cuota['monto'] ?? 0), 2),
+                        ];
+                    }, $cuotas, array_keys($cuotas)),
+                ];
+            }
         }
 
         // ── Información adicional (campos libres SUNAT) ───────────────────
@@ -379,6 +426,17 @@ class FeasyService
             );
             if (! empty($adicional)) {
                 $payload['informacion_adicional'] = $adicional;
+                // Agregar indicador requerido por Feasy para procesar campos adicionales
+                $payload['indicadores'] = array_merge(
+                    $payload['indicadores'] ?? [],
+                    ['indicador_informacion_adicional' => true]
+                );
+
+                Log::channel('stack')->debug('[FeasyService] Campos adicionales ENVIADOS', [
+                    'invoice_id'                    => $invoice->id,
+                    'informacion_adicional'         => $payload['informacion_adicional'],
+                    'indicadores'                   => $payload['indicadores'],
+                ]);
             }
         }
 
@@ -601,5 +659,198 @@ class FeasyService
                 'http_status' => 0,
             ];
         }
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    // 4) NOTAS DE CRÉDITO Y DÉBITO
+    // ══════════════════════════════════════════════════════════════════════
+
+    /**
+     * Envía una nota de crédito o débito a Feasy.
+     *
+     * @return array{success: bool, message: string, data: array|null, errors: array, http_status: int}
+     */
+    public function sendCreditDebitNote(\App\Models\CreditDebitNote $note): array
+    {
+        if (empty($this->token)) {
+            return ['success' => false, 'message' => 'FEASY_TOKEN no configurado.', 'data' => null, 'errors' => [], 'http_status' => 0];
+        }
+
+        $company = Company::findOrFail(session('company_id'));
+
+        if (! $company->facturador_enabled) {
+            return ['success' => false, 'message' => 'Facturación electrónica no habilitada para esta empresa.', 'data' => null, 'errors' => [], 'http_status' => 0];
+        }
+
+        try {
+            $payload = $this->buildCreditDebitNotePayload($note, $company);
+
+            // Elegir endpoint según tipo
+            $endpoint = $note->isCreditNote() 
+                ? '/comprobante/enviar_nota_credito'
+                : '/comprobante/enviar_nota_debito';
+
+            $response = Http::withToken($this->token)
+                ->timeout(30)
+                ->post("{$this->baseUrl}{$endpoint}", $payload);
+
+            Log::channel('stack')->info('[FeasyService] Respuesta recibida', [
+                'endpoint' => $endpoint,
+                'http_status' => $response->status(),
+                'success' => $response->successful(),
+            ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                return [
+                    'success' => true,
+                    'message' => 'Nota enviada exitosamente.',
+                    'data' => [
+                        'codigo_respuesta' => $data['numero_archivo_xml'] ?? null,
+                        'url_pdf' => $data['url_pdf'] ?? null,
+                    ],
+                    'errors' => [],
+                    'http_status' => $response->status(),
+                ];
+            } else {
+                $data = $response->json();
+                return [
+                    'success' => false,
+                    'message' => $data['message'] ?? 'Error al enviar nota.',
+                    'data' => $data,
+                    'errors' => $data['errors'] ?? [],
+                    'http_status' => $response->status(),
+                ];
+            }
+        } catch (\Exception $e) {
+            Log::channel('stack')->error('[FeasyService] Excepción al enviar nota', [
+                'note_id' => $note->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return [
+                'success' => false,
+                'message' => 'Error de conexión: ' . $e->getMessage(),
+                'data' => null,
+                'errors' => [$e->getMessage()],
+                'http_status' => 0,
+            ];
+        }
+    }
+
+    /**
+     * Consulta el estado de una nota de crédito o débito en SUNAT.
+     *
+     * @return array{success: bool, message: string, data: array|null, errors: array, http_status: int}
+     */
+    public function consultCreditDebitNote(\App\Models\CreditDebitNote $note): array
+    {
+        if (empty($this->token)) {
+            return ['success' => false, 'message' => 'FEASY_TOKEN no configurado.', 'data' => null, 'errors' => [], 'http_status' => 0];
+        }
+
+        $company = Company::findOrFail(session('company_id'));
+
+        try {
+            $payload = [
+                'ruc_empresa' => $company->ruc,
+                'numero_archivo_xml' => $note->codigo_respuesta_feasy,
+            ];
+
+            $response = Http::withToken($this->token)
+                ->timeout(30)
+                ->post("{$this->baseUrl}/comprobante/consultar", $payload);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                return [
+                    'success' => true,
+                    'message' => 'Consulta exitosa.',
+                    'data' => [
+                        'codigo_respuesta' => $data['codigo_respuesta'] ?? null,
+                    ],
+                    'errors' => [],
+                    'http_status' => $response->status(),
+                ];
+            } else {
+                return [
+                    'success' => false,
+                    'message' => 'Error en consulta.',
+                    'data' => $response->json(),
+                    'errors' => [$response->json()['message'] ?? 'Error desconocido'],
+                    'http_status' => $response->status(),
+                ];
+            }
+        } catch (\Exception $e) {
+            Log::channel('stack')->error('[FeasyService] Error consultando nota', [
+                'note_id' => $note->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return [
+                'success' => false,
+                'message' => 'Error de conexión: ' . $e->getMessage(),
+                'data' => null,
+                'errors' => [$e->getMessage()],
+                'http_status' => 0,
+            ];
+        }
+    }
+
+    /**
+     * Construye el payload para enviar una nota de crédito o débito.
+     */
+    private function buildCreditDebitNotePayload(\App\Models\CreditDebitNote $note, Company $company): array
+    {
+        $invoice = $note->invoice;
+
+        return [
+            'ruc_empresa' => $company->ruc,
+            'codigo_interno' => $note->codigo_interno,
+            'informacion_documento' => [
+                'codigo_tipo_documento' => $note->codigo_tipo_documento,
+                'codigo_tipo_nota' => $note->codigo_tipo_nota,
+                'serie_documento' => $note->serie_documento,
+                'numero_documento' => $note->numero_documento,
+                'fecha_emision' => $note->fecha_emision->format('Y-m-d'),
+                'hora_emision' => $note->hora_emision,
+                'observacion' => $note->observacion,
+                'correo' => $note->correo,
+                'codigo_moneda' => 'PEN',
+                'porcentaje_igv' => $note->porcentaje_igv,
+                'monto_total_gravado' => $note->monto_total_gravado,
+                'monto_total_inafecto' => $note->monto_total_inafecto,
+                'monto_total_exonerado' => $note->monto_total_exonerado,
+                'monto_total_igv' => $note->monto_total_igv,
+                'monto_total' => $note->monto_total,
+            ],
+            'informacion_emisor' => [
+                'codigo_tipo_documento_emisor' => '6',
+                'numero_documento_emisor' => $company->ruc,
+                'nombre_razon_social_emisor' => $company->razon_social,
+                'ubigeo_emisor' => $company->ubigeo ?? '150101',
+                'departamento_emisor' => $company->departamento ?? 'LIMA',
+                'provincia_emisor' => $company->provincia ?? 'LIMA',
+                'distrito_emisor' => $company->distrito ?? 'LIMA',
+                'direccion_emisor' => $company->direccion,
+            ],
+            'informacion_adquiriente' => [
+                'codigo_tipo_documento_adquiriente' => $invoice->codigo_tipo_documento_adquiriente,
+                'numero_documento_adquiriente' => $invoice->numero_documento_adquiriente,
+                'nombre_razon_social_adquiriente' => $invoice->nombre_razon_social_adquiriente,
+                'codigo_pais_adquiriente' => $invoice->codigo_pais_adquiriente ?? 'PE',
+                'ubigeo_adquiriente' => $invoice->ubigeo_adquiriente ?? '150101',
+                'departamento_adquiriente' => $invoice->departamento_adquiriente ?? 'LIMA',
+                'provincia_adquiriente' => $invoice->provincia_adquiriente ?? 'LIMA',
+                'distrito_adquiriente' => $invoice->distrito_adquiriente ?? 'LIMA',
+                'direccion_adquiriente' => $invoice->direccion_adquiriente,
+                'correo_adquiriente' => $invoice->correo_adquiriente,
+            ],
+            'informacion_documento_referencia' => $note->informacion_documento_referencia,
+            'lista_items' => array_map(fn ($item) => $this->formatItem($item, $note->porcentaje_igv), $note->lista_items),
+            'indicadores' => [
+                'indicador_entrega_bienes' => false,
+            ],
+        ];
     }
 }

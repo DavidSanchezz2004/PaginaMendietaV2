@@ -48,7 +48,7 @@
 
 <div class="form-group">
   <label>Valor Unitario (sin IGV) *</label>
-  <input type="number" name="valor_unitario" class="form-input"
+  <input type="number" name="valor_unitario" id="valor_unitario" class="form-input"
     step="0.0001" min="0"
     value="{{ old('valor_unitario', isset($product) ? (float)$product->valor_unitario : '') }}" required>
   @error('valor_unitario')<p class="form-error">{{ $message }}</p>@enderror
@@ -56,7 +56,7 @@
 
 <div class="form-group">
   <label>Precio Unitario (con IGV) *</label>
-  <input type="number" name="precio_unitario" class="form-input"
+  <input type="number" name="precio_unitario" id="precio_unitario" class="form-input"
     step="0.0001" min="0"
     value="{{ old('precio_unitario', isset($product) ? (float)$product->precio_unitario : '') }}" required>
   @error('precio_unitario')<p class="form-error">{{ $message }}</p>@enderror

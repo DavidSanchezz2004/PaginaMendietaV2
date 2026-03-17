@@ -46,7 +46,7 @@
 
           <div class="placeholder-content module-card-wide">
             <div class="module-toolbar">
-              <h1>Catálogo de Productos</h1>
+              <h1>Catálogo de Productos y Servicios</h1>
               <div style="display:flex; gap:.5rem; align-items:center;">
                 <a href="{{ route('facturador.index') }}" class="btn-secondary" style="font-size:.85rem;">
                   <i class='bx bx-building'></i> Cambiar empresa
