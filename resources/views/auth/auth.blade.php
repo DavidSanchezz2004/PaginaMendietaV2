@@ -11,6 +11,61 @@
 
   {{-- Tu CSS del login (public/css/login.css) --}}
   <link rel="stylesheet" href="{{ asset('css/login.css') }}">
+
+  <style>
+    #legalNoticeModal .modal-content {
+      border-radius: 12px;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    }
+
+    #legalNoticeModal .modal-header {
+      border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+      background-color: rgba(102, 126, 234, 0.05);
+    }
+
+    #legalNoticeModal .modal-title {
+      color: #667eea;
+      font-weight: 600;
+    }
+
+    #legalNoticeModal .modal-body {
+      padding: 1.5rem;
+      line-height: 1.6;
+      color: #333;
+    }
+
+    #legalNoticeModal .modal-body h5 {
+      color: #667eea;
+      font-weight: 600;
+      margin-top: 1.5rem;
+      margin-bottom: 0.8rem;
+    }
+
+    #legalNoticeModal .modal-body h5:first-child {
+      margin-top: 0;
+    }
+
+    #legalNoticeModal .modal-body p {
+      margin-bottom: 0.8rem;
+      font-size: 0.95rem;
+    }
+
+    #legalNoticeModal .modal-body ul {
+      margin-left: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    #legalNoticeModal .modal-body ul li {
+      margin-bottom: 0.5rem;
+      font-size: 0.95rem;
+    }
+
+    #legalNoticeModal .modal-footer {
+      border-top: 1px solid rgba(0, 0, 0, 0.1);
+      background-color: rgba(102, 126, 234, 0.02);
+    }
+  </style>
 @endpush
 
 @push('scripts')
@@ -73,7 +128,7 @@
           <!-- Campo de E-mail -->
           <div class="input-field">
             <label for="email">E-mail Corporativo</label>
-            <input type="email" id="email" name="email" value="{{ old('email') }}" placeholder="david@gmail.com" required>
+            <input type="email" id="email" name="email" value="{{ old('email') }}" placeholder="tu-correo@gmail.com" required>
           </div>
 
           <!-- Campo de Contraseña con revelar integrado -->
@@ -95,7 +150,7 @@
         <footer class="auth-footer">
           <p>
             Acceso restringido a personal y clientes autorizados.
-            <a href="#">Aviso Legal</a>.
+            <a href="#" data-bs-toggle="modal" data-bs-target="#legalNoticeModal">Aviso Legal</a>.
           </p>
         </footer>
       </div>
@@ -127,6 +182,59 @@
     </section>
 
   </main>
+
+  <!-- Modal Aviso Legal -->
+  <div class="modal fade" id="legalNoticeModal" tabindex="-1" aria-labelledby="legalNoticeLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h1 class="modal-title fs-5" id="legalNoticeLabel">Aviso Legal — Portal Mendieta</h1>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <h5>Identificación del sistema</h5>
+          <p>Portal Mendieta es una plataforma digital utilizada para la gestión contable, tributaria y administrativa de empresas y contribuyentes en el Perú.</p>
+          <p>El sistema es operado por Estudio Contable Mendieta y está destinado exclusivamente para el uso de clientes autorizados y personal interno.</p>
+
+          <h5>Acceso al sistema</h5>
+          <p>El acceso a esta plataforma está restringido únicamente a usuarios registrados y autorizados.</p>
+          <p>Cada usuario es responsable de mantener la confidencialidad de sus credenciales de acceso, incluyendo su correo electrónico y contraseña.</p>
+          <p>El uso de credenciales por terceros sin autorización está estrictamente prohibido.</p>
+
+          <h5>Uso adecuado de la plataforma</h5>
+          <p>El usuario se compromete a utilizar la plataforma únicamente para fines relacionados con la gestión contable, administrativa o tributaria de su empresa.</p>
+          <p><strong>Queda prohibido:</strong></p>
+          <ul>
+            <li>Compartir credenciales con terceros.</li>
+            <li>Intentar acceder a información de otros usuarios o empresas.</li>
+            <li>Manipular o alterar información del sistema sin autorización.</li>
+            <li>Utilizar la plataforma para fines ilícitos.</li>
+          </ul>
+
+          <h5>Protección de la información</h5>
+          <p>Portal Mendieta implementa medidas de seguridad destinadas a proteger la información contable, financiera y tributaria almacenada en el sistema.</p>
+          <p>La información registrada en la plataforma será utilizada exclusivamente para fines relacionados con los servicios contables y administrativos prestados por el Estudio Contable Mendieta.</p>
+
+          <h5>Limitación de responsabilidad</h5>
+          <p>El Estudio Contable Mendieta no se responsabiliza por:</p>
+          <ul>
+            <li>El uso indebido del sistema por parte de los usuarios.</li>
+            <li>El acceso no autorizado ocasionado por negligencia en el manejo de credenciales.</li>
+            <li>Interrupciones temporales del sistema por mantenimiento, actualizaciones o causas técnicas.</li>
+          </ul>
+
+          <h5>Legislación aplicable</h5>
+          <p>El uso de esta plataforma se rige por la legislación vigente de la República del Perú.</p>
+
+          <h5>Contacto</h5>
+          <p>Para consultas relacionadas con el acceso o uso del sistema, puede comunicarse con el Estudio Contable Mendieta a través de los canales oficiales de atención.</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  </div>
 @endsection
 
 @push('scripts')
