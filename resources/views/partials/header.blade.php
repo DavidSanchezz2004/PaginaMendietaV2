@@ -1,8 +1,12 @@
 <header class="top-header">
   @php
     $authUser = auth()->user();
-    $resolvedAvatarUrl = $avatarUrl
-      ?? ($authUser?->profile?->avatar_path ? asset('storage/'.$authUser->profile->avatar_path) : 'https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg?auto=compress&cs=tinysrgb&w=150');
+    $resolvedAvatarUrl = $avatarUrl ?? ($authUser?->profile?->avatar_path ? asset('storage/'.$authUser->profile->avatar_path) : null);
+    $userInitials = collect(explode(' ', trim($authUser?->name ?? 'Usuario')))
+      ->filter()
+      ->map(fn (string $part) => mb_substr($part, 0, 1))
+      ->take(2)
+      ->implode('');
     $authRole = $authUser?->role instanceof \App\Enums\RoleEnum
       ? $authUser->role->value
       : (string) ($authUser?->role ?? '');
@@ -89,18 +93,22 @@
     <!-- Perfil de Usuario con Dropdown -->
     <div class="user-profile-container" id="profile-container">
       <div class="user-profile" id="profile-btn">
-        <img
-          src="{{ $resolvedAvatarUrl }}"
-          alt="Usuario"
-          class="avatar-img"
-        >
+        @if($resolvedAvatarUrl)
+          <img
+            src="{{ $resolvedAvatarUrl }}"
+            alt="Usuario"
+            class="avatar-img"
+          >
+        @else
+          <div class="avatar-initials">{{ $userInitials }}</div>
+        @endif
         <i class='bx bx-chevron-down' id="profile-chevron"></i>
       </div>
 
       <div class="profile-dropdown" id="profile-dropdown">
         <div class="dropdown-header">
-          <strong>{{ $userName ?? 'Julio Mendoza' }}</strong>
-          <span>{{ $userEmail ?? 'julio@mendieta.pe' }}</span>
+          <strong>{{ $userName ?? $authUser?->name ?? 'Usuario' }}</strong>
+          <span>{{ $userEmail ?? $authUser?->email ?? 'correo@example.com' }}</span>
         </div>
 
         <hr class="dropdown-divider">
@@ -128,6 +136,28 @@
 
   </div>
 </header>
+
+<style>
+  .avatar-initials {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-weight: 600;
+    font-size: 14px;
+    text-transform: uppercase;
+    flex-shrink: 0;
+  }
+
+  .avatar-img,
+  .avatar-initials {
+    object-fit: cover;
+  }
+</style>
 
 <script>
   (() => {
