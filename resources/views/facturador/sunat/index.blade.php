@@ -7,6 +7,35 @@
   <link rel="stylesheet" href="{{ asset('css/sidebar.css') }}">
   <link rel="stylesheet" href="{{ asset('css/dashboard.css') }}">
   <style>
+    /* Header SUNAT Sticky - Dentro de main-content */
+    .sunat-header-sticky {
+      position: sticky;
+      top: 0;
+      background: #ffffff;
+      padding: 0.8rem;
+      z-index: 40;
+      border-bottom: 1px solid #e5e7eb;
+      margin-bottom: 1rem;
+      width: 100%;
+    }
+
+    .sunat-header-sticky h1 {
+      font-size: 1.1rem;
+      margin: 0;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    .sunat-header-sticky p {
+      margin: 0.2rem 0 0 0 !important;
+      color: #6b7280;
+      font-size: 0.8rem;
+    }
+
+    .sunat-header-sticky .module-toolbar {
+      margin: 0;
+    }
+
     .sunat-portal-actions {
       display: flex;
       align-items: center;
@@ -106,7 +135,22 @@
       ])
 
       <main class="main-content">
-        <div class="module-content-stack">
+        <!-- Header SUNAT Sticky (Dentro de main-content para que funcione el scroll) -->
+        <div class="sunat-header-sticky">
+          <div class="module-toolbar">
+            <div>
+              <h1>Portal SUNAT</h1>
+              <p style="margin:.35rem 0 0; color:#6b7280; font-size:.92rem;">
+                Acceso directo al portal SOL usando las credenciales SUNAT de la empresa activa.
+              </p>
+            </div>
+            <a href="{{ route('companies.index') }}" class="btn-secondary" style="font-size:.85rem;">
+              <i class='bx bx-buildings'></i> Ver empresas
+            </a>
+          </div>
+        </div>
+
+        <div class="module-content-stack sunat-portal-wrapper">
 
           @foreach(['status' => null, 'success' => null, 'error' => 'module-alert--error'] as $flashKey => $flashClass)
             @if(session($flashKey))
@@ -118,17 +162,6 @@
           @endforeach
 
           <div class="placeholder-content module-card-wide">
-            <div class="module-toolbar">
-              <div>
-                <h1>Portal SUNAT</h1>
-                <p style="margin:.35rem 0 0; color:#6b7280; font-size:.92rem;">
-                  Acceso directo al portal SOL usando las credenciales SUNAT de la empresa activa.
-                </p>
-              </div>
-              <a href="{{ route('companies.index') }}" class="btn-secondary" style="font-size:.85rem;">
-                <i class='bx bx-buildings'></i> Ver empresas
-              </a>
-            </div>
 
             <div class="sunat-config-grid">
               <div class="sunat-config-card">
