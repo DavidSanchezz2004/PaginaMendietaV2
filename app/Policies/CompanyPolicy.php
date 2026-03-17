@@ -66,12 +66,13 @@ class CompanyPolicy
 
     /**
      * Alias general para gestionar el panorama de empresas.
-     * Auxiliar solo puede ver, no gestionar (crear/editar).
+     * Solo Admin y Supervisor pueden gestionar (crear/editar).
+     * Auxiliar, Accountant y Client solo pueden ver, no gestionar.
      */
     public function manageCompanies(User $user): bool
     {
         $userRole = $user->role instanceof RoleEnum ? $user->role->value : (string) $user->role;
-        return $userRole !== 'auxiliar';
+        return in_array($userRole, ['admin', 'supervisor']);
     }
 
     /**
