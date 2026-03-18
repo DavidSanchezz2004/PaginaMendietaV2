@@ -38,7 +38,8 @@ class CronogramaController extends Controller
         abort_if(! $user, 403);
 
         $userRole = $user->role instanceof RoleEnum ? $user->role->value : (string) $user->role;
-        abort_if($userRole === 'client', 403);
+        // Solo admin, supervisor y auxiliar pueden acceder
+        abort_if(! in_array($userRole, ['admin', 'supervisor', 'auxiliar'], true), 403);
 
         // Período seleccionado (default: mes y año actuales)
         $year  = (int) $request->get('year',  now()->year);

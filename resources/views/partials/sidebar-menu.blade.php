@@ -1,5 +1,6 @@
 @php
   $menu = config('menu.items', []);
+  $userRole = auth()->user()?->role?->value ?? (string) auth()->user()?->role;
 
   // Helpers
   $isActive = function(array $patterns) {
@@ -8,11 +9,25 @@
     }
     return false;
   };
+
+  // Validar si rol está permitido para item
+  $isRoleAllowed = function($item) use ($userRole) {
+    // Si está en la blacklist de roles excluidos
+    if (isset($item['exclude_roles']) && in_array($userRole, (array)$item['exclude_roles'])) {
+      return false;
+    }
+    // Si existe una whitelist de roles permitidos
+    if (isset($item['only_roles']) && !in_array($userRole, (array)$item['only_roles'])) {
+      return false;
+    }
+    return true;
+  };
 @endphp
 
 <ul class="nav-list">
   @foreach($menu as $item)
     @continue(empty($item['enabled']))
+    @continue(!$isRoleAllowed($item))
 
     {{-- Protección de Seguridad vía Policy --}}
     @php
@@ -41,6 +56,7 @@
           <ul class="submenu">
             @foreach($item['children'] as $child)
               @continue(empty($child['enabled']))
+              @continue(!$isRoleAllowed($child))
 
               {{-- Protección de Submenú vía Policy --}}
               @php

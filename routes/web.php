@@ -108,12 +108,12 @@ Route::middleware('auth')->group(function (): void {
     Route::post('/obligaciones/cronograma/{company}/confirmar', [CronogramaController::class, 'confirm'])->name('obligaciones.cronograma.confirm');
     Route::post('/obligaciones/cronograma/{company}/revertir', [CronogramaController::class, 'revert'])->name('obligaciones.cronograma.revert');
 
-    // Instancias (Credenciales)
-    Route::resource('credentials', CredentialController::class)->except(['show']);
+    // Instancias (Credenciales) - DESHABILITADA
+    // Route::resource('credentials', CredentialController::class)->except(['show']);
 
     // Retro-compatibilidad enlaces Menú
 	Route::get('/menu/obligaciones/calendario', fn () => redirect()->route('obligations.index'))->name('menu.obligaciones.calendario');
-	Route::get('/menu/obligaciones/instancias', fn () => redirect()->route('credentials.index'))->name('menu.obligaciones.instancias');
+	Route::get('/menu/obligaciones/instancias', fn () => redirect()->route('dashboard'))->name('menu.obligaciones.instancias');
 	Route::get('/menu/noticias', fn () => redirect()->route('news.index'))->name('menu.noticias');
 	Route::get('/menu/tutoriales', fn () => redirect()->route('tutorials.index'))->name('menu.tutoriales');
 	Route::get('/menu/configuracion', fn () => response('Mock: Configuración'))->name('menu.configuracion');
