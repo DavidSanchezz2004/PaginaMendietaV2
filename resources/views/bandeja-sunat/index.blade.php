@@ -663,13 +663,35 @@
       }
 
       _currentMensajesUrl = mensajesUrl;
-      /* Extraer companyId del segmento de la URL de mensajes */
-      _currentCompanyId = mensajesUrl.split('/mensajes/')[1] || '';
+      _currentCompanyId   = mensajesUrl.split('/mensajes/')[1] || '';
       _currentTipo = 1;
       document.getElementById('bs-tab-1').classList.add('active');
       document.getElementById('bs-tab-2').classList.remove('active');
 
-      await cargarMensajes(mensajesUrl, 1, true);
+      /* ── Reintentos para rows_null ── */
+      var textos = [
+        'Conectando con el buzón…',
+        'Verificando sesión SUNAT…',
+        'Obteniendo mensajes…',
+        'Casi listo…',
+        'Un momento más…',
+      ];
+      var cargado = false;
+      for (var i = 0; i < textos.length; i++) {
+        setMsgsLoading(textos[i]);
+        if (i > 0) {
+          await new Promise(function (r) { setTimeout(r, 3000); });
+        }
+        var resultado = await cargarMensajes(mensajesUrl, 1, true);
+        if (resultado === 'ok' || resultado === 'expired' || resultado === 'error') {
+          cargado = true;
+          break;
+        }
+        /* resultado === 'rows_null' → reintenta */
+      }
+      if (!cargado) {
+        mostrarVacio('Este RUC no tiene buzón electrónico activo en SUNAT o los mensajes aún no están disponibles.');
+      }
 
     } catch (err) {
       mostrarError('Error de red: ' + err.message);
@@ -683,11 +705,18 @@
     btn.innerHTML = "<i class='bx bx-envelope'></i> Buscar Buzón";
   }
 
+  function mostrarVacio(msg) {
+    hideMsgsLoading();
+    document.getElementById('bs-msgs-error').style.display = 'none';
+    document.getElementById('bs-msgs-content').innerHTML =
+      '<div class="bs-empty-box"><i class="bx bx-inbox"></i>' + escHtml(msg) + '</div>';
+  }
+
   /* ══════════════════════════════════════════════════════════════════════
      2. cargarMensajes(mensajesUrl, tipo, todo)
+     Retorna: 'ok' | 'rows_null' | 'expired' | 'error'
      ══════════════════════════════════════════════════════════════════════ */
   async function cargarMensajes(mensajesUrl, tipo, todo) {
-    setMsgsLoading('Obteniendo mensajes…');
     var qs = '?tipo=' + tipo + '&desde=2025-01-01' + (todo ? '&todo=true' : '');
 
     try {
@@ -696,11 +725,16 @@
 
       if (res.status === 401 || data.expired) {
         mostrarError(data.error || 'Sesión expirada. Haz clic en "Buscar Buzón" nuevamente.');
-        return;
+        return 'expired';
       }
+
       if (!data.ok) {
+        /* rows_null = el bot aún no tiene los datos listos → señal para reintentar */
+        if (data.error === 'rows_null') {
+          return 'rows_null';
+        }
         mostrarError(data.error || 'Error al obtener mensajes.');
-        return;
+        return 'error';
       }
 
       var msgs  = data.mensajes || [];
@@ -711,9 +745,11 @@
       counter.style.display = '';
 
       renderMensajes(msgs, tipo);
+      return 'ok';
 
     } catch (err) {
       mostrarError('Error de red: ' + err.message);
+      return 'error';
     }
   }
 
@@ -782,7 +818,20 @@
     _currentTipo = tipo;
     document.querySelectorAll('.bs-tab').forEach(function (t) { t.classList.remove('active'); });
     tabEl.classList.add('active');
-    await cargarMensajes(_currentMensajesUrl, tipo, true);
+
+    var textos = [
+      'Obteniendo mensajes\u2026',
+      'Verificando sesi\u00f3n SUNAT\u2026',
+      'Casi listo\u2026',
+    ];
+    for (var i = 0; i < textos.length; i++) {
+      setMsgsLoading(textos[i]);
+      if (i > 0) {
+        await new Promise(function (r) { setTimeout(r, 3000); });
+      }
+      var resultado = await cargarMensajes(_currentMensajesUrl, tipo, true);
+      if (resultado === 'ok' || resultado === 'expired' || resultado === 'error') break;
+    }
   }
 
   /* ══════════════════════════════════════════════════════════════════════
