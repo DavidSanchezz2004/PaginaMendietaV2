@@ -19,6 +19,7 @@ use App\Http\Controllers\FinalDocumentController;
 use App\Http\Controllers\ObligationController;
 use App\Http\Controllers\CredentialController;
 use App\Http\Controllers\PortalSunat\PortalSunatController;
+use App\Http\Controllers\BandejaEntrada\BandejaEntradaController;
 use App\Http\Controllers\Profile\ProfileController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\User\CompanyUserController;
@@ -212,6 +213,15 @@ Route::middleware('auth')->group(function (): void {
         ->name('configuracion.feasy.edit');
     Route::post('/configuracion/feasy', [FeasyConfigController::class, 'update'])
         ->name('configuracion.feasy.update');
+
+	// ── Buzón SOL ─────────────────────────────────────────────────────────
+	Route::prefix('bandeja-sunat')->name('bandeja-sunat.')->group(function (): void {
+		Route::get('/',                          [BandejaEntradaController::class, 'index'])    ->name('index');
+		Route::post('/iniciar/{company}',        [BandejaEntradaController::class, 'iniciar'])  ->name('iniciar');
+		Route::get('/mensajes/{company}',        [BandejaEntradaController::class, 'mensajes']) ->name('mensajes');
+		Route::get('/detalle/{company}/{cod}',   [BandejaEntradaController::class, 'detalle'])  ->name('detalle');
+		Route::get('/documento/{company}/{cod}', [BandejaEntradaController::class, 'documento'])->name('documento');
+	});
 
 	Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 });
