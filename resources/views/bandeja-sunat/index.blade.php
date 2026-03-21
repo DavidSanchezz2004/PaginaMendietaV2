@@ -283,18 +283,18 @@ function cargarDesdeBD() {
 }
 
 /* ── Bot login ──────────────────────────────────────────────────────── */
-document.getElementById('btn-iniciar').addEventListener('click', () => {
+document.getElementById('btn-iniciar').addEventListener('click', async () => {
     if (!BZ.urlIniciar) return;
     setStatus('Iniciando sesion con SUNAT...');
     document.getElementById('btn-iniciar').disabled = true;
     mostrarLoader('Conectando con SUNAT...');
 
-    fetch(BZ.urlIniciar, {
-        method: 'POST',
-        headers: { 'X-CSRF-TOKEN': _csrf(), 'Accept': 'application/json' },
-    })
-    .then(r => r.json())
-    .then(data => {
+    try {
+        const r    = await fetch(BZ.urlIniciar, {
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': _csrf(), 'Accept': 'application/json' },
+        });
+        const data = await r.json();
         document.getElementById('btn-iniciar').disabled = false;
         if (!data.ok) {
             setStatus('Error: ' + (data.error ?? 'desconocido'));
@@ -303,58 +303,76 @@ document.getElementById('btn-iniciar').addEventListener('click', () => {
         }
         BZ.sessionOk = true;
         document.getElementById('btn-sync').disabled = false;
-        setStatus('Sesion activa - sincronizando...');
-        sincronizarConReintentos(0);
-    })
-    .catch(() => {
+        setStatus('Sesion activa - preparando datos...');
+        await sincronizarConReintentos();
+    } catch {
         document.getElementById('btn-iniciar').disabled = false;
         setStatus('Error de red');
         mostrarEmpty('Error de conexion');
-    });
+    }
 });
 
 /* ── Sincronizar ────────────────────────────────────────────────────── */
-document.getElementById('btn-sync').addEventListener('click', () => {
+document.getElementById('btn-sync').addEventListener('click', async () => {
     setStatus('Sincronizando...');
     document.getElementById('btn-sync').disabled = true;
     mostrarLoader('Obteniendo mensajes del bot...');
-    sincronizarConReintentos(0);
+    await sincronizarConReintentos();
 });
 
-function sincronizarConReintentos(intento) {
-    fetch(BZ.urlSincronizar, {
-        method: 'POST',
-        headers: { 'X-CSRF-TOKEN': _csrf(), 'Accept': 'application/json', 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tipo: BZ.tipo }),
-    })
-    .then(r => r.json())
-    .then(data => {
-        document.getElementById('btn-sync').disabled = false;
-        if (!data.ok) {
-            if ((data.error ?? '').includes('rows_null') && intento < 4) {
-                const msgs = ['Preparando sesion...','Cargando mensajes...','Procesando...','Casi listo...'];
-                setStatus(msgs[intento] ?? 'Reintentando...');
-                setTimeout(() => sincronizarConReintentos(intento + 1), 3000);
-                return;
-            }
-            if (data.expired) {
-                BZ.sessionOk = false;
-                document.getElementById('btn-sync').disabled = true;
-                setStatus('Sesion expirada - vuelve a buscar.');
-            } else {
-                setStatus('Error: ' + (data.error ?? ''));
-            }
+async function sincronizarConReintentos(maxIntentos = 8) {
+    const delay = ms => new Promise(r => setTimeout(r, ms));
+    for (let i = 0; i < maxIntentos; i++) {
+        let res, data;
+        try {
+            res  = await fetch(BZ.urlSincronizar, {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': _csrf(), 'Accept': 'application/json', 'Content-Type': 'application/json' },
+                body: JSON.stringify({ tipo: BZ.tipo }),
+            });
+            data = await res.json();
+        } catch {
+            document.getElementById('btn-sync').disabled = false;
+            setStatus('Error de red');
             cargarDesdeBD();
             return;
         }
-        setStatus('Sincronizado - ' + data.nuevos + ' nuevos de ' + data.total);
-        cargarDesdeBD();
-    })
-    .catch(() => {
+
+        if (data.ok) {
+            document.getElementById('btn-sync').disabled = false;
+            setStatus('Sincronizado - ' + data.nuevos + ' nuevos de ' + data.total);
+            cargarDesdeBD();
+            return;
+        }
+
+        // El bot aun esta en warm-up — reintentar con polling
+        if (data.error === 'login_pendiente' || res.status === 202) {
+            setStatus('Preparando sesion SUNAT... (' + (i + 1) + '/' + maxIntentos + ')');
+            mostrarLoader('Preparando sesion SUNAT... (' + (i + 1) + '/' + maxIntentos + ')');
+            await delay(3500);
+            continue;
+        }
+
+        // Sesion expirada
+        if (data.expired) {
+            BZ.sessionOk = false;
+            document.getElementById('btn-sync').disabled = true;
+            setStatus('Sesion expirada - vuelve a buscar.');
+            cargarDesdeBD();
+            return;
+        }
+
+        // Error definitivo
         document.getElementById('btn-sync').disabled = false;
-        setStatus('Error de red');
+        setStatus('Error: ' + (data.error ?? 'desconocido'));
         cargarDesdeBD();
-    });
+        return;
+    }
+
+    // Agoto los reintentos
+    document.getElementById('btn-sync').disabled = false;
+    setStatus('Tiempo de espera agotado. Intenta nuevamente.');
+    cargarDesdeBD();
 }
 
 /* ── Renderizado ────────────────────────────────────────────────────── */

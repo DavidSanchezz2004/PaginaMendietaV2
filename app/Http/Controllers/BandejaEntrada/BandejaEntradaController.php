@@ -241,6 +241,16 @@ class BandejaEntradaController extends Controller
             $data = $response->json();
 
             if (! ($data['ok'] ?? false)) {
+                // El bot devuelve rows_null mientras Playwright aún está en warm-up.
+                // Devolvemos 202 para que el JS reintente con polling.
+                if (($data['error'] ?? '') === 'rows_null') {
+                    return response()->json([
+                        'ok'    => false,
+                        'error' => 'login_pendiente',
+                        'retry' => true,
+                        'msg'   => 'Preparando sesión SUNAT...',
+                    ], 202);
+                }
                 return response()->json(['ok' => false, 'error' => $data['error'] ?? 'Error del bot.'], 500);
             }
 
