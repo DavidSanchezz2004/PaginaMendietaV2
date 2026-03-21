@@ -54,15 +54,15 @@
 .bz-list::-webkit-scrollbar-track { background:transparent; }
 
 /* ── Tarjetas de mensaje ────────────────────────────────────────────── */
-.bz-card            { border:1px solid var(--bz-border); border-radius:var(--bz-radius-md); padding:1rem 1.15rem; cursor:pointer; transition:all 0.2s ease; position:relative; overflow:hidden; animation: fadeIn 0.3s ease-out backwards; }
+.bz-card            { border:1px solid var(--bz-border); border-radius:var(--bz-radius-md); padding:1.2rem 1.25rem; cursor:pointer; transition:all 0.25s ease; position:relative; overflow:hidden; animation: fadeIn 0.3s ease-out backwards; min-height: 80px; display: flex; flex-direction: column; justify-content: center; }
 .bz-card:hover      { border-color:var(--bz-border-hover); box-shadow:var(--bz-shadow-md); transform:translateY(-1px); }
 .bz-card.active     { border-color:var(--bz-primary); box-shadow:0 0 0 1px var(--bz-primary); }
 
-.bz-card.unread { border-left: 3px solid var(--bz-primary); background: #f0f7ff; }
+.bz-card.unread { border-left: 4px solid var(--bz-primary); background: #f0f7ff; }
 .bz-card.unread .bz-card-asunto { font-weight: 700; color: var(--bz-text-main); }
 
-.bz-card:not(.unread) { background: var(--bz-bg-panel); border-left: 3px solid transparent; }
-.bz-card:not(.unread) .bz-card-asunto { font-weight: 500; color: var(--bz-text-muted); }
+.bz-card:not(.unread) { background: #f8fbf9; border-left: 4px solid #6ee7b7; }
+.bz-card:not(.unread) .bz-card-asunto { font-weight: 500; color: #475569; }
 
 .bz-card-header     { display:flex; align-items:center; gap:0.6rem; margin-bottom:0.4rem; }
 .bz-card-asunto     { font-size:0.9rem; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -447,14 +447,14 @@ function renderizarLista(rows) {
             : '';
         const unread = m.leido ? '' : ' unread';
         return '<div class="bz-card' + unread + '" data-id="' + m.id + '" data-cod="' + m.cod_sunat + '"' +
-            ' data-asunto="' + escHtml(m.asunto ?? '') + '" data-remitente="' + escHtml(m.remitente ?? '') + '"' +
+            ' data-asunto="' + escHtml(m.asunto ?? '') + '" data-remitente="' + escHtml(m.remitente || 'SUNAT') + '"' +
             ' data-fecha="' + (m.fecha ?? '') + '" data-tiene-doc="' + (m.tiene_documento ?? 1) + '" onclick="abrirMensaje(this)">' +
             '<div class="bz-card-header">' +
             '<span class="bz-card-asunto" title="' + escHtml(m.asunto ?? '') + '">' + escHtml(m.asunto ?? '(sin asunto)') + '</span>' +
             badge +
             '<span class="bz-card-date">' + (m.fecha ?? '') + '</span>' +
             '</div>' +
-            '<div class="bz-card-sub">' + escHtml(m.remitente ?? '') + '</div>' +
+            '<div class="bz-card-sub">' + escHtml(m.remitente || 'SUNAT') + '</div>' +
             '</div>';
     }).join('');
 }
