@@ -228,7 +228,7 @@ class BandejaEntradaController extends Controller
         }
 
         $tipo  = (int) $request->input('tipo', 1);
-        $desde = $request->input('desde', now()->subMonths(3)->format('Y-m-d'));
+        $desde = $request->input('desde', '2025-01-01');
 
         try {
             $response = Http::timeout(120)->get("{$this->botUrl()}/buzon/{$token}", [
