@@ -254,11 +254,11 @@ class BandejaEntradaController extends Controller
                 return response()->json(['ok' => false, 'error' => $data['error'] ?? 'Error del bot.'], 500);
             }
 
-            $rows    = $data['rows'] ?? [];
+            $rows    = $data['mensajes'] ?? [];
             $nuevos  = 0;
 
             foreach ($rows as $row) {
-                $cod = (int) ($row['cod'] ?? 0);
+                $cod = (int) ($row['codMensaje'] ?? 0);
                 if ($cod <= 0) {
                     continue;
                 }
@@ -268,12 +268,19 @@ class BandejaEntradaController extends Controller
                     ->exists();
 
                 if (! $exists) {
+                    $fecha = null;
+                    try {
+                        if (!empty($row['fecEnvio'])) {
+                            $fecha = Carbon::createFromFormat('d/m/Y', $row['fecEnvio'])->toDateString();
+                        }
+                    } catch (\Exception $e) {}
+
                     BuzonMensaje::create([
                         'company_id' => $company->id,
                         'cod_sunat'  => $cod,
-                        'asunto'     => $row['asunto']    ?? null,
-                        'remitente'  => $row['remitente'] ?? null,
-                        'fecha'      => isset($row['fecha']) ? Carbon::parse($row['fecha'])->toDateString() : null,
+                        'asunto'     => $row['desAsunto']    ?? null,
+                        'remitente'  => $row['codUsremisor'] ?? null,
+                        'fecha'      => $fecha,
                         'tipo'       => $tipo,
                     ]);
                     $nuevos++;
