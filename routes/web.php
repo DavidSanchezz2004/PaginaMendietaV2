@@ -120,8 +120,8 @@ Route::middleware('auth')->group(function (): void {
 	Route::get('/menu/configuracion', fn () => response('Mock: Configuración'))->name('menu.configuracion');
 
     // Noticias y Tutoriales
-    Route::resource('news', \App\Http\Controllers\NewsController::class)->parameters(['news' => 'news']);
-    Route::resource('tutorials', \App\Http\Controllers\TutorialController::class);
+    Route::resource('news', \App\Http\Controllers\NewsController::class)->except(['index', 'show'])->parameters(['news' => 'news']);
+    Route::resource('tutorials', \App\Http\Controllers\TutorialController::class)->except(['index', 'show']);
 	});
 
     // ══════════════════════════════════════════════════════════════════════════
