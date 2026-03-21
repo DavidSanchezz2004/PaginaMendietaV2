@@ -216,11 +216,17 @@ Route::middleware('auth')->group(function (): void {
 
 	// ── Buzón SOL ─────────────────────────────────────────────────────────
 	Route::prefix('bandeja-sunat')->name('bandeja-sunat.')->group(function (): void {
-		Route::get('/',                          [BandejaEntradaController::class, 'index'])    ->name('index');
-		Route::post('/iniciar/{company}',        [BandejaEntradaController::class, 'iniciar'])  ->name('iniciar');
-		Route::get('/mensajes/{company}',        [BandejaEntradaController::class, 'mensajes']) ->name('mensajes');
-		Route::get('/detalle/{company}/{cod}',   [BandejaEntradaController::class, 'detalle'])  ->name('detalle');
-		Route::get('/documento/{company}/{cod}', [BandejaEntradaController::class, 'documento'])->name('documento');
+		Route::get('/',                              [BandejaEntradaController::class, 'index'])       ->name('index');
+		Route::post('/iniciar/{company}',            [BandejaEntradaController::class, 'iniciar'])     ->name('iniciar');
+		Route::get('/mensajes/{company}',            [BandejaEntradaController::class, 'mensajes'])    ->name('mensajes');
+		Route::get('/detalle/{company}/{cod}',       [BandejaEntradaController::class, 'detalle'])     ->name('detalle');
+		Route::get('/documento/{company}/{cod}',     [BandejaEntradaController::class, 'documento'])   ->name('documento');
+		Route::post('/sincronizar/{company}',        [BandejaEntradaController::class, 'sincronizar']) ->name('sincronizar');
+		Route::get('/lista/{company}',               [BandejaEntradaController::class, 'lista'])       ->name('lista');
+		Route::post('/leer/{company}/{mensaje}',     [BandejaEntradaController::class, 'marcarLeido']) ->name('leer');
+		Route::get('/keywords',                      [BandejaEntradaController::class, 'keywords'])    ->name('keywords');
+		Route::post('/keywords',                     [BandejaEntradaController::class, 'storeKeyword'])->name('keywords.store');
+		Route::delete('/keywords/{keyword}',         [BandejaEntradaController::class, 'destroyKeyword'])->name('keywords.destroy');
 	});
 
 	Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
