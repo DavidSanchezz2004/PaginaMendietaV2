@@ -303,11 +303,11 @@ class BandejaEntradaController extends Controller
     {
         abort_if(! $request->user(), 403);
 
-        $userId    = $request->user()->id;
-        $tipo      = (int) $request->query('tipo', 1);
-        $q         = (string) $request->query('q', '');
-        $leido     = $request->query('leido', '');     // '1', '0', ''
-        $prioridad = $request->query('prioridad', ''); // 'alta', 'media', 'baja', 'none', ''
+        $userId = $request->user()->id;
+        $tipo   = (int) $request->query('tipo', 1);
+        $q      = (string) $request->query('q', '');
+        $leido  = $request->query('leido', ''); // '1', '0', ''
+        $kw     = mb_strtolower(trim((string) $request->query('kw', ''))); // palabra keyword del usuario
 
         $query = BuzonMensaje::where('company_id', $company->id)
             ->where('tipo', $tipo)
@@ -326,25 +326,23 @@ class BandejaEntradaController extends Controller
         $keywords = BuzonKeyword::all();
 
         $result = $mensajes->map(function (BuzonMensaje $m) use ($userId, $keywords): array {
+            $kwPalabra = null;
             $prioridad = null;
             $kwColor   = null;
             $asuntoLow = mb_strtolower((string) $m->asunto);
 
             foreach ($keywords->sortBy(fn ($k) => match ($k->prioridad) {
                 'alta' => 0, 'media' => 1, default => 2,
-            }) as $kw) {
-                if (str_contains($asuntoLow, mb_strtolower($kw->palabra))) {
-                    $prioridad = $kw->prioridad;
-                    $kwColor   = $kw->color;
+            }) as $kwItem) {
+                if (str_contains($asuntoLow, mb_strtolower($kwItem->palabra))) {
+                    $kwPalabra = $kwItem->palabra;
+                    $prioridad = $kwItem->prioridad;
+                    $kwColor   = $kwItem->color;
                     break;
                 }
             }
 
             $leido = $m->lecturas()->where('user_id', $userId)->exists();
-
-            if ($leido !== null) {
-                // ya calculado arriba
-            }
 
             return [
                 'id'         => $m->id,
@@ -352,6 +350,7 @@ class BandejaEntradaController extends Controller
                 'asunto'     => $m->asunto,
                 'remitente'  => $m->remitente,
                 'fecha'      => $m->fecha?->format('d/m/Y'),
+                'kw_palabra' => $kwPalabra,
                 'prioridad'  => $prioridad,
                 'kw_color'   => $kwColor,
                 'leido'      => $leido,
@@ -364,10 +363,9 @@ class BandejaEntradaController extends Controller
             $result = $result->filter(fn ($r) => ! $r['leido']);
         }
 
-        if ($prioridad === 'none') {
-            $result = $result->filter(fn ($r) => $r['prioridad'] === null);
-        } elseif (in_array($prioridad, ['alta', 'media', 'baja'], true)) {
-            $result = $result->filter(fn ($r) => $r['prioridad'] === $prioridad);
+        if ($kw !== '') {
+            $result = $result->filter(fn ($r) => $r['kw_palabra'] !== null &&
+                mb_strtolower($r['kw_palabra']) === $kw);
         }
 
         return response()->json(['ok' => true, 'rows' => $result->values()]);

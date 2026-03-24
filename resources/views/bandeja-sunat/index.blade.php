@@ -234,13 +234,9 @@
             </div>
 
             <div class="bz-kw-bar">
-                <label><i class="bx bx-tag"></i> Prioridad:</label>
+                <label><i class="bx bx-tag"></i> Keyword:</label>
                 <select id="bz-kw-filter" onchange="setKwFilter(this.value)">
                     <option value="">Todas</option>
-                    <option value="alta">🔴 Alta</option>
-                    <option value="media">🟡 Media</option>
-                    <option value="baja">🔵 Baja</option>
-                    <option value="none">Sin keyword</option>
                 </select>
             </div>
 
@@ -372,7 +368,7 @@ function cargarDesdeBD() {
     if (!BZ.companyId) return;
     mostrarLoader();
     const q   = encodeURIComponent(document.getElementById('bz-search').value);
-    const url = BZ.urlLista + '?tipo=' + BZ.tipo + '&q=' + q + '&leido=' + BZ.leidoFilter + '&prioridad=' + BZ.kwFilter;
+    const url = BZ.urlLista + '?tipo=' + BZ.tipo + '&q=' + q + '&leido=' + BZ.leidoFilter + '&kw=' + encodeURIComponent(BZ.kwFilter);
     fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
         .then(r => r.json())
         .then(data => {
@@ -579,6 +575,19 @@ function cargarKeywords() {
             if (!data.ok) return;
             _allKws = data.keywords;
             filtrarKeywords(document.getElementById('kw-filter').value);
+            // Poblar el select de filtro con las keywords del usuario
+            const sel     = document.getElementById('bz-kw-filter');
+            const current = sel.value;
+            sel.innerHTML = '<option value="">Todas</option>';
+            _allKws.forEach(kw => {
+                const opt = document.createElement('option');
+                opt.value       = kw.palabra;
+                opt.textContent = kw.palabra.charAt(0).toUpperCase() + kw.palabra.slice(1);
+                if (kw.color) opt.style.color = kw.color;
+                sel.appendChild(opt);
+            });
+            // Mantener selección activa si sigue existiendo
+            if ([...sel.options].some(o => o.value === current)) sel.value = current;
         });
 }
 
@@ -712,6 +721,9 @@ function setStatus(msg) { document.getElementById('bz-status').textContent = msg
 function escHtml(str) {
     return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
+
+// Poblar el select de keywords al cargar la página
+cargarKeywords();
 
 let _searchTimer = null;
 document.getElementById('bz-search').addEventListener('input', () => {
