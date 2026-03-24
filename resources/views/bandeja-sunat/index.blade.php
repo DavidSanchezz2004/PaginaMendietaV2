@@ -120,6 +120,12 @@
 
 /* ── Filtro leido ───────────────────────────────────────────────────── */
 .bz-read-filter     { display:flex; background:#f1f5f9; padding:0.25rem; border-radius:var(--bz-radius-md); gap:0.25rem; border:1px solid #e2e8f0; }
+
+/* ── Filtro keywords ────────────────────────────────────────────────── */
+.bz-kw-bar          { display:flex; align-items:center; gap:0.5rem; padding:0.6rem 1.25rem; background:#fafafa; border-bottom:1px solid var(--bz-border); flex-shrink:0; }
+.bz-kw-bar label    { font-size:.75rem; font-weight:600; color:var(--bz-text-muted); white-space:nowrap; }
+.bz-kw-bar select   { flex:1; font-size:.8rem; padding:.35rem .6rem; border:1px solid var(--bz-border); border-radius:var(--bz-radius-md); background:#fff; color:var(--bz-text-main); outline:none; cursor:pointer; transition:border-color .2s; }
+.bz-kw-bar select:focus { border-color:var(--bz-primary); box-shadow:0 0 0 3px rgba(59,130,246,.1); }
 .bz-read-filter button{ flex:1; padding:0.45rem 0.75rem; font-size:0.75rem; font-weight:600; border:none; border-radius:6px; background:transparent; color:var(--bz-text-muted); cursor:pointer; transition:all 0.2s; white-space:nowrap; }
 .bz-read-filter button:hover:not(.active){ color:var(--bz-text-main); background:rgba(255,255,255,0.5); }
 .bz-read-filter button.active{ background:#fff; color:var(--bz-primary); box-shadow:0 1px 3px rgba(0,0,0,0.1); }
@@ -193,6 +199,19 @@
             <i class="bx bx-tag"></i> Keywords
         </button>
 
+        <div style="position:relative;" id="leer-todo-wrap">
+            <button id="btn-leer-todo" class="bz-btn bz-btn-gray" disabled>
+                <i class="bx bx-check-double"></i> Leer todo
+            </button>
+            <div id="leer-todo-panel" style="display:none;position:absolute;top:calc(100% + 6px);left:0;background:#fff;border:1px solid #e2e8f0;border-radius:10px;box-shadow:0 8px 20px rgba(0,0,0,.12);padding:1rem;z-index:200;min-width:190px;">
+                <div style="font-size:.75rem;font-weight:700;color:#64748b;margin-bottom:.6rem;text-transform:uppercase;letter-spacing:.04em;">Marcar leídos por año</div>
+                <select id="leer-todo-anio" style="width:100%;padding:.4rem .5rem;border:1px solid #cbd5e1;border-radius:6px;font-size:.85rem;margin-bottom:.6rem;outline:none;"></select>
+                <button onclick="ejecutarLeerTodo()" class="bz-btn bz-btn-blue" style="width:100%;justify-content:center;">
+                    <i class="bx bx-check"></i> Confirmar
+                </button>
+            </div>
+        </div>
+
         <span id="bz-status" class="ms-auto text-muted" style="font-size:.78rem;"></span>
     </div>
 
@@ -212,6 +231,17 @@
                     <button data-val="0" onclick="setReadFilter(this,'0')">No leídos</button>
                     <button data-val="1" onclick="setReadFilter(this,'1')">Leídos</button>
                 </div>
+            </div>
+
+            <div class="bz-kw-bar">
+                <label><i class="bx bx-tag"></i> Prioridad:</label>
+                <select id="bz-kw-filter" onchange="setKwFilter(this.value)">
+                    <option value="">Todas</option>
+                    <option value="alta">🔴 Alta</option>
+                    <option value="media">🟡 Media</option>
+                    <option value="baja">🔵 Baja</option>
+                    <option value="none">Sin keyword</option>
+                </select>
             </div>
 
             <div class="bz-tabs">
@@ -262,6 +292,11 @@
             </button>
         </div>
         <div class="modal-body" style="padding:1rem 1.5rem;">
+            <div style="margin-bottom:.6rem;">
+                <input type="text" id="kw-filter" placeholder="Filtrar palabras clave..."
+                    oninput="filtrarKeywords(this.value)"
+                    style="width:100%;padding:.4rem .65rem;border:1px solid #cbd5e1;border-radius:6px;font-size:.82rem;outline:none;">
+            </div>
             <div style="display:flex;gap:.5rem;margin-bottom:1rem;">
                 <input type="text" id="kw-input" placeholder="Palabra clave..."
                     style="flex:2;padding:.4rem .65rem;border:1px solid #cbd5e1;border-radius:6px;font-size:.82rem;outline:none;">
@@ -294,6 +329,7 @@ const BZ = {
     urlSincronizar:null,
     tipo:          1,
     leidoFilter:   '',
+    kwFilter:      '',
     sessionOk:     false,
 };
 
@@ -310,18 +346,23 @@ document.getElementById('bz-company').addEventListener('change', function () {
     document.getElementById('bz-company-name').textContent = opt.dataset.nombre;
     document.getElementById('bz-company-info').textContent =
         parseInt(opt.dataset.count) > 0 ? opt.dataset.count + ' mensajes en BD local' : 'Sin mensajes en BD local aun';
-    document.getElementById('btn-iniciar').disabled = false;
-    document.getElementById('btn-sync').disabled    = true;
+    document.getElementById('btn-iniciar').disabled  = false;
+    document.getElementById('btn-sync').disabled     = true;
+    document.getElementById('btn-leer-todo').disabled = false;
     setStatus('');
+    ocultarDetalle();
     cargarDesdeBD();
 });
 
 function resetPanel() {
-    BZ.companyId = null;
+    BZ.companyId  = null;
+    BZ.kwFilter   = '';
+    document.getElementById('bz-kw-filter').value    = '';
     document.getElementById('bz-company-name').textContent = 'Sin empresa seleccionada';
     document.getElementById('bz-company-info').textContent = 'Selecciona una empresa arriba';
-    document.getElementById('btn-iniciar').disabled = true;
-    document.getElementById('btn-sync').disabled    = true;
+    document.getElementById('btn-iniciar').disabled   = true;
+    document.getElementById('btn-sync').disabled      = true;
+    document.getElementById('btn-leer-todo').disabled = true;
     mostrarEmpty('Selecciona una empresa para ver sus mensajes');
     ocultarDetalle();
 }
@@ -331,7 +372,7 @@ function cargarDesdeBD() {
     if (!BZ.companyId) return;
     mostrarLoader();
     const q   = encodeURIComponent(document.getElementById('bz-search').value);
-    const url = BZ.urlLista + '?tipo=' + BZ.tipo + '&q=' + q + '&leido=' + BZ.leidoFilter;
+    const url = BZ.urlLista + '?tipo=' + BZ.tipo + '&q=' + q + '&leido=' + BZ.leidoFilter + '&prioridad=' + BZ.kwFilter;
     fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
         .then(r => r.json())
         .then(data => {
@@ -503,6 +544,11 @@ function setReadFilter(btn, val) {
     cargarDesdeBD();
 }
 
+function setKwFilter(val) {
+    BZ.kwFilter = val;
+    cargarDesdeBD();
+}
+
 function cambiarTipo(tipo, tab) {
     document.querySelectorAll('.bz-tab').forEach(t => t.classList.remove('active'));
     tab.classList.add('active');
@@ -519,7 +565,11 @@ document.getElementById('btn-kw').addEventListener('click', () => {
 function cerrarKwModal() {
     document.getElementById('kwModal').classList.remove('show');
     document.body.style.overflow = '';
+    document.getElementById('kw-filter').value = '';
+    filtrarKeywords('');
 }
+
+let _allKws = [];
 
 function cargarKeywords() {
     const urlKw = '{{ route("bandeja-sunat.keywords") }}';
@@ -527,20 +577,34 @@ function cargarKeywords() {
         .then(r => r.json())
         .then(data => {
             if (!data.ok) return;
-            const list = document.getElementById('kw-list');
-            if (!data.keywords.length) {
-                list.innerHTML = '<div class="text-muted py-3 text-center" style="font-size:.8rem;">Sin palabras clave</div>';
-                return;
-            }
-            list.innerHTML = data.keywords.map(kw =>
-                '<div class="kw-row" id="kw-row-' + kw.id + '">' +
-                '<div class="kw-color-dot" style="background:' + kw.color + '"></div>' +
-                '<span style="flex:1;font-size:.82rem;">' + escHtml(kw.palabra) + '</span>' +
-                '<span class="bz-badge" style="background:' + kw.color + '">' + kw.prioridad.toUpperCase() + '</span>' +
-                '<button class="bz-btn bz-btn-red bz-btn-sm ms-1" onclick="eliminarKeyword(' + kw.id + ')">' +
-                '<i class="bx bx-trash"></i></button></div>'
-            ).join('');
+            _allKws = data.keywords;
+            filtrarKeywords(document.getElementById('kw-filter').value);
         });
+}
+
+function renderizarKeywords(kws) {
+    const list = document.getElementById('kw-list');
+    if (!kws.length) {
+        list.innerHTML = '<div class="text-muted py-3 text-center" style="font-size:.8rem;">Sin palabras clave</div>';
+        return;
+    }
+    list.innerHTML = kws.map(kw =>
+        '<div class="kw-row" id="kw-row-' + kw.id + '">' +
+        '<div class="kw-color-dot" style="background:' + kw.color + '"></div>' +
+        '<span style="flex:1;font-size:.82rem;">' + escHtml(kw.palabra) + '</span>' +
+        '<span class="bz-badge" style="background:' + kw.color + '">' + kw.prioridad.toUpperCase() + '</span>' +
+        '<button class="bz-btn bz-btn-red bz-btn-sm ms-1" onclick="eliminarKeyword(' + kw.id + ')">' +
+        '<i class="bx bx-trash"></i></button></div>'
+    ).join('');
+}
+
+function filtrarKeywords(q) {
+    const filtered = q.trim()
+        ? _allKws.filter(kw =>
+            kw.palabra.toLowerCase().includes(q.toLowerCase()) ||
+            kw.prioridad.toLowerCase().includes(q.toLowerCase()))
+        : _allKws;
+    renderizarKeywords(filtered);
 }
 
 function agregarKeyword() {
@@ -558,6 +622,7 @@ function agregarKeyword() {
     .then(data => {
         if (!data.ok) { alert(data.message ?? 'Error al agregar'); return; }
         document.getElementById('kw-input').value = '';
+        document.getElementById('kw-filter').value = '';
         cargarKeywords();
         if (BZ.companyId) cargarDesdeBD();
     });
@@ -573,10 +638,57 @@ function eliminarKeyword(id) {
     .then(r => r.json())
     .then(data => {
         if (data.ok) {
-            document.getElementById('kw-row-' + id)?.remove();
+            _allKws = _allKws.filter(k => k.id !== id);
+            filtrarKeywords(document.getElementById('kw-filter').value);
             if (BZ.companyId) cargarDesdeBD();
         }
     });
+}
+
+/* ── Leer todo por año ──────────────────────────────────────────────── */
+(function poblarAnios() {
+    const sel = document.getElementById('leer-todo-anio');
+    [2026, 2025].forEach(y => {
+        const opt = document.createElement('option');
+        opt.value = y; opt.textContent = y;
+        sel.appendChild(opt);
+    });
+})();
+
+document.getElementById('btn-leer-todo').addEventListener('click', (e) => {
+    e.stopPropagation();
+    const panel = document.getElementById('leer-todo-panel');
+    panel.style.display = panel.style.display === 'none' ? '' : 'none';
+});
+
+document.addEventListener('click', (e) => {
+    if (!document.getElementById('leer-todo-wrap').contains(e.target)) {
+        document.getElementById('leer-todo-panel').style.display = 'none';
+    }
+});
+
+async function ejecutarLeerTodo() {
+    if (!BZ.companyId) return;
+    const anio        = document.getElementById('leer-todo-anio').value;
+    const urlLeerTodo = BZ.urlLista.replace('/lista/', '/leer-todo/');
+    document.getElementById('leer-todo-panel').style.display = 'none';
+    setStatus('Marcando año ' + anio + '...');
+    try {
+        const r    = await fetch(urlLeerTodo, {
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': _csrf(), 'Accept': 'application/json', 'Content-Type': 'application/json' },
+            body: JSON.stringify({ anio }),
+        });
+        const data = await r.json();
+        if (data.ok) {
+            setStatus(data.marcados + ' mensajes marcados como leídos (' + anio + ')');
+            cargarDesdeBD();
+        } else {
+            setStatus('Error: ' + (data.error ?? 'desconocido'));
+        }
+    } catch {
+        setStatus('Error de red');
+    }
 }
 
 /* ── Helpers UI ─────────────────────────────────────────────────────── */

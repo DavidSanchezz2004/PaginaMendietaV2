@@ -224,7 +224,8 @@ Route::middleware('auth')->group(function (): void {
 		Route::get('/documento/{company}/{cod}',     [BandejaEntradaController::class, 'documento'])   ->name('documento');
 		Route::post('/sincronizar/{company}',        [BandejaEntradaController::class, 'sincronizar']) ->name('sincronizar');
 		Route::get('/lista/{company}',               [BandejaEntradaController::class, 'lista'])       ->name('lista');
-		Route::post('/leer/{company}/{mensaje}',     [BandejaEntradaController::class, 'marcarLeido']) ->name('leer');
+		Route::post('/leer/{company}/{mensaje}',     [BandejaEntradaController::class, 'marcarLeido'])     ->name('leer');
+		Route::post('/leer-todo/{company}',          [BandejaEntradaController::class, 'marcarTodoLeido'])->name('leer-todo');
 		Route::get('/keywords',                      [BandejaEntradaController::class, 'keywords'])    ->name('keywords');
 		Route::post('/keywords',                     [BandejaEntradaController::class, 'storeKeyword'])->name('keywords.store');
 		Route::delete('/keywords/{keyword}',         [BandejaEntradaController::class, 'destroyKeyword'])->name('keywords.destroy');

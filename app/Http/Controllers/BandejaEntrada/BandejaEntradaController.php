@@ -303,10 +303,11 @@ class BandejaEntradaController extends Controller
     {
         abort_if(! $request->user(), 403);
 
-        $userId = $request->user()->id;
-        $tipo   = (int) $request->query('tipo', 1);
-        $q      = (string) $request->query('q', '');
-        $leido  = $request->query('leido', ''); // '1', '0', ''
+        $userId    = $request->user()->id;
+        $tipo      = (int) $request->query('tipo', 1);
+        $q         = (string) $request->query('q', '');
+        $leido     = $request->query('leido', '');     // '1', '0', ''
+        $prioridad = $request->query('prioridad', ''); // 'alta', 'media', 'baja', 'none', ''
 
         $query = BuzonMensaje::where('company_id', $company->id)
             ->where('tipo', $tipo)
@@ -361,6 +362,12 @@ class BandejaEntradaController extends Controller
             $result = $result->filter(fn ($r) => $r['leido']);
         } elseif ($leido === '0') {
             $result = $result->filter(fn ($r) => ! $r['leido']);
+        }
+
+        if ($prioridad === 'none') {
+            $result = $result->filter(fn ($r) => $r['prioridad'] === null);
+        } elseif (in_array($prioridad, ['alta', 'media', 'baja'], true)) {
+            $result = $result->filter(fn ($r) => $r['prioridad'] === $prioridad);
         }
 
         return response()->json(['ok' => true, 'rows' => $result->values()]);
@@ -436,5 +443,38 @@ class BandejaEntradaController extends Controller
         $keyword->delete();
 
         return response()->json(['ok' => true]);
+    }
+
+    /**
+     * Marca todos los mensajes de un año como leídos por el usuario actual.
+     * POST /bandeja-sunat/leer-todo/{company}
+     */
+    public function marcarTodoLeido(Request $request, Company $company): JsonResponse
+    {
+        abort_if(! $request->user(), 403);
+
+        $userId = $request->user()->id;
+        $anio   = (int) $request->input('anio', now()->year);
+
+        if ($anio < 2015 || $anio > now()->year + 1) {
+            return response()->json(['ok' => false, 'error' => 'Año inválido.'], 422);
+        }
+
+        $mensajes = BuzonMensaje::where('company_id', $company->id)
+            ->whereYear('fecha', $anio)
+            ->pluck('id');
+
+        $marcados = 0;
+        foreach ($mensajes as $mensajeId) {
+            $lectura = BuzonLectura::firstOrCreate(
+                ['buzon_mensaje_id' => $mensajeId, 'user_id' => $userId],
+                ['leido_at' => now()]
+            );
+            if ($lectura->wasRecentlyCreated) {
+                $marcados++;
+            }
+        }
+
+        return response()->json(['ok' => true, 'marcados' => $marcados, 'total' => $mensajes->count()]);
     }
 }
