@@ -63,9 +63,9 @@ Route::middleware('auth')->group(function (): void {
 	});
 	Route::get('/usuarios', [CompanyUserController::class, 'index'])->name('users.index');
 	Route::get('/usuarios/crear', [CompanyUserController::class, 'create'])->name('users.create');
-	Route::post('/usuarios', [CompanyUserController::class, 'store'])->name('users.store');
+	Route::post('/usuarios', [CompanyUserController::class, 'store'])->name('users.store')->middleware('throttle:10,1');
 	Route::get('/usuarios/{managedUser}/editar', [CompanyUserController::class, 'edit'])->name('users.edit');
-	Route::patch('/usuarios/{managedUser}', [CompanyUserController::class, 'update'])->name('users.update');
+	Route::patch('/usuarios/{managedUser}', [CompanyUserController::class, 'update'])->name('users.update')->middleware('throttle:10,1');
 	Route::get('/usuarios/{managedUser}/asignaciones', [CompanyUserController::class, 'editAssignments'])->name('users.assignments.edit');
 	Route::patch('/usuarios/{managedUser}/asignaciones', [CompanyUserController::class, 'updateAssignments'])->name('users.assignments.update');
 	Route::post('/usuarios/{managedUser}/toggle-status', [CompanyUserController::class, 'toggleStatus'])->name('users.toggle-status');
@@ -73,7 +73,7 @@ Route::middleware('auth')->group(function (): void {
 
 	Route::middleware('active.company')->group(function (): void {
 	Route::get('/perfil', [ProfileController::class, 'show'])->name('profile');
-	Route::patch('/perfil', [ProfileController::class, 'update'])->name('profile.update');
+	Route::patch('/perfil', [ProfileController::class, 'update'])->name('profile.update')->middleware('throttle:10,1');
 
 	Route::get('/menu/inicio', fn () => response('Mock: Inicio'))->name('menu.inicio');
 	    Route::get('/noticias', [\App\Http\Controllers\NewsController::class, 'index'])->name('news.index');
@@ -170,7 +170,8 @@ Route::middleware('auth')->group(function (): void {
 
             // Acciones Feasy sobre una factura
             Route::post('invoices/{invoice}/emit',    [InvoiceController::class, 'emit'])
-                ->name('invoices.emit');
+                ->name('invoices.emit')
+                ->middleware('throttle:20,1');
 
             Route::post('invoices/{invoice}/consult', [InvoiceController::class, 'consult'])
                 ->name('invoices.consult');

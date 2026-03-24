@@ -14,7 +14,12 @@ class NewsService
     public function storeNews(array $data, ?UploadedFile $image, int $authorId): News
     {
         $data['author_id'] = $authorId;
-        
+
+        // Sanitizar HTML para prevenir XSS antes de persistir en BD
+        if (isset($data['content'])) {
+            $data['content'] = clean($data['content']);
+        }
+
         if ($data['status'] === 'published') {
             $data['published_at'] = now();
         }
@@ -31,6 +36,11 @@ class NewsService
      */
     public function updateNews(News $news, array $data, ?UploadedFile $image): News
     {
+        // Sanitizar HTML para prevenir XSS antes de persistir en BD
+        if (isset($data['content'])) {
+            $data['content'] = clean($data['content']);
+        }
+
         if ($data['status'] === 'published' && !$news->published_at) {
             $data['published_at'] = now();
         } elseif ($data['status'] === 'draft') {

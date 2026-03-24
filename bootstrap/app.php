@@ -12,9 +12,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // EasyPanel / reverse proxy: confiar en X-Forwarded-* para detectar HTTPS real.
+        // EasyPanel / reverse proxy: usar IP concreta del proxy (configurable via TRUSTED_PROXIES).
+        // En desarrollo se permite '*'; en producción definir la IP real del reverse proxy.
         $middleware->trustProxies(
-            at: '*',
+            at: (string) env('TRUSTED_PROXIES', '127.0.0.1'),
             headers: Request::HEADER_X_FORWARDED_FOR
                 | Request::HEADER_X_FORWARDED_HOST
                 | Request::HEADER_X_FORWARDED_PORT

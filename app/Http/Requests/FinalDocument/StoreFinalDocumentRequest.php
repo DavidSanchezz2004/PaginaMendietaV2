@@ -11,7 +11,7 @@ class StoreFinalDocumentRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return true;
+        return $this->user()?->can('create', \App\Models\FinalDocument::class) ?? false;
     }
 
     /**
@@ -25,7 +25,7 @@ class StoreFinalDocumentRequest extends FormRequest
             'company_id' => ['required', 'exists:companies,id'],
             'title' => ['required', 'string', 'max:255'],
             'document_type' => ['required', 'string', 'max:100'],
-            'file' => ['required', 'file', 'max:10240'], // Max 10MB
+            'file' => ['required', 'file', 'max:10240', 'mimes:pdf,doc,docx,xlsx,xls,png,jpg,jpeg,zip'],
         ];
     }
 }

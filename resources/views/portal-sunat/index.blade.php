@@ -203,6 +203,25 @@
     }
     .ps-btn-declaracion:hover { transform: translateY(-1px); box-shadow: 0 10px 24px rgba(20,83,45,.25); }
 
+    /* Botón SUNAFIL — rojo para diferenciarlo */
+    .ps-btn-sunafil {
+      display: inline-flex;
+      align-items: center;
+      gap: .38rem;
+      background: linear-gradient(135deg, #b91c1c 0%, #dc2626 100%);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: .5rem .85rem;
+      font-size: .82rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 6px 18px rgba(185,28,28,.2);
+      transition: transform .15s, box-shadow .15s;
+      white-space: nowrap;
+    }
+    .ps-btn-sunafil:hover { transform: translateY(-1px); box-shadow: 0 10px 24px rgba(185,28,28,.25); }
+
     .ps-btn-cred {
       display: inline-flex;
       align-items: center;
@@ -412,6 +431,7 @@
     body.dark-mode .ps-chip.off { background: rgba(185, 28, 28, 0.2); color: #f87171; }
     body.dark-mode .ps-btn-sunat { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); box-shadow: 0 6px 18px rgba(37,99,235,.2); }
     body.dark-mode .ps-btn-declaracion { background: linear-gradient(135deg, #15803d 0%, #16a34a 100%); box-shadow: 0 6px 18px rgba(21,128,61,.2); }
+    body.dark-mode .ps-btn-sunafil { background: linear-gradient(135deg, #991b1b 0%, #b91c1c 100%); box-shadow: 0 6px 18px rgba(153,27,27,.2); }
     body.dark-mode .ps-btn-cred { background: var(--clr-bg-body, #0f172a); color: #e2e8f0; border-color: #475569; }
     body.dark-mode .ps-btn-cred:hover { background: rgba(37, 99, 235, 0.1); border-color: #3b82f6; color: #60a5fa; }
   </style>
@@ -614,6 +634,16 @@
                               data-sunat-clave="{{ $company->clave_sol }}"
                               title="Abrir Declaración y Pago">
                               <i class='bx bx-receipt'></i> Declaración y Pago
+                            </button>
+
+                            {{-- SUNAFIL va por el bot, NO necesita credenciales en el botón --}}
+                            <button type="button"
+                              class="ps-btn-sunafil"
+                              data-sunat-url="{{ route('portal-sunat.open', $company) }}?portal=sunafil"
+                              data-sunat-portal="sunafil"
+                              data-sunat-nombre="{{ $company->name }}"
+                              title="Abrir Casilla SUNAFIL">
+                              <i class='bx bx-shield-alt-2'></i> SUNAFIL
                             </button>
                           @endif
 

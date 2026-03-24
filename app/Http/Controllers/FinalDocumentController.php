@@ -46,9 +46,25 @@ class FinalDocumentController extends Controller
     {
         $this->authorize('create', FinalDocument::class);
 
+        $user = $request->user();
+        $role = $user->role instanceof \App\Enums\RoleEnum ? $user->role->value : (string) $user->role;
+        $isGlobal = in_array($role, ['admin', 'supervisor'], true);
+
+        // Verificar que el company_id pertenece a una empresa que el usuario gestiona
+        if (! $isGlobal) {
+            $companyId = (int) $request->company_id;
+            $hasAccess = $user->companies()
+                ->wherePivot('status', 'active')
+                ->where('companies.id', $companyId)
+                ->exists();
+
+            abort_if(! $hasAccess, 403, 'No tienes acceso a la empresa seleccionada.');
+        }
+
         $file = $request->file('file');
         $originalName = $file->getClientOriginalName();
-        $path = $file->store('final_documents', 'public');
+        // Almacenar en disco privado (no accesible por URL directa)
+        $path = $file->store('final_documents', 'local');
 
         FinalDocument::create([
             'title' => $request->title,
@@ -66,8 +82,8 @@ class FinalDocumentController extends Controller
     {
         $this->authorize('delete', $finalDocument);
 
-        if ($finalDocument->file_path && Storage::disk('public')->exists($finalDocument->file_path)) {
-            Storage::disk('public')->delete($finalDocument->file_path);
+        if ($finalDocument->file_path && Storage::disk('local')->exists($finalDocument->file_path)) {
+            Storage::disk('local')->delete($finalDocument->file_path);
         }
 
         $finalDocument->delete();
@@ -80,8 +96,11 @@ class FinalDocumentController extends Controller
     {
         $this->authorize('view', $finalDocument);
 
-        abort_if(!Storage::disk('public')->exists($finalDocument->file_path), 404, 'Archivo no encontrado.');
+        abort_if(! $finalDocument->file_path || ! Storage::disk('local')->exists($finalDocument->file_path), 404, 'Archivo no encontrado.');
 
-        return Storage::disk('public')->download($finalDocument->file_path, $finalDocument->original_name);
+        return response()->download(
+            Storage::disk('local')->path($finalDocument->file_path),
+            $finalDocument->original_name
+        );
     }
 }

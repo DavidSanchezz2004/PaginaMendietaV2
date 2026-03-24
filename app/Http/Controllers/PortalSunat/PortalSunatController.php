@@ -21,7 +21,7 @@ class PortalSunatController extends Controller
     private const PORTALES = [
         'sunat'       => 'Menú SOL',
         'declaracion' => 'Declaración y Pago',
-        // 'sunafil' => disponible en el bot pero no expuesto al frontend
+        'sunafil'     => 'Casilla SUNAFIL',
     ];
 
     /**
@@ -272,13 +272,19 @@ class PortalSunatController extends Controller
                 default       => "{$botUrl}/proxy/create",  // sunat
             };
 
-            $response = Http::timeout(30)
+            $http = Http::timeout(30)
                 ->withHeaders([
                     'x-api-key'  => $botKey,
                     'User-Agent' => 'LaravelBot/1.0',
                     'Accept'     => 'application/json',
-                ])
-                ->post($endpoint, [
+                ]);
+
+            // En local/ngrok el CA bundle de cURL no puede verificar el certificado
+            if (app()->isLocal() || str_contains($botUrl, 'ngrok')) {
+                $http = $http->withoutVerifying();
+            }
+
+            $response = $http->post($endpoint, [
                     'ruc'         => $company->ruc,
                     'usuario_sol' => $company->usuario_sol,
                     'clave_sol'   => $company->clave_sol,

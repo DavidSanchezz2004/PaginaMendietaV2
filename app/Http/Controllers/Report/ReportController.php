@@ -110,7 +110,10 @@ class ReportController extends Controller
 
         abort_if(! $report->file_path || ! Storage::disk('local')->exists($report->file_path), 404, 'El archivo no existe.');
 
-        return response()->download(storage_path('app/private/' . $report->file_path));
+        return response()->download(
+            Storage::disk('local')->path($report->file_path),
+            basename($report->file_path)
+        );
     }
 
     public function publish(Report $report): RedirectResponse

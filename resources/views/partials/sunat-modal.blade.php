@@ -76,6 +76,13 @@
       icon:        'bx-receipt',
       loadingText: 'Iniciando sesión en Declaración y Pago...',
     },
+    sunafil: {
+      label:       'Casilla SUNAFIL',
+      headerColor: '#b91c1c',
+      spinColor:   '#dc2626',
+      icon:        'bx-shield-alt-2',
+      loadingText: 'Iniciando sesión en SUNAFIL...',
+    },
   };
 
   // ── Click handler ────────────────────────────────────────────────────────
