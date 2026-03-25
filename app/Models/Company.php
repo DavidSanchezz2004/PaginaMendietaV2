@@ -42,6 +42,9 @@ class Company extends Model
         // ── Credenciales SOL (Portal SUNAT) ───────────────────────────────
         'usuario_sol',
         'clave_sol',         // encrypted
+        // ── Credenciales AFPnet ───────────────────────────────────────────
+        'afpnet_usuario',
+        'afpnet_clave',      // encrypted
     ];
 
     /**
@@ -55,6 +58,7 @@ class Company extends Model
             'facturador_enabled'          => 'boolean',
             'feasy_token'                 => 'encrypted',
             'clave_sol'                   => 'encrypted',
+            'afpnet_clave'                => 'encrypted',
             'informacion_adicional_config' => 'array',
         ];
     }
@@ -112,6 +116,11 @@ class Company extends Model
     public function hasSunatCredentials(): bool
     {
         return ! empty($this->usuario_sol) && ! empty($this->clave_sol);
+    }
+
+    public function hasAfpnetCredentials(): bool
+    {
+        return ! empty($this->afpnet_usuario) && ! empty($this->afpnet_clave);
     }
 
     public function canUseSunatPortal(): bool

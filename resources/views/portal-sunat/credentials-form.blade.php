@@ -124,6 +124,73 @@
               </div>
             </form>
 
+            {{-- ── Separador AFPnet ─────────────────────────────────────── --}}
+            <hr style="border:none; border-top:1px solid #e2e8f0; margin:2rem 0;">
+            <div style="margin-bottom:1.25rem;">
+              <h2 style="margin:0 0 .35rem; font-size:1.1rem;">Credenciales AFPnet</h2>
+              <p style="margin:0; color:#6b7280; font-size:.92rem;">
+                Credenciales del portal AFPnet (diferentes a las de SUNAT). Solo el RUC se comparte.
+              </p>
+            </div>
+
+            {{-- Info cards AFPnet --}}
+            <div style="display:flex; gap:.75rem; flex-wrap:wrap; margin-bottom:1.5rem;">
+              <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:.85rem 1.1rem; flex:1 1 200px;">
+                <p style="margin:0; font-size:.75rem; color:#64748b; text-transform:uppercase; letter-spacing:.06em;">Estado AFPnet</p>
+                <p style="margin:.3rem 0 0; font-weight:700; color:{{ $company->hasAfpnetCredentials() ? '#166534' : '#92400e' }};">
+                  {{ $company->hasAfpnetCredentials() ? 'Configuradas' : 'Pendientes' }}
+                </p>
+              </div>
+            </div>
+
+            {{-- Formulario AFPnet (formulario separado) --}}
+            <form method="POST" action="{{ route('portal-sunat.credentials.update', $company) }}"
+              class="module-form companies-form-grid">
+              @csrf
+              @method('PUT')
+
+              <div class="form-group">
+                <label>Usuario AFPnet</label>
+                <input
+                  type="text"
+                  name="afpnet_usuario"
+                  class="form-input"
+                  autocomplete="off"
+                  placeholder="Ej. usuario@empresa.com"
+                  value="{{ old('afpnet_usuario', $company->afpnet_usuario ?? '') }}">
+                @error('afpnet_usuario')<p class="form-error">{{ $message }}</p>@enderror
+                <p style="font-size:.78rem; color:#94a3b8; margin-top:.3rem;">
+                  El usuario de acceso al portal AFPnet.
+                </p>
+              </div>
+
+              <div class="form-group">
+                <label>Clave AFPnet</label>
+                <input
+                  type="password"
+                  name="afpnet_clave"
+                  class="form-input"
+                  autocomplete="new-password"
+                  placeholder="{{ $company->afpnet_clave ? '(guardada — dejar en blanco para no cambiar)' : 'Ingresa la contraseña AFPnet' }}">
+                @error('afpnet_clave')<p class="form-error">{{ $message }}</p>@enderror
+                <p style="font-size:.78rem; color:#94a3b8; margin-top:.3rem;">
+                  Déjalo en blanco para conservar la clave actual.
+                </p>
+              </div>
+
+              {{-- Campo usuario_sol oculto requerido por el controlador --}}
+              <input type="hidden" name="usuario_sol" value="{{ $company->usuario_sol ?? '' }}">
+
+              <div class="form-group full-width profile-actions module-actions">
+                <a href="{{ route('portal-sunat.index') }}" class="btn-secondary">
+                  <i class='bx bx-arrow-back'></i> Cancelar
+                </a>
+                <button type="submit" class="btn-primary">
+                  <i class='bx bx-save'></i> Guardar credenciales AFPnet
+                </button>
+              </div>
+            </form>
+
           </div>
         </div>
       </main>

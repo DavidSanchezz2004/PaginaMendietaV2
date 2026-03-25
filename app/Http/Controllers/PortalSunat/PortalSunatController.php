@@ -192,14 +192,24 @@ class PortalSunatController extends Controller
         $this->authorize('updateSunatCredentials', $company);
 
         $validated = $request->validate([
-            'usuario_sol' => ['required', 'string', 'max:50'],
-            'clave_sol'   => ['nullable', 'string', 'max:255'],
+            'usuario_sol'    => ['required', 'string', 'max:50'],
+            'clave_sol'      => ['nullable', 'string', 'max:255'],
+            'afpnet_usuario' => ['nullable', 'string', 'max:100'],
+            'afpnet_clave'   => ['nullable', 'string', 'max:255'],
         ]);
 
         $update = ['usuario_sol' => strtoupper(trim($validated['usuario_sol']))];
 
         if (! empty($validated['clave_sol'])) {
             $update['clave_sol'] = $validated['clave_sol'];
+        }
+
+        if (array_key_exists('afpnet_usuario', $validated)) {
+            $update['afpnet_usuario'] = trim($validated['afpnet_usuario'] ?? '') ?: null;
+        }
+
+        if (! empty($validated['afpnet_clave'])) {
+            $update['afpnet_clave'] = $validated['afpnet_clave'];
         }
 
         $company->update($update);

@@ -434,6 +434,33 @@
     body.dark-mode .ps-btn-sunafil { background: linear-gradient(135deg, #991b1b 0%, #b91c1c 100%); box-shadow: 0 6px 18px rgba(153,27,27,.2); }
     body.dark-mode .ps-btn-cred { background: var(--clr-bg-body, #0f172a); color: #e2e8f0; border-color: #475569; }
     body.dark-mode .ps-btn-cred:hover { background: rgba(37, 99, 235, 0.1); border-color: #3b82f6; color: #60a5fa; }
+
+    /* Botón AFPnet — azul corporativo para diferenciarlo */
+    .ps-btn-afpnet {
+      display: inline-flex;
+      align-items: center;
+      gap: .38rem;
+      background: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 100%);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: .5rem .85rem;
+      font-size: .82rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 6px 18px rgba(29,78,216,.2);
+      transition: transform .15s, box-shadow .15s;
+      white-space: nowrap;
+      text-decoration: none;
+    }
+    .ps-btn-afpnet:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 24px rgba(29,78,216,.25);
+    }
+    body.dark-mode .ps-btn-afpnet {
+      background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
+      box-shadow: 0 6px 18px rgba(37,99,235,.2);
+    }
   </style>
 @endpush
 
@@ -647,6 +674,26 @@
                             </button>
                           @endif
 
+                          {{-- Botón AFPnet --}}
+                          @if($company->hasAfpnetCredentials())
+                            <button type="button"
+                              class="ps-btn-afpnet"
+                              data-afpnet-ruc="{{ $company->ruc }}"
+                              data-afpnet-usuario="{{ $company->afpnet_usuario }}"
+                              data-afpnet-clave="{{ $company->afpnet_clave }}"
+                              onclick="abrirAfpnet(this)"
+                              title="Abrir AFPnet">
+                              <i class='bx bx-buildings'></i> AFPnet
+                            </button>
+                          @else
+                            <a href="{{ route('portal-sunat.credentials', $company) }}"
+                               class="ps-btn-afpnet"
+                               style="opacity:.55;"
+                               title="Configurar credenciales AFPnet">
+                              <i class='bx bx-key'></i> Config. AFPnet
+                            </a>
+                          @endif
+
                           {{-- Editar credenciales (NO auxiliar) --}}
                           @can('updateSunatCredentials', $company)
                             <a href="{{ route('portal-sunat.credentials', $company) }}" class="ps-btn-cred">
@@ -709,5 +756,17 @@
       if (closeBtn) closeBtn.addEventListener('click', () => flash.remove());
       window.setTimeout(() => { if (document.body.contains(flash)) flash.remove(); }, 4500);
     });
+
+    function abrirAfpnet(btn) {
+      const payload = btoa(JSON.stringify({
+        ruc:     btn.dataset.afpnetRuc,
+        usuario: btn.dataset.afpnetUsuario,
+        clave:   btn.dataset.afpnetClave,
+      }));
+      window.open(
+        'https://www.afpnet.com.pe/#afp=' + encodeURIComponent(payload),
+        '_blank'
+      );
+    }
   </script>
 @endpush
