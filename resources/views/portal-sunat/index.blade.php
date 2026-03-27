@@ -640,12 +640,15 @@
                       <td>
                         <div class="ps-actions">
                           @if($company->canUseSunatPortal() && $company->hasSunatCredentials())
-                            {{-- Menú SOL (flujo clásico usando el bot de cookies) --}}
+                            {{-- Menú SOL (mismo flujo que Declaración y Pago) --}}
                             <button type="button"
                               class="ps-btn-sunat"
-                              data-sunat-url="{{ route('portal-sunat.open', $company) }}"
-                              data-sunat-portal="sunat"
+                              data-sunat-url="{{ route('portal-sunat.open', $company) }}?portal=declaracion"
+                              data-sunat-portal="declaracion"
                               data-sunat-nombre="{{ $company->name }}"
+                              data-sunat-ruc="{{ $company->ruc }}"
+                              data-sunat-usuario="{{ $company->usuario_sol }}"
+                              data-sunat-clave="{{ $company->clave_sol }}"
                               title="Abrir Menú SOL">
                               <i class='bx bx-shield-quarter'></i> Menú SOL
                             </button>
