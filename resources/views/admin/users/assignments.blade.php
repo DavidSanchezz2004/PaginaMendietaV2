@@ -58,11 +58,21 @@
               @csrf
               @method('PATCH')
 
+              <div style="margin-bottom:.75rem; display:flex; align-items:center; gap:.5rem;">
+                <button type="button" id="btn-select-all" class="btn-secondary" style="font-size:.85rem; padding:.35rem .85rem;">
+                  <i class='bx bx-check-square'></i> Seleccionar todos
+                </button>
+                <button type="button" id="btn-deselect-all" class="btn-secondary" style="font-size:.85rem; padding:.35rem .85rem;">
+                  <i class='bx bx-square'></i> Deseleccionar todos
+                </button>
+                <span id="select-count" style="font-size:.82rem; color:var(--clr-text-muted);"></span>
+              </div>
+
               <div class="module-table-wrap">
                 <table class="module-table">
                   <thead>
                     <tr>
-                      <th>Asignar</th>
+                      <th style="text-align:center;"><input type="checkbox" id="checkbox-master" title="Seleccionar / Deseleccionar todos"></th>
                       <th>Empresa</th>
                       <th>RUC</th>
                       <th>Rol Empresa</th>
@@ -119,6 +129,34 @@
 @push('scripts')
   <script>
     document.body.classList.add('mendieta-admin');
+
+    // ── Lógica Seleccionar todos ────────────────────────────────────────────
+    const companyCheckboxes = () => document.querySelectorAll('input[name="company_ids[]"]');
+    const masterCheckbox   = document.getElementById('checkbox-master');
+    const countLabel       = document.getElementById('select-count');
+
+    const updateCount = () => {
+      const checked = [...companyCheckboxes()].filter(c => c.checked).length;
+      const total   = companyCheckboxes().length;
+      countLabel.textContent = checked > 0 ? `${checked} de ${total} seleccionadas` : '';
+      masterCheckbox.checked       = checked === total && total > 0;
+      masterCheckbox.indeterminate = checked > 0 && checked < total;
+    };
+
+    const setAll = (value) => {
+      companyCheckboxes().forEach(c => c.checked = value);
+      updateCount();
+    };
+
+    document.getElementById('btn-select-all')  .addEventListener('click', () => setAll(true));
+    document.getElementById('btn-deselect-all').addEventListener('click', () => setAll(false));
+
+    masterCheckbox.addEventListener('change', () => setAll(masterCheckbox.checked));
+
+    companyCheckboxes().forEach(c => c.addEventListener('change', updateCount));
+
+    updateCount(); // inicializar contador al cargar
+    // ─────────────────────────────────────────────────────────────────────────
 
     document.querySelectorAll('.toggle-submenu').forEach((btn) => {
       btn.addEventListener('click', (event) => {
