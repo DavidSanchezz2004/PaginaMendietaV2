@@ -174,10 +174,17 @@
 
     document.querySelectorAll('[data-company-delete-form]').forEach((form) => {
       form.addEventListener('submit', (event) => {
-        const ok = confirm('¿Seguro que deseas eliminar esta empresa? Esta acción no se puede deshacer.');
-        if (!ok) {
-          event.preventDefault();
-        }
+        event.preventDefault();
+        Swal.fire({
+          title: '¿Estás seguro?',
+          text: '¿Seguro que deseas eliminar esta empresa? Esta acción no se puede deshacer.',
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#dc2626',
+          cancelButtonColor: '#6b7280',
+          cancelButtonText: 'Cancelar',
+          confirmButtonText: 'Sí, eliminar'
+        }).then((result) => { if (result.isConfirmed) HTMLFormElement.prototype.submit.call(form); });
       });
     });
 

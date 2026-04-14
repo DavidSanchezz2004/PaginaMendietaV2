@@ -134,7 +134,19 @@
 @push('scripts')
   <script>
     document.querySelectorAll('[data-confirm-delete]').forEach(f => {
-      f.addEventListener('submit', e => { if (!confirm('¿Eliminar este producto?')) e.preventDefault(); });
+      f.addEventListener('submit', e => {
+        e.preventDefault();
+        Swal.fire({
+          title: '¿Eliminar producto?',
+          text: 'Esta acción no se puede deshacer.',
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#dc2626',
+          cancelButtonColor: '#6b7280',
+          cancelButtonText: 'Cancelar',
+          confirmButtonText: 'Sí, eliminar'
+        }).then(r => { if (r.isConfirmed) HTMLFormElement.prototype.submit.call(f); });
+      });
     });
     document.querySelectorAll('[data-flash-message]').forEach((flash) => {
       const closeBtn = flash.querySelector('[data-flash-close]');

@@ -28,7 +28,7 @@
 <div class="form-group">
   <label>Unidad de Medida *</label>
   <select name="codigo_unidad_medida" class="form-input" required>
-    @foreach(['NIU'=>'NIU (Unidad)', 'ZZ'=>'ZZ (Servicio)', 'KGM'=>'KGM (Kilogramo)', 'MTR'=>'MTR (Metro)', 'LTR'=>'LTR (Litro)', 'GLL'=>'GLL (Galón)'] as $val => $lbl)
+    @foreach(['NIU'=>'NIU (Unidad)', 'ZZ'=>'ZZ (Servicio)', 'KGM'=>'KGM (Kilogramo)', 'MTR'=>'MTR (Metro)', 'LTR'=>'LTR (Litro)', 'GLL'=>'GLL (Galón)', 'BX'=>'BX (Caja)', 'BG'=>'BG (Bolsa)', 'BO'=>'BO (Botella)', 'PA'=>'PA (Paquete)', 'PK'=>'PK (Pack)', 'DZN'=>'DZN (Docena)', 'SET'=>'SET (Set)', 'MIL'=>'MIL (Millar)', 'GRM'=>'GRM (Gramo)', 'MLT'=>'MLT (Mililitro)', 'M2'=>'M2 (Metro cuadrado)', 'M3'=>'M3 (Metro cúbico)'] as $val => $lbl)
       <option value="{{ $val }}" {{ old('codigo_unidad_medida', $product->codigo_unidad_medida ?? 'NIU') === $val ? 'selected' : '' }}>{{ $lbl }}</option>
     @endforeach
   </select>
@@ -49,7 +49,7 @@
 <div class="form-group">
   <label>Valor Unitario (sin IGV) *</label>
   <input type="number" name="valor_unitario" id="valor_unitario" class="form-input"
-    step="0.0001" min="0"
+    step="0.00000001" min="0"
     value="{{ old('valor_unitario', isset($product) ? (float)$product->valor_unitario : '') }}" required>
   @error('valor_unitario')<p class="form-error">{{ $message }}</p>@enderror
 </div>

@@ -147,23 +147,35 @@ class InvoiceRepository implements InvoiceRepositoryInterface
      */
     public function persistEmitResponse(Invoice $invoice, array $feasyResponse): Invoice
     {
-        $isSuccess     = $feasyResponse['success'] ?? false;
-        $data          = $feasyResponse['data'] ?? [];
-        $codigoSunat   = $data['codigo_respuesta'] ?? null;
+        $isSuccess   = $feasyResponse['success'] ?? false;
+        $data        = $feasyResponse['data'] ?? [];
+        $codigoSunat = $data['codigo_respuesta'] ?? null;
+
+        // GRE (tipo 09) devuelve "A01" (ticket asíncrono): recibido por SUNAT, pendiente resolución.
+        $isGreTicket   = $invoice->codigo_tipo_documento === '09'
+                      && $isSuccess
+                      && $codigoSunat === 'A01';
         $isAcceptedByS = $isSuccess && $codigoSunat === '0';
 
+        if ($isGreTicket) {
+            $estadoInvoice = InvoiceStatusEnum::SENT->value;
+            $estadoFeasy   = FeasyStatusEnum::TICKET->value;
+        } elseif ($isAcceptedByS) {
+            $estadoInvoice = InvoiceStatusEnum::SENT->value;
+            $estadoFeasy   = FeasyStatusEnum::SENT->value;
+        } else {
+            $estadoInvoice = InvoiceStatusEnum::ERROR->value;
+            $estadoFeasy   = $isSuccess ? FeasyStatusEnum::REJECTED->value : FeasyStatusEnum::ERROR->value;
+        }
+
         $invoice->update([
-            'estado'                  => $isAcceptedByS
-                ? InvoiceStatusEnum::SENT->value
-                : InvoiceStatusEnum::ERROR->value,
-            'estado_feasy'            => $isAcceptedByS
-                ? FeasyStatusEnum::SENT->value
-                : ($isSuccess ? FeasyStatusEnum::REJECTED->value : FeasyStatusEnum::ERROR->value),
+            'estado'                  => $estadoInvoice,
+            'estado_feasy'            => $estadoFeasy,
             'codigo_respuesta_sunat'  => $codigoSunat,
             'mensaje_respuesta_sunat' => $data['mensaje_respuesta'] ?? ($feasyResponse['message'] ?? null),
             'nombre_archivo_xml'      => $data['nombre_archivo_xml'] ?? null,
-            'sent_at'                 => $isAcceptedByS ? now() : null,
-            'last_error'              => ! $isSuccess ? json_encode($feasyResponse) : null,
+            'sent_at'                 => ($isAcceptedByS || $isGreTicket) ? now() : null,
+            'last_error'              => (! $isSuccess && ! $isGreTicket) ? json_encode($feasyResponse) : null,
         ]);
 
         return $invoice->fresh();

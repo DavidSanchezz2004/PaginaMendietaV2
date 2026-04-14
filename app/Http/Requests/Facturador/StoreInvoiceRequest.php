@@ -147,6 +147,13 @@ class StoreInvoiceRequest extends FormRequest
             'lista_cuotas.*.fecha_pago'   => ['nullable', 'required_if:forma_pago,2', 'date_format:Y-m-d'],
             'lista_cuotas.*.monto'        => ['nullable', 'required_if:forma_pago,2', 'numeric', 'min:0.01'],
 
+            // ── Guías de remisión adjuntas (solo Factura/Boleta, opcional) ─
+            // Permite referenciar GRE ya emitidas. Solo aplica a tipos 01 y 03.
+            'lista_guias'                              => ['nullable', 'array', 'max:20'],
+            'lista_guias.*.codigo_tipo_documento'      => ['required_with:lista_guias', 'nullable', 'string', 'in:09,31'],
+            'lista_guias.*.serie_documento'            => ['required_with:lista_guias', 'nullable', 'string', 'max:10'],
+            'lista_guias.*.numero_documento'           => ['required_with:lista_guias', 'nullable', 'string', 'max:20'],
+
             // ── Items ──────────────────────────────────────────────────────
             'items'                           => ['required', 'array', 'min:1'],
             'items.*.codigo_interno'          => ['required', 'string', 'max:50'],

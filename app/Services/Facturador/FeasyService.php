@@ -344,6 +344,21 @@ class FeasyService
             $payload['indicadores'] = ['indicador_entrega_bienes' => true];
         }
 
+        // ── Guías de remisión adjuntas (lista_guias) ──────────────────────
+        // Solo aplica a Factura (01) y Boleta (03). Se envía tal cual está en BD.
+        if (! empty($invoice->lista_guias) && is_array($invoice->lista_guias)) {
+            $payload['lista_guias'] = array_values(
+                array_filter($invoice->lista_guias, fn ($g) =>
+                    ! empty($g['codigo_tipo_documento']) &&
+                    ! empty($g['serie_documento']) &&
+                    ! empty($g['numero_documento'])
+                )
+            );
+            if (empty($payload['lista_guias'])) {
+                unset($payload['lista_guias']);
+            }
+        }
+
         // ── Detracción SPOT (solo Factura tipo 01, monto > 700 PEN) ──────
         // DEBUG: Loguear estado de detracción ANTES de procesar
         Log::channel('stack')->debug('[FeasyService] Estado detracción ANTES de procesar', [
@@ -446,16 +461,21 @@ class FeasyService
     /** @return array<string, mixed> */
     private function buildEmisorPayload(Company $company): array
     {
+        $dep = $company->departamento ? mb_strtoupper(mb_substr($company->departamento, 0, 30)) : null;
+        $pro = $company->provincia    ? mb_strtoupper(mb_substr($company->provincia,    0, 30)) : null;
+        $dis = $company->distrito     ? mb_strtoupper(mb_substr($company->distrito,     0, 30)) : null;
+        $dir = $company->direccion_fiscal ? mb_substr($company->direccion_fiscal, 0, 200) : null;
+
         return [
             'codigo_tipo_documento_emisor'    => '6', // 6 = RUC
             'numero_documento_emisor'         => $company->ruc,
             'nombre_razon_social_emisor'      => $company->razon_social ?? $company->name,
             'ubigeo_emisor'                   => $company->ubigeo,
-            'departamento_emisor'             => null, // Feasy los deduce del ubigeo
-            'provincia_emisor'                => null,
-            'distrito_emisor'                 => null,
+            'departamento_emisor'             => $dep,
+            'provincia_emisor'                => $pro,
+            'distrito_emisor'                 => $dis,
             'urbanizacion_emisor'             => null,
-            'direccion_emisor'                => $company->direccion_fiscal,
+            'direccion_emisor'                => $dir,
         ];
     }
 
@@ -485,13 +505,15 @@ class FeasyService
      */
     private function buildGrePayload(Invoice $invoice, Company $company): array
     {
-        $destinatario = $invoice->gre_destinatario ?? [];
-        $puntoPartida = $invoice->gre_punto_partida ?? [];
-        $puntoLlegada = $invoice->gre_punto_llegada ?? [];
-        $vehiculos    = $invoice->gre_vehiculos    ?? [];
-        $conductores  = $invoice->gre_conductores  ?? [];
+        $destinatario   = $invoice->gre_destinatario  ?? [];
+        $puntoPartida   = $invoice->gre_punto_partida ?? [];
+        $puntoLlegada   = $invoice->gre_punto_llegada ?? [];
+        $vehiculos      = $invoice->gre_vehiculos     ?? [];
+        $conductores    = $invoice->gre_conductores   ?? [];
+        $transportista  = $invoice->gre_transportista ?? [];
+        $modalidad      = $invoice->codigo_modalidad_traslado;
 
-        return [
+        $payload = [
             'informacion_documento' => [
                 'codigo_interno'                        => $invoice->codigo_interno,
                 'fecha_emision'                         => $invoice->fecha_emision->format('Y-m-d'),
@@ -503,7 +525,7 @@ class FeasyService
                 'correo'                                => $invoice->correo,
                 'codigo_motivo_traslado'                => $invoice->codigo_motivo_traslado,
                 'descripcion_motivo_traslado'           => $invoice->descripcion_motivo_traslado,
-                'codigo_modalidad_traslado'             => $invoice->codigo_modalidad_traslado,
+                'codigo_modalidad_traslado'             => $modalidad,
                 'fecha_inicio_traslado'                 => $invoice->fecha_inicio_traslado?->format('Y-m-d'),
                 'codigo_unidad_medida_peso_bruto_total' => $invoice->codigo_unidad_medida_peso_bruto,
                 'peso_bruto_total'                      => (float) $invoice->peso_bruto_total,
@@ -519,29 +541,47 @@ class FeasyService
                 'nombre_razon_social_destinatario'    => $destinatario['nombre_razon_social_destinatario'] ?? '',
             ],
             'informacion_punto_partida' => [
-                'ubigeo_punto_partida'   => $puntoPartida['ubigeo_punto_partida'] ?? '',
+                'ubigeo_punto_partida'    => $puntoPartida['ubigeo_punto_partida'] ?? '',
                 'direccion_punto_partida' => $puntoPartida['direccion_punto_partida'] ?? '',
             ],
             'informacion_punto_llegada' => [
-                'ubigeo_punto_llegada'   => $puntoLlegada['ubigeo_punto_llegada'] ?? '',
+                'ubigeo_punto_llegada'    => $puntoLlegada['ubigeo_punto_llegada'] ?? '',
                 'direccion_punto_llegada' => $puntoLlegada['direccion_punto_llegada'] ?? '',
             ],
-            'lista_vehiculos' => array_values(array_map(function (array $v): array {
-                $v['indicador_principal'] = (bool) ($v['indicador_principal'] ?? false);
-                return $v;
-            }, $vehiculos)),
-            'lista_conductores' => array_values(array_map(function (array $c): array {
-                $c['indicador_principal'] = (bool) ($c['indicador_principal'] ?? false);
-                return $c;
-            }, $conductores)),
             'lista_items' => $invoice->items->map(fn (\App\Models\InvoiceItem $item) => [
                 'correlativo'          => $item->correlativo,
-                'codigo_interno'       => $item->codigo_interno,
                 'codigo_unidad_medida' => $item->codigo_unidad_medida,
                 'descripcion'          => $item->descripcion,
                 'cantidad'             => round((float) $item->cantidad, 4),
             ])->values()->toArray(),
         ];
+
+        // Transporte Público (01): necesita transportista, SIN vehículos/conductores
+        if ($modalidad === '01') {
+            $payload['informacion_transportista'] = [
+                'codigo_tipo_documento_transportista'  => $transportista['codigo_tipo_documento_transportista'] ?? '6',
+                'numero_documento_transportista'       => $transportista['numero_documento_transportista'] ?? '',
+                'nombre_razon_social_transportista'    => $transportista['nombre_razon_social_transportista'] ?? '',
+            ];
+        }
+
+        // Transporte Privado (02): necesita vehículos y conductores, SIN transportista
+        if ($modalidad === '02') {
+            $payload['lista_vehiculos'] = array_values(array_map(function (array $v): array {
+                $v['indicador_principal'] = (bool) ($v['indicador_principal'] ?? false);
+                return array_intersect_key($v, array_flip(['correlativo', 'numero_placa', 'indicador_principal']));
+            }, $vehiculos));
+
+            $payload['lista_conductores'] = array_values(array_map(function (array $c): array {
+                $c['indicador_principal'] = (bool) ($c['indicador_principal'] ?? false);
+                return array_intersect_key($c, array_flip([
+                    'correlativo', 'codigo_tipo_documento', 'numero_documento',
+                    'nombre', 'apellido', 'numero_licencia', 'indicador_principal',
+                ]));
+            }, $conductores));
+        }
+
+        return $payload;
     }
 
     /** @return array<string, mixed> */
@@ -549,7 +589,6 @@ class FeasyService
     {
         return [
             'correlativo'            => $item->correlativo,
-            'codigo_interno'         => $item->codigo_interno,
             'codigo_sunat'           => $item->codigo_sunat,
             'tipo'                   => $item->tipo,
             'codigo_unidad_medida'   => $item->codigo_unidad_medida,

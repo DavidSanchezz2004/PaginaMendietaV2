@@ -138,7 +138,7 @@
 													@endcan
 
 													@can('delete', $report)
-														<form action="{{ route('reports.destroy', $report) }}" method="POST" style="display:inline-block;" onsubmit="return confirm('¿Eliminar reporte permanentemente?');">
+														<form action="{{ route('reports.destroy', $report) }}" method="POST" style="display:inline-block;" data-confirm="¿Eliminar reporte permanentemente? Esta acción no se puede deshacer.">
 															@csrf
 															@method('DELETE')
 															<button type="submit" class="btn-action-icon" style="color: #b91c1c; background-color: rgba(239, 68, 68, 0.1);" title="Eliminar">

@@ -124,10 +124,10 @@
                                                             <i class='bx bx-edit'></i>
                                                         </a>
                                                         @if($ob->status !== 'completed')
-                                                            <form action="{{ route('obligations.complete', $ob) }}" method="POST" style="display:inline;">
+                                                                <form action="{{ route('obligations.complete', $ob) }}" method="POST" style="display:inline;" data-confirm="¿Marcar esta obligación como completada?">
                                                                 @csrf
                                                                 @method('PATCH')
-                                                                <button type="submit" class="ob-btn complete" title="Marcar pagado" onclick="return confirm('¿Marcar como completada?')">
+                                                                <button type="submit" class="ob-btn complete" title="Marcar pagado">
                                                                     <i class='bx bx-check-circle'></i>
                                                                 </button>
                                                             </form>

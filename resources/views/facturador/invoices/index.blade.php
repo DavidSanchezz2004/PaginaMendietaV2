@@ -49,6 +49,18 @@
     body.dark-mode .det-table tr:hover td { background:rgba(255,255,255,.04); }
     #btn-toggle-detalle.active { background:var(--clr-active-bg,#1a6b57); color:#fff; border-color:var(--clr-active-bg,#1a6b57); }
 
+    /* ── Badges de estado contable ── */
+    .accounting-badge { display:inline-flex; align-items:center; gap:.3rem; padding:.25rem .65rem; border-radius:12px; font-size:.72rem; font-weight:700; white-space:nowrap; }
+    .accounting-badge--incompleto { background:rgba(239,68,68,.1); color:#dc2626; border:1px solid rgba(239,68,68,.25); }
+    .accounting-badge--pendiente  { background:rgba(245,158,11,.1); color:#d97706; border:1px solid rgba(245,158,11,.25); }
+    .accounting-badge--listo      { background:rgba(16,185,129,.1); color:#059669; border:1px solid rgba(16,185,129,.25); }
+    body.dark-mode .accounting-badge--incompleto { background:rgba(239,68,68,.15); }
+    body.dark-mode .accounting-badge--pendiente  { background:rgba(245,158,11,.15); }
+    body.dark-mode .accounting-badge--listo      { background:rgba(16,185,129,.15); }
+    .btn-completar { display:inline-flex; align-items:center; gap:.3rem; padding:.28rem .7rem; background:rgba(245,158,11,.12); color:#d97706; border:1px solid rgba(245,158,11,.3); border-radius:8px; font-size:.72rem; font-weight:700; cursor:pointer; white-space:nowrap; transition:all .15s; }
+    .btn-completar:hover { background:rgba(245,158,11,.2); transform:translateY(-1px); }
+    body.dark-mode .btn-completar { background:rgba(245,158,11,.15); color:#fbbf24; }
+
     /* ── Tarjetas de resumen ── */
     .stat-cards { display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; margin-bottom:1.5rem; }
     @media(max-width:900px){ .stat-cards { grid-template-columns:repeat(2,1fr); } }
@@ -110,12 +122,21 @@
                 <button type="button" id="btn-toggle-detalle" class="btn-secondary" style="font-size:.85rem;" title="Ver todos los comprobantes con más columnas">
                   <i class='bx bx-table'></i> Más detalle
                 </button>
+                @php
+                  $listoCount = $invoices->where('accounting_status', \App\Enums\AccountingStatusEnum::LISTO)->count();
+                @endphp
+                <button type="button" id="btn-export-excel"
+                        style="display:{{ $listoCount > 0 ? 'inline-flex' : 'none' }}; align-items:center; gap:.4rem; padding:.55rem 1.1rem; background:#059669; color:#fff; border:none; border-radius:8px; cursor:pointer; font-size:.85rem; font-weight:600; transition:all .15s;"
+                        title="{{ $listoCount }} comprobante(s) listo(s) para exportar">
+                  <i class='bx bx-file-export'></i>
+                  Exportar Excel <span id="export-ready-count" style="background:rgba(255,255,255,.25); border-radius:10px; padding:.05rem .45rem; font-size:.75rem;">{{ $listoCount }}</span>
+                </button>
                 <a href="{{ route('facturador.index') }}" class="btn-secondary" style="font-size:.85rem;">
                   <i class='bx bx-building'></i> Cambiar empresa
                 </a>
                 @can('create', \App\Models\Invoice::class)
                   <a href="{{ route('facturador.invoices.create') }}" class="btn-primary">
-                    <i class='bx bx-plus'></i> Nueva Factura
+                    <i class='bx bx-plus'></i> Nueva Factura/Boleta
                   </a>
                 @endcan
               </div>
@@ -201,6 +222,7 @@
                     <th style="text-align:right;">Total</th>
                     <th>Estado</th>
                     <th>SUNAT</th>
+                    <th>Contable</th>
                     <th class="cell-action">Acciones</th>
                   </tr>
                 </thead>
@@ -226,8 +248,25 @@
                           {{ $invoice->estado_feasy->label() }}
                         </span>
                       </td>
+                      <td>
+                        @php $accStatus = $invoice->accounting_status ?? \App\Enums\AccountingStatusEnum::INCOMPLETO; @endphp
+                        <span class="accounting-badge accounting-badge--{{ $accStatus->value }}"
+                              data-accounting-badge="{{ $invoice->id }}"
+                              title="{{ $accStatus->label() }}">
+                          {{ $accStatus->icon() }} {{ $accStatus->label() }}
+                        </span>
+                      </td>
                       <td class="cell-action">
                         <div class="action-wrapper">
+                          @if($invoice->accounting_status !== \App\Enums\AccountingStatusEnum::LISTO)
+                            <button type="button"
+                                    class="btn-completar"
+                                    data-completar-btn="{{ $invoice->id }}"
+                                    onclick="openAccountingModal({{ $invoice->id }})"
+                                    title="Completar información contable">
+                              ⚠ Completar
+                            </button>
+                          @endif
                           <a href="{{ route('facturador.invoices.show', $invoice) }}" class="btn-action-icon" title="Ver detalle">
                             <i class='bx bx-show'></i>
                           </a>
@@ -290,6 +329,7 @@
                     <th style="text-align:right;">Total</th>
                     <th>Estado</th>
                     <th>SUNAT</th>
+                    <th>Contable</th>
                     <th style="text-align:center;">Acciones</th>
                   </tr>
                 </thead>
@@ -331,8 +371,27 @@
                           {{ $invoice->estado_feasy->label() }}
                         </span>
                       </td>
+                      <td>
+                        @php $accStatusDet = $invoice->accounting_status ?? \App\Enums\AccountingStatusEnum::INCOMPLETO; @endphp
+                        <span class="accounting-badge accounting-badge--{{ $accStatusDet->value }}"
+                              data-accounting-badge="{{ $invoice->id }}"
+                              style="font-size:.68rem; padding:.2rem .55rem;"
+                              title="{{ $accStatusDet->label() }}">
+                          {{ $accStatusDet->icon() }} {{ $accStatusDet->label() }}
+                        </span>
+                      </td>
                       <td style="text-align:center;">
                         <div class="action-wrapper" style="justify-content:center;">
+                          @if($invoice->accounting_status !== \App\Enums\AccountingStatusEnum::LISTO)
+                            <button type="button"
+                                    class="btn-completar"
+                                    data-completar-btn="{{ $invoice->id }}"
+                                    onclick="openAccountingModal({{ $invoice->id }})"
+                                    title="Completar información contable"
+                                    style="font-size:.68rem; padding:.2rem .55rem;">
+                              ⚠
+                            </button>
+                          @endif
                           <a href="{{ route('facturador.invoices.show', $invoice) }}" class="btn-action-icon" title="Ver detalle">
                             <i class='bx bx-show'></i>
                           </a>
@@ -384,12 +443,12 @@
               <div>
                 <h2 style="margin:0; font-size:1.05rem; display:flex; align-items:center; gap:.5rem;">
                   <i class='bx bx-info-circle' style="color:var(--clr-active-bg,#1a6b57);"></i>
-                  Información Adicional (Feasy)
+                  Información Adicional 
                 </h2>
                 <p style="margin:.3rem 0 0; color:#64748b; font-size:.88rem;">
                   Estos valores se envían automáticamente en el bloque <code>informacion_adicional</code>
-                  del JSON a SUNAT/Feasy al emitir cualquier Factura, Boleta o comprobante con SPOT.<br>
-                  Los <strong>nombres</strong> de los campos se configuran en el portal web de Feasy
+                  del JSON a SUNAT al emitir cualquier Factura, Boleta o comprobante con SPOT.<br>
+                  Los <strong>nombres</strong> de los campos se configuran en el portal web
                   (<em>Configuración → Campos Adicionales</em>).
                 </p>
               </div>
@@ -445,11 +504,22 @@
       </main>
     </section>
   </div>
+
+  {{-- ── Modales contables ── --}}
+  @include('facturador.invoices.partials.accounting-modal')
+  @include('facturador.invoices.partials.export-modal')
+
 @endsection
 
 @push('scripts')
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script>
+    // Rutas disponibles para los partials (sin exponer tokens en el HTML)
+    window.AccountingRoutes = {
+      get:         '{{ url('facturador/invoices') }}/:id/accounting',
+      save:        '{{ url('facturador/invoices') }}/:id/accounting',
+      exportCount: '{{ route('facturador.invoices.export-count') }}',
+    };
     document.querySelectorAll('[data-flash-message]').forEach((flash) => {
       const closeBtn = flash.querySelector('[data-flash-close]');
       if (closeBtn) closeBtn.addEventListener('click', () => flash.remove());
@@ -514,7 +584,7 @@
     }
 
     function iaAddRow() {
-      if (iaCount() >= MAX_IA) { alert('Máximo ' + MAX_IA + ' campos permitidos.'); return; }
+      if (iaCount() >= MAX_IA) { Swal.fire({icon:'warning', title:'Límite alcanzado', text:'Máximo ' + MAX_IA + ' campos permitidos.'}); return; }
       const n = iaCount() + 1;
       const row = document.createElement('div');
       row.className = 'ia-row';

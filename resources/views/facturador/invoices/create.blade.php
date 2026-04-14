@@ -49,6 +49,27 @@
     .detrac-monto-row .val { font-size:1.1rem; font-weight:800; color:#92400e; font-family:monospace; }
     .detrac-alert { display:flex; align-items:center; gap:.4rem; font-size:.78rem; color:#78350f; margin-top:.5rem; }
     .detrac-alert i { color:#f59e0b; font-size:1rem; }
+
+    /* ── Guías de Remisión ────────────────────────────────────────────── */
+    .guias-box { background:#f0fdf4; border:1px solid #bbf7d0; border-left:4px solid #16a34a; border-radius:10px; padding:.85rem 1rem; margin-top:1rem; }
+    .guias-box-off { background:#f9fafb; border:1px solid #e5e7eb; border-left:4px solid #d1d5db; border-radius:10px; padding:.75rem 1rem; margin-top:1rem; cursor:pointer; }
+    .guias-box-off:hover { border-left-color:#16a34a; background:#f0fdf4; }
+    .guias-toggle-row { display:flex; align-items:center; gap:.6rem; }
+    .guias-toggle-row label { font-weight:600; font-size:.9rem; color:#166534; cursor:pointer; }
+    .guias-table { width:100%; border-collapse:collapse; font-size:.8rem; margin-top:.75rem; }
+    .guias-table th { background:#dcfce7; padding:.35rem .45rem; text-align:left; font-weight:600; font-size:.78rem; }
+    .guias-table td { padding:.3rem .4rem; vertical-align:middle; }
+    .guias-table input, .guias-table select { padding:.28rem .4rem; border:1px solid #d1fae5; border-radius:5px; font-size:.8rem; width:100%; box-sizing:border-box; }
+
+    /* ── Entrega de Bienes ───────────────────────────────────────────── */
+    .entrega-box { background:#eff6ff; border:1px solid #bfdbfe; border-left:4px solid #2563eb; border-radius:10px; padding:.85rem 1rem; margin-top:1rem; }
+    .entrega-box-off { background:#f9fafb; border:1px solid #e5e7eb; border-left:4px solid #d1d5db; border-radius:10px; padding:.75rem 1rem; margin-top:1rem; cursor:pointer; }
+    .entrega-box-off:hover { border-left-color:#2563eb; background:#eff6ff; }
+    .entrega-toggle-row { display:flex; align-items:center; gap:.6rem; }
+    .entrega-toggle-row label { font-weight:600; font-size:.9rem; color:#1e40af; cursor:pointer; }
+    .entrega-fields { margin-top:.75rem; display:flex; flex-direction:column; gap:.55rem; }
+    .entrega-fields .form-group { margin:0; }
+    .entrega-fields label { font-size:.78rem; }
   </style>
 @endpush
 
@@ -113,7 +134,6 @@
                         <option value="03" {{ old('codigo_tipo_documento') == '03' ? 'selected' : '' }}>03 — Boleta</option>
                         <option value="07" {{ old('codigo_tipo_documento') == '07' ? 'selected' : '' }}>07 — N. Crédito</option>
                         <option value="08" {{ old('codigo_tipo_documento') == '08' ? 'selected' : '' }}>08 — N. Débito</option>
-                        <option value="09" {{ old('codigo_tipo_documento') == '09' ? 'selected' : '' }}>09 — Guía Remisión</option>
                       </select>
                       @error('codigo_tipo_documento')<p class="form-error">{{ $message }}</p>@enderror
                     </div>
@@ -362,7 +382,7 @@
                               </select>
                             </td>
                             <td><input type="number" name="items[{{ $i }}][cantidad]" class="qty" min="0.001" step="0.001" value="{{ $item['cantidad'] ?? '' }}" required></td>
-                            <td class="item-monetary-td"><input type="number" name="items[{{ $i }}][monto_precio_unitario]" class="price" min="0" step="0.0001" value="{{ $item['monto_precio_unitario'] ?? '' }}"></td>
+                            <td class="item-monetary-td"><input type="number" name="items[{{ $i }}][monto_precio_unitario]" class="price" min="0" step="0.00000001" value="{{ $item['monto_precio_unitario'] ?? '' }}"></td>
                             <td class="item-monetary-td">
                               <select name="items[{{ $i }}][codigo_indicador_afecto]" class="afecto">
                                 <option value="10" {{ ($item['codigo_indicador_afecto'] ?? '10') == '10' ? 'selected' : '' }}>10-Grav</option>
@@ -579,6 +599,122 @@
 
                   </div>
 
+                  {{-- ── Guías de Remisión adjuntas (solo Factura/Boleta) ─ --}}
+                  <div id="guias-wrapper" style="display:none;">
+
+                    {{-- Caja cerrada --}}
+                    <div id="guias-box-off" class="guias-box-off" onclick="toggleGuias(true)">
+                      <div class="guias-toggle-row">
+                        <i class='bx bx-file-blank' style="color:#16a34a; font-size:1.1rem;"></i>
+                        <label>Adjuntar Guía(s) de Remisión</label>
+                        <span style="margin-left:auto; font-size:.75rem; color:#166534; font-weight:600;">Click para añadir</span>
+                      </div>
+                    </div>
+
+                    {{-- Caja abierta --}}
+                    <div id="guias-box-on" class="guias-box" style="display:none;">
+                      <div class="guias-toggle-row" style="margin-bottom:.1rem;">
+                        <i class='bx bx-file-blank' style="color:#16a34a; font-size:1.1rem;"></i>
+                        <label style="color:#166534;">Guías de Remisión adjuntas</label>
+                        <button type="button" onclick="toggleGuias(false)" style="margin-left:auto; font-size:.75rem; background:none; border:none; color:#166534; cursor:pointer; font-weight:600;">✕ Quitar</button>
+                      </div>
+
+                      <table class="guias-table">
+                        <thead>
+                          <tr>
+                            <th style="width:80px;">Tipo</th>
+                            <th>Serie</th>
+                            <th>Número</th>
+                            <th style="width:30px;"></th>
+                          </tr>
+                        </thead>
+                        <tbody id="guias-body">
+                          @foreach(old('lista_guias', []) as $gi => $guia)
+                          <tr>
+                            <td>
+                              <select name="lista_guias[{{ $gi }}][codigo_tipo_documento]" class="guias-input">
+                                <option value="09" {{ ($guia['codigo_tipo_documento'] ?? '') === '09' ? 'selected' : '' }}>09 — GRE Remitente</option>
+                                <option value="31" {{ ($guia['codigo_tipo_documento'] ?? '') === '31' ? 'selected' : '' }}>31 — GRE Transport.</option>
+                              </select>
+                            </td>
+                            <td><input type="text" name="lista_guias[{{ $gi }}][serie_documento]" maxlength="10" placeholder="T001" value="{{ $guia['serie_documento'] ?? '' }}"></td>
+                            <td><input type="text" name="lista_guias[{{ $gi }}][numero_documento]" maxlength="20" placeholder="1" value="{{ $guia['numero_documento'] ?? '' }}"></td>
+                            <td><button type="button" class="btn-action-icon remove-guia" title="Quitar"><i class='bx bx-trash'></i></button></td>
+                          </tr>
+                          @endforeach
+                        </tbody>
+                      </table>
+
+                      <button type="button" id="add-guia-btn"
+                              style="font-size:.8rem; padding:.3rem .8rem; width:100%; margin-top:.5rem; background:#dcfce7; border:1px solid #86efac; border-radius:6px; color:#166534; cursor:pointer; font-weight:600;">
+                        <i class='bx bx-plus'></i> Agregar guía
+                      </button>
+                    </div>
+                  </div>
+
+                  {{-- ── Entrega de Bienes (lugar de entrega SUNAT) ──────── --}}
+                  <div id="entrega-wrapper" style="display:none;">
+
+                    {{-- Caja cerrada --}}
+                    <div id="entrega-box-off" class="entrega-box-off" onclick="toggleEntrega(true)">
+                      <div class="entrega-toggle-row">
+                        <i class='bx bx-map-pin' style="color:#2563eb; font-size:1.1rem;"></i>
+                        <label>Indicar lugar de entrega</label>
+                        <span style="margin-left:auto; font-size:.75rem; color:#1e40af; font-weight:600;">Click para añadir</span>
+                      </div>
+                    </div>
+
+                    {{-- Caja abierta --}}
+                    <div id="entrega-box-on" class="entrega-box" style="display:none;">
+                      <div class="entrega-toggle-row" style="margin-bottom:.1rem;">
+                        <i class='bx bx-map-pin' style="color:#2563eb; font-size:1.1rem;"></i>
+                        <label style="color:#1e40af;">Lugar de entrega de bienes</label>
+                        <button type="button" onclick="toggleEntrega(false)" style="margin-left:auto; font-size:.75rem; background:none; border:none; color:#1e40af; cursor:pointer; font-weight:600;">✕ Quitar</button>
+                      </div>
+
+                      <input type="hidden" name="indicador_entrega_bienes" value="0" id="h-entrega-indicator">
+
+                      <div class="entrega-fields">
+                        <div class="form-group">
+                          <label>Ubigeo</label>
+                          <input type="text" name="informacion_entrega_bienes[ubigeo_entrega]" class="form-input"
+                                 maxlength="6" placeholder="Ej: 150102"
+                                 value="{{ old('informacion_entrega_bienes.ubigeo_entrega') }}">
+                        </div>
+                        <div class="form-group">
+                          <label>Departamento</label>
+                          <input type="text" name="informacion_entrega_bienes[departamento_entrega]" class="form-input"
+                                 maxlength="100" placeholder="Ej: LIMA"
+                                 value="{{ old('informacion_entrega_bienes.departamento_entrega') }}">
+                        </div>
+                        <div class="form-group">
+                          <label>Provincia</label>
+                          <input type="text" name="informacion_entrega_bienes[provincia_entrega]" class="form-input"
+                                 maxlength="100" placeholder="Ej: LIMA"
+                                 value="{{ old('informacion_entrega_bienes.provincia_entrega') }}">
+                        </div>
+                        <div class="form-group">
+                          <label>Distrito</label>
+                          <input type="text" name="informacion_entrega_bienes[distrito_entrega]" class="form-input"
+                                 maxlength="100" placeholder="Ej: LIMA"
+                                 value="{{ old('informacion_entrega_bienes.distrito_entrega') }}">
+                        </div>
+                        <div class="form-group">
+                          <label>Dirección *</label>
+                          <input type="text" name="informacion_entrega_bienes[direccion_entrega]" class="form-input"
+                                 maxlength="300" placeholder="Jr. Lima 123"
+                                 value="{{ old('informacion_entrega_bienes.direccion_entrega') }}">
+                        </div>
+                        <div class="form-group">
+                          <label>País</label>
+                          <input type="text" name="informacion_entrega_bienes[codigo_pais_entrega]" class="form-input"
+                                 maxlength="2" placeholder="PE"
+                                 value="{{ old('informacion_entrega_bienes.codigo_pais_entrega', 'PE') }}">
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
                   {{-- Botones siempre visibles --}}
                   <div style="display:flex; flex-direction:column; gap:.5rem; margin-top:1.25rem;">
                     <button type="submit" class="btn-primary">
@@ -683,7 +819,7 @@ function newItemRow(i) {
       <option value="KGM">KGM</option><option value="MTR">MTR</option><option value="LTR">LTR</option>
     </select></td>
     <td><input type="number" name="items[${i}][cantidad]" class="qty" min="0.001" step="0.001" required></td>
-    <td class="item-monetary-td"${mHide}><input type="number" name="items[${i}][monto_precio_unitario]" class="price" min="0" step="0.0001" ${isGre ? '' : 'required'}></td>
+    <td class="item-monetary-td"${mHide}><input type="number" name="items[${i}][monto_precio_unitario]" class="price" min="0" step="0.00000001" ${isGre ? '' : 'required'}></td>
     <td class="item-monetary-td"${mHide}><select name="items[${i}][codigo_indicador_afecto]" class="afecto">
       <option value="10">10-Grav</option><option value="20">20-Exon</option>
       <option value="30">30-Ina</option><option value="40">40-Exp</option>
@@ -1013,19 +1149,19 @@ document.getElementById('invoice-form')?.addEventListener('submit', function(e) 
     const codigo = document.getElementById('detrac-codigo')?.value;
     if (!cuenta) {
       e.preventDefault();
-      alert('⚠️ Detracción SPOT: ingrese la cuenta del Banco de la Nación antes de guardar.');
+      Swal.fire({icon:'warning', title:'Detragación SPOT', text:'Ingrese la cuenta del Banco de la Nación antes de guardar.'});
       document.getElementById('detrac-cuenta')?.focus();
       return;
     }
     if (cuenta.length !== 11) {
       e.preventDefault();
-      alert('⚠️ La cuenta del Banco de la Nación debe tener exactamente 11 dígitos.');
+      Swal.fire({icon:'warning', title:'Cuenta inválida', text:'La cuenta del Banco de la Nación debe tener exactamente 11 dígitos.'});
       document.getElementById('detrac-cuenta')?.focus();
       return;
     }
     if (!codigo) {
       e.preventDefault();
-      alert('⚠️ Detracción SPOT: seleccione el código del bien o servicio sujeto a detracción.');
+      Swal.fire({icon:'warning', title:'Detragación SPOT', text:'Seleccione el código del bien o servicio sujeto a detracción.'});
       return;
     }
   }
@@ -1096,7 +1232,16 @@ function cuotasRenumber() {
 }
 
 function cuotasAddRow() {
-  if (cuotasCount() >= MAX_CUOTAS) { alert('Máximo ' + MAX_CUOTAS + ' cuotas.'); return; }
+  if (cuotasCount() >= MAX_CUOTAS) { 
+    Swal.fire({
+      title: 'Límite de cuotas',
+      text: 'Máximo ' + MAX_CUOTAS + ' cuotas.',
+      icon: 'warning',
+      confirmButtonText: 'OK',
+      customClass: { popup: document.body.classList.contains('dark-mode') ? 'swal2-dark' : '' }
+    });
+    return; 
+  }
   const i = cuotasCount();
   const row = document.createElement('div');
   row.className = 'cuota-row';
@@ -1133,5 +1278,93 @@ formaPagoSel?.addEventListener('change', function () {
 
 // Inicializar suma en carga
 cuotasUpdateSuma();
+
+// ── Guías de Remisión adjuntas ─────────────────────────────────────────
+// Solo se muestran para Factura (01) y Boleta (03)
+function updateGuiasWrapper() {
+  const tipo = document.getElementById('tipo-doc-select')?.value;
+  const w    = document.getElementById('guias-wrapper');
+  if (!w) return;
+  const visible = tipo === '01' || tipo === '03';
+  w.style.display = visible ? '' : 'none';
+  if (!visible) toggleGuias(false);
+}
+
+function toggleGuias(activate) {
+  const off = document.getElementById('guias-box-off');
+  const on  = document.getElementById('guias-box-on');
+  if (!off || !on) return;
+  off.style.display = activate ? 'none' : '';
+  on.style.display  = activate ? '' : 'none';
+  if (activate && document.querySelectorAll('#guias-body tr').length === 0) {
+    guiasAddRow();
+  }
+}
+
+let guiasIndex = {{ count(old('lista_guias', [])) }};
+function guiasAddRow() {
+  const i   = guiasIndex++;
+  const row = `<tr>
+    <td>
+      <select name="lista_guias[${i}][codigo_tipo_documento]" style="padding:.28rem .4rem;border:1px solid #d1fae5;border-radius:5px;font-size:.8rem;width:100%;">
+        <option value="09">09 — GRE Remitente</option>
+        <option value="31">31 — GRE Transport.</option>
+      </select>
+    </td>
+    <td><input type="text" name="lista_guias[${i}][serie_documento]" maxlength="10" placeholder="T001" style="padding:.28rem .4rem;border:1px solid #d1fae5;border-radius:5px;font-size:.8rem;width:100%;box-sizing:border-box;"></td>
+    <td><input type="text" name="lista_guias[${i}][numero_documento]" maxlength="20" placeholder="1" style="padding:.28rem .4rem;border:1px solid #d1fae5;border-radius:5px;font-size:.8rem;width:100%;box-sizing:border-box;"></td>
+    <td><button type="button" class="btn-action-icon remove-guia" title="Quitar"><i class='bx bx-trash'></i></button></td>
+  </tr>`;
+  const tbody = document.getElementById('guias-body');
+  if (tbody) {
+    tbody.insertAdjacentHTML('beforeend', row);
+    tbody.querySelector('tr:last-child .remove-guia')?.addEventListener('click', function () {
+      this.closest('tr').remove();
+    });
+  }
+}
+
+document.getElementById('add-guia-btn')?.addEventListener('click', guiasAddRow);
+document.querySelectorAll('#guias-body .remove-guia').forEach(btn => {
+  btn.addEventListener('click', function () { this.closest('tr').remove(); });
+});
+
+// Inicializar guías: mostrar sección si ya hay filas (old input)
+if (guiasIndex > 0) toggleGuias(true);
+
+// ── Entrega de Bienes ──────────────────────────────────────────────────
+function updateEntregaWrapper() {
+  const tipo = document.getElementById('tipo-doc-select')?.value;
+  const w    = document.getElementById('entrega-wrapper');
+  if (!w) return;
+  const visible = tipo === '01' || tipo === '03';
+  w.style.display = visible ? '' : 'none';
+  if (!visible) toggleEntrega(false);
+}
+
+function toggleEntrega(activate) {
+  const off = document.getElementById('entrega-box-off');
+  const on  = document.getElementById('entrega-box-on');
+  const ind = document.getElementById('h-entrega-indicator');
+  if (!off || !on) return;
+  off.style.display = activate ? 'none' : '';
+  on.style.display  = activate ? '' : 'none';
+  if (ind) ind.value = activate ? '1' : '0';
+}
+
+// Inicializar: si hay old input para entrega_bienes, abrir la caja
+@if(old('indicador_entrega_bienes') || old('informacion_entrega_bienes.direccion_entrega'))
+  document.addEventListener('DOMContentLoaded', function () { toggleEntrega(true); });
+@endif
+
+// Conectar cambio de tipo doc con visibilidad
+document.getElementById('tipo-doc-select')?.addEventListener('change', function () {
+  updateGuiasWrapper();
+  updateEntregaWrapper();
+});
+
+// Inicializar en carga
+updateGuiasWrapper();
+updateEntregaWrapper();
 </script>
 @endpush

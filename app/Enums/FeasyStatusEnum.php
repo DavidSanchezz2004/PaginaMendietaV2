@@ -15,6 +15,13 @@ enum FeasyStatusEnum: string
     /** Enviado y aceptado por SUNAT (codigo_respuesta = "0") */
     case SENT = 'sent';
 
+    /**
+     * Ticket generado por SUNAT (GRE asíncrona).
+     * codigo_respuesta = "A01" — equivale a "recibido, procesando".
+     * El estado definitivo se obtiene al consultar.
+     */
+    case TICKET = 'ticket';
+
     /** Rechazado por SUNAT (codigo_respuesta != "0") */
     case REJECTED = 'rejected';
 
@@ -29,6 +36,7 @@ enum FeasyStatusEnum: string
         return match($this) {
             self::PENDING   => 'Pendiente',
             self::SENT      => 'Aceptado SUNAT',
+            self::TICKET    => 'Ticket generado',
             self::REJECTED  => 'Rechazado SUNAT',
             self::ERROR     => 'Error Feasy',
             self::CONSULTED => 'Consultado',

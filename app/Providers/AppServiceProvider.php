@@ -18,6 +18,7 @@ use App\Repositories\Contracts\CompanyMembershipRepositoryInterface;
 use App\Repositories\Contracts\CompanyUserManagementRepositoryInterface;
 use App\Repositories\Contracts\InvoiceRepositoryInterface;
 use App\Repositories\Contracts\ProductRepositoryInterface;
+use App\Repositories\Contracts\PurchaseRepositoryInterface;
 use App\Repositories\Contracts\UserProfileRepositoryInterface;
 use App\Repositories\Contracts\UserRepositoryInterface;
 use App\Repositories\Eloquent\ClientRepository;
@@ -26,6 +27,7 @@ use App\Repositories\Eloquent\CompanyMembershipRepository;
 use App\Repositories\Eloquent\CompanyUserManagementRepository;
 use App\Repositories\Eloquent\InvoiceRepository;
 use App\Repositories\Eloquent\ProductRepository;
+use App\Repositories\Eloquent\PurchaseRepository;
 use App\Repositories\Eloquent\UserProfileRepository;
 use App\Repositories\Eloquent\UserRepository;
 use Illuminate\Support\Facades\Gate;
@@ -51,6 +53,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(ProductRepositoryInterface::class, ProductRepository::class);
         $this->app->bind(ClientRepositoryInterface::class, ClientRepository::class);
         $this->app->bind(InvoiceRepositoryInterface::class, InvoiceRepository::class);
+        $this->app->bind(PurchaseRepositoryInterface::class, PurchaseRepository::class);
     }
 
     /**
@@ -75,5 +78,6 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Client::class, ClientPolicy::class);
         Gate::policy(Invoice::class, InvoicePolicy::class);
         Gate::policy(CreditDebitNote::class, CreditDebitNotePolicy::class);
+        Gate::policy(\App\Models\Purchase::class, \App\Policies\PurchasePolicy::class);
     }
 }

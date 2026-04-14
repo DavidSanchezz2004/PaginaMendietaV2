@@ -140,7 +140,7 @@
 
                   <div class="module-actions" style="grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center;">
                       <div>
-                          <button type="submit" form="delete-form" class="btn-secondary" style="color: #dc2626; border-color: #fca5a5; background-color: #fef2f2;" onclick="return confirm('¿Estás seguro de que deseas eliminar esta noticia?');">
+                          <button type="button" form="delete-form" class="btn-secondary" style="color: #dc2626; border-color: #fca5a5; background-color: #fef2f2;" onclick="Swal.fire({title:'¿Estás seguro?',text:'¿Deseas eliminar esta noticia?',icon:'warning',showCancelButton:true,confirmButtonColor:'#dc2626',cancelButtonColor:'#6b7280',cancelButtonText:'Cancelar',confirmButtonText:'Sí, eliminar'}).then(r=>{if(r.isConfirmed)document.getElementById('delete-form').submit()})">
                               <i class='bx bx-trash'></i> Eliminar
                           </button>
                       </div>

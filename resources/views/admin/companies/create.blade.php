@@ -16,6 +16,12 @@
     $nameValue = old('name', $company->name ?? '');
     $statusValue = old('status', $company->status ?? 'active');
     $facturadorEnabled = (bool) old('facturador_enabled', $company->facturador_enabled ?? false);
+    $direccionValue = old('direccion_fiscal', $company->direccion_fiscal ?? '');
+    $ubigeoValue = old('ubigeo', $company->ubigeo ?? '');
+    $departamentoValue = old('departamento', $company->departamento ?? '');
+    $provinciaValue = old('provincia', $company->provincia ?? '');
+    $distritoValue = old('distrito', $company->distrito ?? '');
+    $ubicacionValue = old('ubicacion', implode(' - ', array_filter([$departamentoValue, $provinciaValue, $distritoValue])));
   @endphp
 
   <div class="app-layout">
@@ -89,13 +95,22 @@
             </div>
 
             <div class="form-group full-width">
-              <label>Dirección (SUNAT)</label>
-              <input type="text" id="direccion" class="form-input" value="{{ old('direccion') }}" readonly>
+              <label>Dirección Fiscal (SUNAT)</label>
+              <input type="text" id="direccion" name="direccion_fiscal" class="form-input" value="{{ $direccionValue }}" placeholder="Se completa al consultar el RUC">
             </div>
 
             <div class="form-group full-width">
               <label>Ubicación (Departamento - Provincia - Distrito)</label>
-              <input type="text" id="ubicacion" class="form-input" value="{{ old('ubicacion') }}" readonly>
+              <input type="text" id="ubicacion" class="form-input" value="{{ $ubicacionValue }}" readonly placeholder="Se completa al consultar el RUC">
+              <input type="hidden" id="departamento" name="departamento" value="{{ $departamentoValue }}">
+              <input type="hidden" id="provincia" name="provincia" value="{{ $provinciaValue }}">
+              <input type="hidden" id="distrito" name="distrito" value="{{ $distritoValue }}">
+            </div>
+
+            <div class="form-group">
+              <label>Ubigeo SUNAT <small style="color:#6b7280; font-weight:400;">(6 dígitos)</small></label>
+              <input type="text" id="ubigeo" name="ubigeo" class="form-input" value="{{ $ubigeoValue }}" maxlength="6" pattern="[0-9]{6}" placeholder="Ej. 150101" title="Código ubigeo SUNAT de 6 dígitos">
+              <small style="color:#6b7280; display:block; margin-top:.25rem;">Código de 6 dígitos según SUNAT. Lima Cercado = 150101, Arequipa = 040101</small>
             </div>
 
             <div class="form-group">
@@ -312,6 +327,10 @@
     const nameInput = document.getElementById('name');
     const direccionInput = document.getElementById('direccion');
     const ubicacionInput = document.getElementById('ubicacion');
+    const ubigeoInput = document.getElementById('ubigeo');
+    const departamentoInput = document.getElementById('departamento');
+    const provinciaInput = document.getElementById('provincia');
+    const distritoInput = document.getElementById('distrito');
     const statusInput = document.getElementById('status');
 
     if (btnLookup && rucInput && !btnLookup.disabled) {
@@ -319,7 +338,7 @@
         const ruc = (rucInput.value || '').trim();
 
         if (!/^\d{11}$/.test(ruc)) {
-          alert('El RUC debe tener 11 dígitos numéricos.');
+          Swal.fire({icon:'warning', title:'RUC inválido', text:'El RUC debe tener 11 dígitos numéricos.'});
           return;
         }
 
@@ -342,19 +361,23 @@
 
           if (!response.ok || !payload.success) {
             const errorText = payload?.message || payload?.errors?.ruc?.[0] || 'No se pudo consultar el RUC.';
-            alert(errorText);
+            Swal.fire({icon:'error', title:'Error', text: errorText});
             return;
           }
 
           nameInput.value = payload.data.name || '';
           direccionInput.value = payload.data.direccion || '';
           ubicacionInput.value = payload.data.ubicacion || '';
+          departamentoInput.value = payload.data.departamento || '';
+          provinciaInput.value = payload.data.provincia || '';
+          distritoInput.value = payload.data.distrito || '';
+          // ubigeo no viene del lookup — el usuario debe ingresarlo manualmente si lo necesita
 
           if (payload.data.status) {
             statusInput.value = payload.data.status;
           }
         } catch (error) {
-          alert('Error de conexión consultando el RUC.');
+          Swal.fire({icon:'error', title:'Error de conexión', text:'No se pudo consultar el RUC. Verifique su conexión.'});
         } finally {
           btnLookup.disabled = false;
           btnLookup.textContent = originalText;
@@ -369,7 +392,17 @@
 
     document.querySelectorAll('[data-confirm-remove]').forEach((form) => {
       form.addEventListener('submit', (e) => {
-        if (! confirm('¿Quitar a este usuario de la empresa?')) e.preventDefault();
+        e.preventDefault();
+        Swal.fire({
+          title: '¿Estás seguro?',
+          text: '¿Quitar a este usuario de la empresa?',
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#dc2626',
+          cancelButtonColor: '#6b7280',
+          cancelButtonText: 'Cancelar',
+          confirmButtonText: 'Sí, quitar'
+        }).then((result) => { if (result.isConfirmed) HTMLFormElement.prototype.submit.call(form); });
       });
     });
 

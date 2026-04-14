@@ -100,7 +100,7 @@
                 </form>
 
                 <div style="margin-top: 2rem; border-top: 1px solid #f3f4f6; padding-top: 1.5rem;">
-                    <form action="{{ route('credentials.destroy', $credential) }}" method="POST" onsubmit="return confirm('¿Está seguro de eliminar esta credencial permanentemente? No se puede recuperar.');">
+                    <form action="{{ route('credentials.destroy', $credential) }}" method="POST" data-confirm="¿Eliminar esta credencial permanentemente? No se puede recuperar.">
                         @csrf
                         @method('DELETE')
                         <button type="submit" style="background: none; border: none; color: #ef4444; font-size: 0.875rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; border-radius: 0.5rem; transition: background 0.2s;">

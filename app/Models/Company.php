@@ -34,6 +34,9 @@ class Company extends Model
         // ── Campos Facturador / SUNAT ──────────────────────────────────────
         'razon_social',
         'ubigeo',
+        'departamento',
+        'provincia',
+        'distrito',
         'direccion_fiscal',
         'feasy_token',       // encrypted
         'facturador_enabled',
@@ -45,6 +48,7 @@ class Company extends Model
         // ── Credenciales AFPnet ───────────────────────────────────────────
         'afpnet_usuario',
         'afpnet_clave',      // encrypted
+        'api_token',
     ];
 
     /**
@@ -100,6 +104,21 @@ class Company extends Model
         return $this->hasMany(\App\Models\InvoiceItem::class);
     }
 
+    public function purchases(): HasMany
+    {
+        return $this->hasMany(\App\Models\Purchase::class);
+    }
+
+    public function letras(): HasMany
+    {
+        return $this->hasMany(\App\Models\LetraCambio::class);
+    }
+
+    public function reglasContables(): HasMany
+    {
+        return $this->hasMany(\App\Models\ReglaContable::class);
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────
 
     /**
@@ -126,6 +145,21 @@ class Company extends Model
     public function canUseSunatPortal(): bool
     {
         return $this->status === 'active';
+    }
+
+    public function hasApiToken(): bool
+    {
+        return ! empty($this->api_token);
+    }
+
+    /**
+     * Genera un nuevo api_token seguro y lo persiste.
+     */
+    public function generateApiToken(): string
+    {
+        $token = bin2hex(random_bytes(32)); // 64 hex chars
+        $this->update(['api_token' => $token]);
+        return $token;
     }
 }
 

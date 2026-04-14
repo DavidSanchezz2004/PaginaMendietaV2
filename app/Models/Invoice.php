@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\AccountingStatusEnum;
 use App\Enums\FeasyStatusEnum;
 use App\Enums\InvoiceStatusEnum;
 use App\Models\Concerns\BelongsToActiveCompany;
@@ -49,6 +50,7 @@ class Invoice extends Model
         'observacion',
         'correo',
         'numero_orden_compra',
+        'lista_guias',          // guías de remisión adjuntas (JSON)
         'codigo_moneda',
         'porcentaje_igv',
         'monto_tipo_cambio',
@@ -83,6 +85,7 @@ class Invoice extends Model
         'gre_destinatario',
         'gre_vehiculos',
         'gre_conductores',
+        'gre_transportista',
         'estado',
         'estado_feasy',
         'codigo_respuesta_sunat',
@@ -98,6 +101,21 @@ class Invoice extends Model
         'sent_at',
         'consulted_at',
         'last_error',
+        // Campos contables (completado para exportación)
+        'accounting_status',
+        'tipo_operacion',
+        'tipo_venta',
+        'cuenta_contable',
+        'codigo_producto_servicio',
+        'glosa',
+        'centro_costo',
+        'tipo_gasto',
+        'sucursal',
+        'vendedor',
+        'es_anticipo',
+        'es_documento_contingencia',
+        'es_sujeto_retencion',
+        'es_sujeto_percepcion',
     ];
 
     protected function casts(): array
@@ -109,6 +127,7 @@ class Invoice extends Model
             'hora_emision'               => 'datetime:H:i:s',
             'informacion_entrega_bienes' => 'array',
             'indicador_entrega_bienes'   => 'boolean',
+            'lista_guias'                => 'array',
             // SPOT
             'indicador_detraccion'       => 'boolean',
             'informacion_detraccion'     => 'array',
@@ -121,8 +140,14 @@ class Invoice extends Model
             'gre_destinatario'           => 'array',
             'gre_vehiculos'              => 'array',
             'gre_conductores'            => 'array',
+            'gre_transportista'          => 'array',
             'estado'                     => InvoiceStatusEnum::class,
             'estado_feasy'               => FeasyStatusEnum::class,
+            'accounting_status'          => AccountingStatusEnum::class,
+            'es_anticipo'                => 'boolean',
+            'es_documento_contingencia'  => 'boolean',
+            'es_sujeto_retencion'        => 'boolean',
+            'es_sujeto_percepcion'       => 'boolean',
             'sent_at'                    => 'datetime',
             'consulted_at'               => 'datetime',
             // Montos como float (decimal con 2 decimales en cálculos)
@@ -171,6 +196,106 @@ class Invoice extends Model
         return "{$this->serie_documento}-{$this->numero_documento}";
     }
 
+    // ── Completitud contable ────────────────────────────────────────────────
+
+    /**
+     * Evalúa qué campos contables faltan y calcula el estado de completitud.
+     * Devuelve array con: status, missing_required, missing_optional, filled_count, total_required.
+     */
+    public function getAccountingCompletenessAttribute(): array
+    {
+        $required = [
+            'tipo_operacion'           => 'Tipo de operación',
+            'tipo_venta'               => 'Tipo de venta',
+            'cuenta_contable'          => 'Cuenta contable',
+            'codigo_producto_servicio' => 'Código producto/servicio',
+        ];
+
+        // forma_pago ya existe en el documento; solo exigir si es factura/boleta
+        if (in_array($this->codigo_tipo_documento ?? '', ['01', '03'])) {
+            $required['forma_pago'] = 'Forma de pago';
+        }
+
+        $optional = [
+            'glosa'        => 'Glosa',
+            'centro_costo' => 'Centro de costo',
+            'tipo_gasto'   => 'Tipo de gasto',
+        ];
+
+        $missingRequired = [];
+        foreach ($required as $field => $label) {
+            if (empty($this->{$field})) {
+                $missingRequired[$field] = $label;
+            }
+        }
+
+        $missingOptional = [];
+        foreach ($optional as $field => $label) {
+            if (empty($this->{$field})) {
+                $missingOptional[$field] = $label;
+            }
+        }
+
+        $filledCount = count($required) - count($missingRequired);
+
+        if (count($missingRequired) === 0) {
+            $status = AccountingStatusEnum::LISTO;
+        } elseif ($filledCount > 0) {
+            $status = AccountingStatusEnum::PENDIENTE;
+        } else {
+            $status = AccountingStatusEnum::INCOMPLETO;
+        }
+
+        return [
+            'status'           => $status,
+            'missing_required' => $missingRequired,
+            'missing_optional' => $missingOptional,
+            'filled_count'     => $filledCount,
+            'total_required'   => count($required),
+        ];
+    }
+
+    /**
+     * Genera sugerencias de auto-relleno basadas en el tipo de documento y datos del cliente.
+     */
+    public function getAutoFillSuggestionsAttribute(): array
+    {
+        $suggestions = [];
+
+        // Tipo de operación según código de comprobante
+        if (empty($this->tipo_operacion)) {
+            $suggestions['tipo_operacion'] = match ($this->codigo_tipo_documento ?? '') {
+                '01', '03' => '0101',  // Venta interna
+                '07'       => '0112',  // Nota crédito
+                '08'       => '0113',  // Nota débito
+                '09'       => '0116',  // Guía de remisión
+                default    => '0101',
+            };
+        }
+
+        // Tipo de venta según código de comprobante
+        if (empty($this->tipo_venta)) {
+            $suggestions['tipo_venta'] = match ($this->codigo_tipo_documento ?? '') {
+                '01', '03' => 'IN',  // Interna
+                '07'       => 'NC',  // Nota Crédito
+                '08'       => 'ND',  // Nota Débito
+                default    => 'IN',
+            };
+        }
+
+        // Forma de pago si no está seteada (para facturas/boletas)
+        if (empty($this->forma_pago) && in_array($this->codigo_tipo_documento ?? '', ['01', '03'])) {
+            $suggestions['forma_pago'] = '01'; // Contado por defecto
+        }
+
+        // Detectar si debería marcarse como sujeto a detracción
+        if (!$this->es_sujeto_retencion && $this->indicador_detraccion) {
+            $suggestions['indicador_detraccion'] = true;
+        }
+
+        return $suggestions;
+    }
+
     /**
      * ¿Se puede emitir? Solo draft o error (reintento).
      */
@@ -185,13 +310,21 @@ class Invoice extends Model
 
     /**
      * ¿Se puede consultar? Solo si ya fue enviada.
+     * Las GRE (tipo 09) también pueden consultarse desde ERROR porque son asíncronas:
+     * SUNAT puede haber recibido el documento aunque la respuesta haya llegado con error.
      */
     public function canBeConsulted(): bool
     {
-        return in_array($this->estado, [
+        $states = [
             InvoiceStatusEnum::SENT,
             InvoiceStatusEnum::CONSULTED,
-        ], true);
+        ];
+
+        if ($this->codigo_tipo_documento === '09') {
+            $states[] = InvoiceStatusEnum::ERROR;
+        }
+
+        return in_array($this->estado, $states, true);
     }
 
     /**

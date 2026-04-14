@@ -103,7 +103,7 @@
                     </form>
 
                     <div style="margin-top: 2rem; border-top: 1px solid #f3f4f6; padding-top: 1.5rem;">
-                        <form action="{{ route('obligations.destroy', $obligation) }}" method="POST" onsubmit="return confirm('¿Está seguro de eliminar esta obligación de forma permanente?');">
+                        <form action="{{ route('obligations.destroy', $obligation) }}" method="POST" data-confirm="¿Eliminar esta obligación permanentemente? Esta acción no se puede deshacer.">
                             @csrf
                             @method('DELETE')
                             <button type="submit" style="background: none; border: none; color: #ef4444; font-size: 0.875rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; border-radius: 0.5rem; transition: background 0.2s;">

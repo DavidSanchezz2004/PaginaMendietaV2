@@ -17,9 +17,9 @@ class DashboardController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-        
-        // Delegate fetching all role-specific metrics and data to the service
-        $data = $this->dashboardService->getDashboardData($user);
+        $year = (int) $request->query('year', now()->year);
+
+        $data = $this->dashboardService->getDashboardData($user, $year);
 
         return view('dashboard', $data);
     }

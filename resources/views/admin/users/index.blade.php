@@ -323,11 +323,19 @@
 
     document.querySelectorAll('[data-confirm-toggle]').forEach((form) => {
       form.addEventListener('submit', (e) => {
+        e.preventDefault();
         const btn = form.querySelector('button[data-toggle-label]');
         const label = btn?.dataset.toggleLabel ?? 'cambiar estado de';
-        if (!confirm(`¿Estás seguro de que deseas ${label} a este usuario?`)) {
-          e.preventDefault();
-        }
+        Swal.fire({
+          title: '¿Estás seguro?',
+          text: `¿Deseas ${label} a este usuario?`,
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#dc2626',
+          cancelButtonColor: '#6b7280',
+          cancelButtonText: 'Cancelar',
+          confirmButtonText: 'Sí, continuar'
+        }).then((result) => { if (result.isConfirmed) HTMLFormElement.prototype.submit.call(form); });
       });
     });
   </script>

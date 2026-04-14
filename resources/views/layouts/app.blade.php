@@ -128,6 +128,30 @@
     }
   </script>
 
+  {{-- SweetAlert2 --}}
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      document.querySelectorAll('form[data-confirm]').forEach(function (form) {
+        form.addEventListener('submit', function (e) {
+          e.preventDefault();
+          Swal.fire({
+            title: '¿Estás seguro?',
+            text: form.dataset.confirm,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc2626',
+            cancelButtonColor: '#6b7280',
+            cancelButtonText: 'Cancelar',
+            confirmButtonText: 'Sí, continuar'
+          }).then(function (result) {
+            if (result.isConfirmed) HTMLFormElement.prototype.submit.call(form);
+          });
+        });
+      });
+    });
+  </script>
+
   {{-- JS por vista --}}
   @stack('scripts')
 </body>

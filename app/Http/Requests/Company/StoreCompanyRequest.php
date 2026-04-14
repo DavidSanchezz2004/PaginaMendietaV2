@@ -22,6 +22,11 @@ class StoreCompanyRequest extends FormRequest
             'name' => ['required', 'string', 'min:3', 'max:255'],
             'status' => ['required', 'string', Rule::in(['active', 'inactive'])],
             'facturador_enabled' => ['nullable', 'boolean'],
+            'ubigeo' => ['nullable', 'string', 'regex:/^[0-9]{6}$/', 'max:6'],
+            'departamento' => ['nullable', 'string', 'max:30'],
+            'provincia' => ['nullable', 'string', 'max:30'],
+            'distrito' => ['nullable', 'string', 'max:30'],
+            'direccion_fiscal' => ['nullable', 'string', 'max:200'],
         ];
     }
 }

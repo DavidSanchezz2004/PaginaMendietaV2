@@ -620,7 +620,7 @@ function agregarKeyword() {
     const palabra   = document.getElementById('kw-input').value.trim();
     const prioridad = document.getElementById('kw-prioridad').value;
     const color     = document.getElementById('kw-color').value;
-    if (!palabra) { alert('Escribe una palabra clave.'); return; }
+    if (!palabra) { Swal.fire({icon:'warning', title:'Campo requerido', text:'Escribe una palabra clave.'}); return; }
     const urlKw = '{{ route("bandeja-sunat.keywords.store") }}';
     fetch(urlKw, {
         method: 'POST',
@@ -629,7 +629,7 @@ function agregarKeyword() {
     })
     .then(r => r.json())
     .then(data => {
-        if (!data.ok) { alert(data.message ?? 'Error al agregar'); return; }
+        if (!data.ok) { Swal.fire({icon:'error', title:'Error', text: data.message ?? 'Error al agregar'}); return; }
         document.getElementById('kw-input').value = '';
         document.getElementById('kw-filter').value = '';
         cargarKeywords();
@@ -637,8 +637,18 @@ function agregarKeyword() {
     });
 }
 
-function eliminarKeyword(id) {
-    if (!confirm('Eliminar esta palabra clave?')) return;
+async function eliminarKeyword(id) {
+    const elimResult = await Swal.fire({
+      title: '¿Eliminar palabra clave?',
+      text: 'Esta acción no se puede deshacer.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#dc2626',
+      cancelButtonColor: '#6b7280',
+      cancelButtonText: 'Cancelar',
+      confirmButtonText: 'Sí, eliminar'
+    });
+    if (!elimResult.isConfirmed) return;
     const urlDel = '{{ url("bandeja-sunat/keywords") }}/' + id;
     fetch(urlDel, {
         method: 'DELETE',

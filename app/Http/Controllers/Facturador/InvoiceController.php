@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Facturador;
 
+use App\Enums\AccountingStatusEnum;
+use App\Exports\InvoiceExport;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Facturador\StoreInvoiceRequest;
 use App\Models\Invoice;
@@ -10,11 +12,14 @@ use App\Models\SpotDetraccion;
 use App\Services\Facturador\ClientService;
 use App\Services\Facturador\InvoiceService;
 use App\Services\Facturador\ProductService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
+use Maatwebsite\Excel\Facades\Excel;
 use RuntimeException;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
@@ -111,9 +116,16 @@ class InvoiceController extends Controller
 
         if ($tipoDoc === '09') {
             // GRE: ítems sin montos, sin cliente, sin forma de pago
-            $items = array_map(fn (array $item): array => array_intersect_key($item, array_flip([
+            $items = array_map(fn (array $item): array => array_merge([
+                'monto_valor_unitario'    => 0,
+                'monto_precio_unitario'   => 0,
+                'monto_valor_total'       => 0,
+                'monto_igv'               => 0,
+                'monto_total'             => 0,
+                'codigo_indicador_afecto' => '10',
+            ], array_intersect_key($item, array_flip([
                 'correlativo', 'codigo_interno', 'codigo_unidad_medida', 'descripcion', 'cantidad',
-            ])), $items);
+            ]))), $items);
 
             // Forzar defaults para campos que no aplican a GRE
             $validated['client_id']           = null;
@@ -123,6 +135,7 @@ class InvoiceController extends Controller
             $validated['monto_total']          = 0;
             $validated['porcentaje_igv']       = $validated['porcentaje_igv'] ?? 18;
             $validated['codigo_moneda']        = $validated['codigo_moneda'] ?? 'PEN';
+            $validated['lista_guias']          = null; // GRE no adjunta guías
         } else {
             // Calcular monto_valor_unitario y monto_valor_total si no los envió el JS
             $igvRate = (float) ($validated['porcentaje_igv'] ?? 18) / 100;
@@ -365,5 +378,192 @@ class InvoiceController extends Controller
 
         return redirect()->route('facturador.invoices.show', $invoice)
             ->with('success', 'Cobro eliminado correctamente.');
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    // Completado contable + Exportación Excel
+    // ══════════════════════════════════════════════════════════════════════
+
+    /**
+     * Devuelve datos del comprobante + completitud + sugerencias autofill.
+     * GET /facturador/invoices/{invoice}/accounting  (AJAX)
+     */
+    public function getAccountingData(Invoice $invoice): JsonResponse
+    {
+        $this->authorize('view', $invoice);
+
+        $invoice->load('client');
+        $completeness = $invoice->accounting_completeness;
+        $suggestions  = $invoice->auto_fill_suggestions;
+
+        return response()->json([
+            'invoice' => [
+                'id'                       => $invoice->id,
+                'serie_numero'             => $invoice->serie_numero,
+                'codigo_tipo_documento'    => $invoice->codigo_tipo_documento,
+                'tipo_documento_label'     => ['01' => 'Factura', '03' => 'Boleta', '07' => 'N. Crédito', '08' => 'N. Débito', '09' => 'GRE'][$invoice->codigo_tipo_documento] ?? $invoice->codigo_tipo_documento,
+                'cliente'                  => $invoice->client?->nombre_razon_social ?? '—',
+                'ruc'                      => $invoice->client?->numero_documento ?? '—',
+                'tipo_doc_cliente'         => $invoice->client?->tipo_documento ?? '',
+                'monto_total'              => number_format((float) $invoice->monto_total, 2),
+                'codigo_moneda'            => $invoice->codigo_moneda ?? 'PEN',
+                'fecha_emision'            => $invoice->fecha_emision?->format('d/m/Y') ?? '',
+                'fecha_vencimiento'        => $invoice->fecha_vencimiento?->format('d/m/Y') ?? '',
+                'indicador_detraccion'     => (bool) $invoice->indicador_detraccion,
+                // Campos contables guardados
+                'forma_pago'               => $invoice->forma_pago ?? '',
+                'tipo_operacion'           => $invoice->tipo_operacion ?? '',
+                'tipo_venta'               => $invoice->tipo_venta ?? '',
+                'cuenta_contable'          => $invoice->cuenta_contable ?? '',
+                'codigo_producto_servicio' => $invoice->codigo_producto_servicio ?? '',
+                'glosa'                    => $invoice->glosa ?? '',
+                'centro_costo'             => $invoice->centro_costo ?? '',
+                'tipo_gasto'               => $invoice->tipo_gasto ?? '',
+                'sucursal'                 => $invoice->sucursal ?? '',
+                'vendedor'                 => $invoice->vendedor ?? '',
+                'es_anticipo'              => (bool) $invoice->es_anticipo,
+                'es_documento_contingencia'=> (bool) $invoice->es_documento_contingencia,
+                'es_sujeto_retencion'      => (bool) $invoice->es_sujeto_retencion,
+                'es_sujeto_percepcion'     => (bool) $invoice->es_sujeto_percepcion,
+                'lista_cuotas'             => $invoice->lista_cuotas ?? [],
+                'accounting_status'        => $invoice->accounting_status?->value ?? 'incompleto',
+            ],
+            'completeness' => $completeness,
+            'suggestions'  => $suggestions,
+        ]);
+    }
+
+    /**
+     * Guarda los campos contables y recalcula accounting_status.
+     * PATCH /facturador/invoices/{invoice}/accounting  (AJAX)
+     */
+    public function saveAccounting(Request $request, Invoice $invoice): JsonResponse
+    {
+        $this->authorize('view', $invoice);
+
+        $validated = $request->validate([
+            'tipo_operacion'            => 'required|string|max:10',
+            'tipo_venta'                => 'required|string|max:10',
+            'cuenta_contable'           => 'required|string|max:10',
+            'codigo_producto_servicio'  => 'required|string|max:50',
+            'forma_pago'                => 'required|in:1,2',
+            'glosa'                     => 'nullable|string|max:500',
+            'centro_costo'              => 'nullable|string|max:50',
+            'tipo_gasto'                => 'nullable|string|max:20',
+            'sucursal'                  => 'nullable|string|max:50',
+            'vendedor'                  => 'nullable|string|max:100',
+            'es_anticipo'               => 'boolean',
+            'es_documento_contingencia' => 'boolean',
+            'es_sujeto_retencion'       => 'boolean',
+            'es_sujeto_percepcion'      => 'boolean',
+            // Cuotas (solo si crédito)
+            'cuota_1_fecha'             => 'nullable|date',
+            'cuota_1_monto'             => 'nullable|numeric|min:0',
+            'cuota_2_fecha'             => 'nullable|date',
+            'cuota_2_monto'             => 'nullable|numeric|min:0',
+        ]);
+
+        // Construir cuotas si el pago es a crédito
+        $cuotas = $invoice->lista_cuotas ?? [];
+        if ($validated['forma_pago'] === '2') {
+            $cuotas = [];
+            if (!empty($validated['cuota_1_fecha']) && !empty($validated['cuota_1_monto'])) {
+                $cuotas[] = [
+                    'fecha_pago' => $validated['cuota_1_fecha'],
+                    'monto'      => (float) $validated['cuota_1_monto'],
+                    'moneda'     => $invoice->codigo_moneda ?? 'PEN',
+                ];
+            }
+            if (!empty($validated['cuota_2_fecha']) && !empty($validated['cuota_2_monto'])) {
+                $cuotas[] = [
+                    'fecha_pago' => $validated['cuota_2_fecha'],
+                    'monto'      => (float) $validated['cuota_2_monto'],
+                    'moneda'     => $invoice->codigo_moneda ?? 'PEN',
+                ];
+            }
+        }
+
+        $invoice->fill([
+            'tipo_operacion'            => $validated['tipo_operacion'],
+            'tipo_venta'                => $validated['tipo_venta'],
+            'cuenta_contable'           => $validated['cuenta_contable'],
+            'codigo_producto_servicio'  => $validated['codigo_producto_servicio'],
+            'forma_pago'                => $validated['forma_pago'],
+            'glosa'                     => $validated['glosa'] ?? null,
+            'centro_costo'              => $validated['centro_costo'] ?? null,
+            'tipo_gasto'                => $validated['tipo_gasto'] ?? null,
+            'sucursal'                  => $validated['sucursal'] ?? null,
+            'vendedor'                  => $validated['vendedor'] ?? null,
+            'es_anticipo'               => (bool) ($validated['es_anticipo'] ?? false),
+            'es_documento_contingencia' => (bool) ($validated['es_documento_contingencia'] ?? false),
+            'es_sujeto_retencion'       => (bool) ($validated['es_sujeto_retencion'] ?? false),
+            'es_sujeto_percepcion'      => (bool) ($validated['es_sujeto_percepcion'] ?? false),
+            'lista_cuotas'              => !empty($cuotas) ? $cuotas : $invoice->lista_cuotas,
+        ]);
+
+        // Recalcular accounting_status
+        $completeness = $invoice->accounting_completeness;
+        $invoice->accounting_status = $completeness['status'];
+        $invoice->save();
+
+        return response()->json([
+            'success'           => true,
+            'accounting_status' => $invoice->accounting_status->value,
+            'label'             => $invoice->accounting_status->label(),
+            'completeness'      => $invoice->accounting_completeness,
+        ]);
+    }
+
+    /**
+     * Cuenta comprobantes listos en un rango para el modal de exportación.
+     * GET /facturador/invoices/export-count  (AJAX)
+     */
+    public function exportCount(Request $request): JsonResponse
+    {
+        $this->authorize('viewAny', Invoice::class);
+
+        $validated = $request->validate([
+            'from' => 'required|date',
+            'to'   => 'required|date|after_or_equal:from',
+        ]);
+
+        $count = Invoice::where('company_id', session('company_id'))
+            ->where('accounting_status', 'listo')
+            ->whereBetween('fecha_emision', [$validated['from'], $validated['to']])
+            ->count();
+
+        return response()->json(['count' => $count]);
+    }
+
+    /**
+     * Exporta comprobantes listos a Excel SUNAT-ready.
+     * GET /facturador/invoices/export-excel?from=YYYY-MM-DD&to=YYYY-MM-DD
+     */
+    public function exportExcel(Request $request): BinaryFileResponse|RedirectResponse
+    {
+        $this->authorize('viewAny', Invoice::class);
+
+        $validated = $request->validate([
+            'from' => 'required|date',
+            'to'   => 'required|date|after_or_equal:from',
+        ]);
+
+        $companyId = session('company_id');
+        $count = Invoice::where('company_id', $companyId)
+            ->where('accounting_status', 'listo')
+            ->whereBetween('fecha_emision', [$validated['from'], $validated['to']])
+            ->count();
+
+        if ($count === 0) {
+            return redirect()->route('facturador.invoices.index')
+                ->with('warning', 'No hay comprobantes listos en ese rango de fechas.');
+        }
+
+        $filename = 'LibroVentas_' . str_replace('-', '', $validated['from']) . '_' . str_replace('-', '', $validated['to']) . '.xlsx';
+
+        return Excel::download(
+            new InvoiceExport($companyId, $validated['from'], $validated['to']),
+            $filename
+        );
     }
 }

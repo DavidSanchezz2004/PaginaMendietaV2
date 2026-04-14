@@ -11,7 +11,11 @@ use App\Http\Controllers\Configuration\InformacionAdicionalConfigController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Facturador\ClientController;
 use App\Http\Controllers\Facturador\FacturadorController;
+use App\Http\Controllers\Facturador\LetraCambioController;
+use App\Http\Controllers\Facturador\PurchaseController;
+use App\Http\Controllers\Facturador\GREController;
 use App\Http\Controllers\Facturador\InvoiceController;
+use App\Http\Controllers\Facturador\QuotationController;
 use App\Http\Controllers\Facturador\CreditDebitNoteController;
 use App\Http\Controllers\Facturador\ProductController;
 use App\Http\Controllers\Facturador\SunatLoginController;
@@ -164,7 +168,12 @@ Route::middleware('auth')->group(function (): void {
             Route::get('clients/{client}/abrir-sunat', [SunatLoginController::class, 'abrirSunat'])
                 ->name('clients.abrir-sunat');
 
-            // Facturas
+            // Facturas — rutas estáticas ANTES del resource para evitar colisión con {invoice}
+            Route::get('invoices/export-excel', [InvoiceController::class, 'exportExcel'])
+                ->name('invoices.export-excel');
+            Route::get('invoices/export-count', [InvoiceController::class, 'exportCount'])
+                ->name('invoices.export-count');
+
             Route::resource('invoices', InvoiceController::class)
                 ->except(['edit', 'update']);
 
@@ -188,6 +197,64 @@ Route::middleware('auth')->group(function (): void {
             Route::delete('invoices/{invoice}/payments/{payment}', [InvoiceController::class, 'destroyPayment'])
                 ->name('invoices.payments.destroy');
 
+            // ── Completado contable + Exportación Excel ─────────────────────────────────────
+            Route::get('invoices/{invoice}/accounting',  [InvoiceController::class, 'getAccountingData'])
+                ->name('invoices.accounting.get');
+            Route::patch('invoices/{invoice}/accounting', [InvoiceController::class, 'saveAccounting'])
+                ->name('invoices.accounting.save');
+
+            // ── Compras ───────────────────────────────────────────────────────────────────
+            Route::get('compras/export-excel',  [PurchaseController::class, 'exportExcel'])
+                ->name('compras.export-excel');
+            Route::get('compras/export-count',  [PurchaseController::class, 'exportCount'])
+                ->name('compras.export-count');
+            Route::get('compras/lookup-provider', [PurchaseController::class, 'lookupProvider'])
+                ->name('compras.lookup-provider');
+            Route::get('compras/subir', [PurchaseController::class, 'subirForm'])
+                ->name('compras.subir');
+            Route::post('compras/subir', [PurchaseController::class, 'subirProcesar'])
+                ->name('compras.subir.procesar');
+            Route::post('compras/subir-pdf-extraer', [PurchaseController::class, 'subirPdfExtraer'])
+                ->name('compras.subir.pdf.extraer');
+            Route::post('compras/subir-pdf-confirmar', [PurchaseController::class, 'subirPdfConfirmar'])
+                ->name('compras.subir.pdf.confirmar');
+
+            Route::resource('compras', PurchaseController::class)
+                ->except(['edit', 'update'])
+                ->parameters(['compras' => 'purchase']);
+
+            Route::get('compras/{purchase}/edit',   [PurchaseController::class, 'edit'])
+                ->name('compras.edit');
+            Route::put('compras/{purchase}',         [PurchaseController::class, 'update'])
+                ->name('compras.update');
+
+            Route::get('compras/{purchase}/accounting',  [PurchaseController::class, 'getAccountingData'])
+                ->name('compras.accounting.get');
+            Route::patch('compras/{purchase}/accounting', [PurchaseController::class, 'saveAccounting'])
+                ->name('compras.accounting.save');
+
+            // ── Letras de Cambio ──────────────────────────────────────────────────────────
+            Route::get('letras', [LetraCambioController::class, 'index'])
+                ->name('letras.index');
+            Route::get('letras/{letraCambio}', [LetraCambioController::class, 'show'])
+                ->name('letras.show');
+            Route::get('letras/{letraCambio}/imprimir', [LetraCambioController::class, 'imprimir'])
+                ->name('letras.imprimir');
+            Route::post('letras/{letraCambio}/pago', [LetraCambioController::class, 'registrarPago'])
+                ->name('letras.pago');
+            Route::get('compras/{purchase}/canjear', [LetraCambioController::class, 'canjeForm'])
+                ->name('compras.canjear.form');
+            Route::post('compras/{purchase}/canjear', [LetraCambioController::class, 'canjear'])
+                ->name('compras.canjear');
+
+            // ── Cotizador ──────────────────────────────────────────────────────────────────
+            Route::get('quotations/create', [QuotationController::class, 'create'])
+                ->name('quotations.create');
+            Route::post('quotations/preview', [QuotationController::class, 'preview'])
+                ->name('quotations.preview');
+            Route::get('quotations/service-proposal/{regimen?}', [QuotationController::class, 'serviceProposal'])
+                ->name('quotations.service-proposal');
+
             // Notas de Crédito y Débito (oculto temporalmente)
             // Route::resource('credit-debit-notes', CreditDebitNoteController::class)
             //     ->except(['edit', 'update']);
@@ -197,6 +264,23 @@ Route::middleware('auth')->group(function (): void {
             //     ->name('credit_debit_notes.consult');
             // Route::get('credit-debit-notes/{creditDebitNote}/xml',      [CreditDebitNoteController::class, 'downloadXml'])
             //     ->name('credit_debit_notes.xml');
+
+            // ── Guías de Remisión Electrónica (GRE) ───────────────────────
+            Route::resource('gre', GREController::class)
+                ->except(['edit', 'update']);
+
+            Route::post('gre/{invoice}/emit',    [GREController::class, 'emit'])
+                ->name('gre.emit')
+                ->middleware('throttle:20,1');
+
+            Route::post('gre/{invoice}/consult', [GREController::class, 'consult'])
+                ->name('gre.consult');
+
+            Route::post('gre/{invoice}/void',    [GREController::class, 'void'])
+                ->name('gre.void');
+
+            Route::get('gre/{invoice}/xml',      [GREController::class, 'downloadXml'])
+                ->name('gre.xml');
 
             // ── Configuración: Información Adicional (valores enviados a Feasy) ──
             Route::put('configuracion/informacion-adicional', [InformacionAdicionalConfigController::class, 'update'])

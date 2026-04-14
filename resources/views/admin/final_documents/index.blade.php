@@ -109,7 +109,7 @@
                                       </a>
                                       
                                       @if(auth()->user()->role === \App\Enums\RoleEnum::ADMIN || auth()->user()->role === \App\Enums\RoleEnum::SUPERVISOR)
-                                      <form action="{{ route('final-documents.destroy', $doc) }}" method="POST" onsubmit="return confirm('¿Eliminar este documento permanentemente de los registros de la empresa?');" style="margin: 0;">
+                                      <form action="{{ route('final-documents.destroy', $doc) }}" method="POST" data-confirm="¿Eliminar este documento permanentemente de los registros de la empresa?" style="margin: 0;">
                                           @csrf
                                           @method('DELETE')
                                           <button type="submit" class="btn-secondary" style="padding: 0.35rem 0.5rem; color: #dc2626; border-color: #fca5a5; background-color: #fef2f2;" title="Eliminar">

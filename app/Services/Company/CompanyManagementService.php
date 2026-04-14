@@ -44,6 +44,11 @@ class CompanyManagementService
             'name' => (string) $validated['name'],
             'status' => (string) ($validated['status'] ?? 'active'),
             'facturador_enabled' => (bool) ($validated['facturador_enabled'] ?? false),
+            'ubigeo' => $validated['ubigeo'] ?? null,
+            'departamento' => $validated['departamento'] ?? null,
+            'provincia' => $validated['provincia'] ?? null,
+            'distrito' => $validated['distrito'] ?? null,
+            'direccion_fiscal' => $validated['direccion_fiscal'] ?? null,
         ]);
 
         $ownerUser->companies()->syncWithoutDetaching([
@@ -63,6 +68,11 @@ class CompanyManagementService
             'name' => (string) $validated['name'],
             'status' => (string) ($validated['status'] ?? 'active'),
             'facturador_enabled' => (bool) ($validated['facturador_enabled'] ?? false),
+            'ubigeo' => $validated['ubigeo'] ?? null,
+            'departamento' => $validated['departamento'] ?? null,
+            'provincia' => $validated['provincia'] ?? null,
+            'distrito' => $validated['distrito'] ?? null,
+            'direccion_fiscal' => $validated['direccion_fiscal'] ?? null,
         ]);
     }
 
@@ -129,6 +139,9 @@ class CompanyManagementService
                 $data['provincia'],
                 $data['distrito'],
             ])),
+            'departamento' => $data['departamento'],
+            'provincia' => $data['provincia'],
+            'distrito' => $data['distrito'],
             'status' => mb_strtoupper($data['estado']) === 'ACTIVO' ? 'active' : 'inactive',
         ];
     }

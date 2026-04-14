@@ -127,7 +127,25 @@
 @push('scripts')
   <script>
     document.querySelectorAll('[data-confirm-delete]').forEach(f => {
-      f.addEventListener('submit', e => { if (!confirm('¿Eliminar este cliente?')) e.preventDefault(); });
+      f.addEventListener('submit', async e => {
+        e.preventDefault();
+        const result = await Swal.fire({
+          title: 'Eliminar cliente',
+          text: 'Esta acción no se puede deshacer.',
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonText: 'Sí, eliminar',
+          cancelButtonText: 'Cancelar',
+          reverseButtons: true,
+          customClass: {
+            popup: document.body.classList.contains('dark-mode') ? 'swal2-dark' : ''
+          }
+        });
+
+        if (result.isConfirmed) {
+          HTMLFormElement.prototype.submit.call(f);
+        }
+      });
     });
     document.querySelectorAll('[data-flash-message]').forEach((flash) => {
       const closeBtn = flash.querySelector('[data-flash-close]');
