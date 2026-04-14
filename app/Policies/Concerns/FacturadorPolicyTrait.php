@@ -40,6 +40,15 @@ trait FacturadorPolicyTrait
      */
     protected function canAccessFacturador(User $user): bool
     {
+        // Caso A: admin global bypassa restricción de pivot role y empresa activa
+        $globalRole = $user->role instanceof RoleEnum
+            ? $user->role->value
+            : (string) $user->role;
+
+        if (in_array($globalRole, $this->globalRoles, true)) {
+            return true;
+        }
+
         $companyId = session('company_id');
 
         if (! $companyId) {
@@ -50,15 +59,6 @@ trait FacturadorPolicyTrait
         $company = Company::find($companyId);
         if (! $company || ! $company->facturador_enabled) {
             return false;
-        }
-
-        // Caso A: admin global bypassa restricción de pivot role
-        $globalRole = $user->role instanceof RoleEnum
-            ? $user->role->value
-            : (string) $user->role;
-
-        if (in_array($globalRole, $this->globalRoles, true)) {
-            return true;
         }
 
         // Caso B: verificar pivot estrictamente en BD (no en sesión)
