@@ -110,9 +110,25 @@ ARG OPENAI_MODEL=gpt-4o-mini
 ARG GIT_SHA=
 
 # System deps + required PHP extensions
+# maatwebsite/excel (PHPSpreadsheet) needs: gd, xml, mbstring, bcmath, intl, zip
+# smalot/pdfparser needs: mbstring, xml
 RUN apt-get update && apt-get install -y \
-    git unzip zip libzip-dev \
-  && docker-php-ext-install pdo_mysql zip \
+    git unzip zip \
+    libzip-dev \
+    libgd-dev \
+    libxml2-dev \
+    libicu-dev \
+    libonig-dev \
+  && docker-php-ext-configure gd \
+  && docker-php-ext-install \
+      pdo_mysql \
+      zip \
+      gd \
+      xml \
+      mbstring \
+      bcmath \
+      intl \
+      simplexml \
   && rm -rf /var/lib/apt/lists/*
 
 # Composer binary
