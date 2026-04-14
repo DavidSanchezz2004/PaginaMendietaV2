@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\RoleEnum;
 use App\Models\Company;
 use Closure;
 use Illuminate\Http\Request;
@@ -22,6 +23,17 @@ class EnsureFacturadorEnabled
 {
     public function handle(Request $request, Closure $next): Response
     {
+        // Admin global bypasea la restricción de facturador_enabled
+        $user = $request->user();
+        if ($user) {
+            $globalRole = $user->role instanceof RoleEnum
+                ? $user->role->value
+                : (string) $user->role;
+            if ($globalRole === 'admin') {
+                return $next($request);
+            }
+        }
+
         $companyId = $request->session()->get('company_id');
 
         if (! $companyId) {
