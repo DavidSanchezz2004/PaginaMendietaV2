@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use Database\Seeders\InitialSetupSeeder;
+use Database\Seeders\SpotDetraccionSeeder;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -17,6 +18,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             InitialSetupSeeder::class,
+            SpotDetraccionSeeder::class,
         ]);
     }
 }
