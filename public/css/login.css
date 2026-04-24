@@ -1,0 +1,474 @@
+:root {
+    /* Paleta Corporativa Oficial Mendieta */
+    --color-primary: #053d38; /* Verde oscuro oficial */
+    --color-primary-light: #34675c; /* Verde medio oficial */
+    --color-accent: #a3ccaa; /* Verde claro oficial / Acento */
+    --color-text-dark: #13140e; /* Negro oficial */
+    --color-text-gray: #6b7280;
+    --color-bg-form: #ffffff;
+    --color-bg-input: #f9fafb;
+    --color-border: #b2c8c1; /* Gris verdoso claro para bordes */
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+    background-color: var(--color-bg-form);
+    color: var(--color-text-dark);
+}
+
+.auth-layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* =========================================
+   LADO IZQUIERDO: FORMULARIO
+   ========================================= */
+.auth-form-section {
+    width: 45%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 3rem;
+    background-color: var(--color-bg-form);
+    z-index: 10;
+}
+
+.auth-form-container {
+    width: 100%;
+    max-width: 420px;
+}
+
+.logo-wrapper {
+    position: absolute;
+    top: 3rem;
+    left: 4rem;
+    z-index: 20;
+}
+
+/* La imagen es la proporcionada, pero nos aseguramos que se vea bien como logo de cabecera */
+.brand-logo-img {
+    height: 85px;
+    width: auto;
+    object-fit: contain;
+    /* Convertimos el logo a oscuro para que se vea perfectamente sobre el fondo blanco */
+    filter: brightness(0);
+}
+
+.auth-header {
+    margin-bottom: 2.5rem;
+}
+
+.auth-header h1 {
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: var(--color-primary);
+    margin-bottom: 0.5rem;
+}
+
+.auth-header p {
+    font-size: 1.05rem;
+    color: var(--color-text-gray);
+    font-weight: 500;
+}
+
+.luxury-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+/* Campos de Formulario Premium */
+.input-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.input-field label {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--color-text-dark);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Contenedor del input (para la contraseña) */
+.password-wrapper {
+    position: relative;
+    display: flex;
+}
+
+.input-field input {
+    width: 100%;
+    padding: 1rem 1.2rem;
+    background-color: var(--color-bg-input);
+    border: 1px solid transparent;
+    border-bottom: 2px solid var(--color-border);
+    border-radius: 4px 4px 0 0; /* Bordes rectos base para aspecto "establishment" */
+    font-size: 1rem;
+    color: var(--color-text-dark);
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.password-wrapper input {
+    padding-right: 4rem; /* Espacio para el botón de revelar */
+}
+
+.input-field input::placeholder {
+    color: #9ca3af;
+    font-weight: 400;
+}
+
+/* Estado Focus: sube sombras y activa el color principal */
+.input-field input:focus {
+    outline: none;
+    background-color: #ffffff;
+    border-bottom-color: var(--color-primary);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
+}
+
+.btn-toggle {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--color-text-gray);
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.btn-toggle:hover {
+    color: var(--color-text-dark);
+}
+
+/* Checkbox Personalizado y Olvido de Contraseña */
+.form-extras {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 0.5rem;
+}
+
+.custom-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+}
+
+.custom-checkbox input {
+    display: none; /* Ocultamos el nativo */
+}
+
+.checkmark {
+    width: 18px;
+    height: 18px;
+    background-color: var(--color-bg-input);
+    border: 2px solid var(--color-border);
+    border-radius: 3px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.2s;
+}
+
+.custom-checkbox input:checked + .checkmark {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
+.custom-checkbox input:checked + .checkmark::after {
+    content: "";
+    width: 4px;
+    height: 9px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+    margin-bottom: 2px;
+}
+
+.label-text {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--color-text-gray);
+}
+
+.forgot-link {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--color-text-dark);
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.forgot-link:hover {
+    color: var(--color-primary);
+    text-decoration: underline;
+}
+
+/* Botón Principal - Impactante y Sólido */
+.btn-submit {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--color-primary);
+    color: #ffffff;
+    border: none;
+    /* Sin border-radius para aspecto arquitectónico y serio */
+    padding: 1.15rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    margin-top: 1rem;
+    transition: all 0.3s ease;
+}
+
+.btn-submit:hover {
+    background-color: var(--color-primary-light);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(10, 27, 20, 0.15);
+}
+
+.btn-submit .arrow-icon {
+    font-size: 1.2rem;
+    transition: transform 0.3s ease;
+}
+
+.btn-submit:hover .arrow-icon {
+    transform: translateX(5px);
+}
+
+/* Pie de formulario */
+.auth-footer {
+    margin-top: 3rem;
+    border-top: 1px solid var(--color-border);
+    padding-top: 1.5rem;
+}
+
+.auth-footer p {
+    font-size: 0.8rem;
+    color: #9ca3af;
+    line-height: 1.5;
+}
+
+.auth-footer a {
+    color: #08140a;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.auth-footer a:hover {
+    color: var(--color-text-dark);
+}
+
+/* =========================================
+   LADO DERECHO: BRANDING (The Statement)
+   ========================================= */
+.auth-brand-section {
+    width: 55%;
+    background-color: var(--color-primary);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 5rem 6%;
+    overflow: hidden;
+}
+
+/* La "Marca de agua" Tipográfica Gigante. 
+   Esto mata el "look de plantilla IA" y lo hace lucir muy intencional y de alta gama. */
+.brand-watermark {
+    position: absolute;
+    top: 50%;
+    left: -10%;
+    transform: translateY(-50%);
+    font-size: 18vw;
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.015);
+    line-height: 0.8;
+    letter-spacing: -0.05em;
+    pointer-events: none;
+    z-index: 1;
+    white-space: nowrap;
+}
+
+.brand-content-wrapper {
+    position: relative;
+    z-index: 2;
+    max-width: 600px;
+    color: #ffffff;
+}
+
+.accent-line {
+    width: 60px;
+    height: 4px;
+    background-color: var(--color-accent); /* Acento dorado pálido */
+    margin-bottom: 2rem;
+}
+
+.brand-content-wrapper h2 {
+    font-size: 3.5rem;
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    margin-bottom: 1.5rem;
+}
+
+.brand-content-wrapper p {
+    font-size: 1.2rem;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 400;
+    margin-bottom: 3.5rem;
+    max-width: 85%;
+}
+
+/* Stats / Elementos de confianza institucionales */
+.brand-stats {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.stat-item strong {
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--color-bg-form);
+}
+
+.stat-item span {
+    font-size: 0.95rem;
+    color: var(--color-accent);
+    font-weight: 500;
+}
+
+.divider {
+    width: 1px;
+    height: 40px;
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+/* =========================================
+   RESPONSIVO / MOBILE
+   ========================================= */
+@media (max-width: 1024px) {
+    .auth-form-section {
+        width: 50%;
+    }
+    .auth-brand-section {
+        width: 50%;
+    }
+    .brand-content-wrapper h2 {
+        font-size: 2.5rem;
+    }
+}
+
+/* Mejoras para laptops y pantallas medianas */
+@media (max-width: 1366px) and (min-width: 1025px) {
+    .auth-form-section {
+        width: 55%;
+        padding: 2.5rem 2rem;
+    }
+    .auth-brand-section {
+        width: 45%;
+        padding: 3rem 3% 3rem 2%;
+    }
+    .brand-content-wrapper h2 {
+        font-size: 2.2rem;
+    }
+    .auth-form-container {
+        max-width: 370px;
+    }
+    .logo-wrapper {
+        left: 2rem;
+        top: 2rem;
+    }
+}
+
+@media (max-width: 850px) {
+    .auth-layout {
+        flex-direction: column;
+    }
+
+    .auth-form-section {
+        width: 100%;
+        padding: 4rem 2rem;
+        min-height: 100vh;
+    }
+
+    /* En móvil ocultamos el statement derecho y priorizamos solo el login */
+    .auth-brand-section {
+        display: none;
+    }
+
+    .auth-form-container {
+        margin-top: -10vh; /* Centrar un poco mejor verticalmente */
+    }
+    /* Mejoras móviles */
+    .logo-wrapper {
+        position: static;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-bottom: 2rem;
+        top: unset;
+        left: unset;
+    }
+    .brand-logo-img {
+        height: 60px;
+        margin: 0 auto;
+        display: block;
+    }
+    .auth-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    .auth-header h1 {
+        font-size: 1.4rem;
+    }
+    .auth-header p {
+        font-size: 0.95rem;
+    }
+    .auth-form-container {
+        max-width: 100%;
+        width: 100%;
+        margin: 0 auto;
+        padding: 0;
+    }
+    .luxury-form {
+        gap: 1rem;
+    }
+    .btn-submit {
+        font-size: 0.95rem;
+        padding: 1rem 1rem;
+    }
+    .auth-footer {
+        margin-top: 2rem;
+        padding-top: 1rem;
+    }
+}

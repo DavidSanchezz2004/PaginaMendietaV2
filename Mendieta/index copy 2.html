@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TributoSimple | IA Tributaria por Mendieta</title>
+    <meta name="description" content="TributoSimple es el asistente con inteligencia artificial desarrollado por el estudio contable Mendieta para guiarte en el complejo mundo de las rentas en Perú.">
+    <link rel="stylesheet" href="css.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="navbar">
+        <div class="container nav-container">
+            <div class="brand">
+                <img src="logo.png" alt="Mendieta" class="brand-logo">
+                <div class="brand-divider"></div>
+                <div class="brand-name">TRIBUTOSIMPLE</div>
+            </div>
+            
+            <nav class="nav-links">
+                <a href="#">Soluciones</a>
+                <a href="#">Eficiencia IA</a>
+                <a href="#">Planes corporativos</a>
+            </nav>
+
+            <div class="nav-actions">
+                <a href="#" class="nav-user-btn" aria-label="Ingreso Clientes">
+                    <div class="user-icon-wrapper">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" class="u-icon" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        <span class="pulse-dot"></span>
+                    </div>
+                </a>
+                <a href="#" class="btn btn-primary">Empezar gratis</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="hero">
+        <div class="container hero-container">
+            <div class="hero-content">
+                <div class="badge fade-in-up">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    IA Tributaria Certificada
+                </div>
+                
+                <h1 class="hero-title fade-in-up" style="animation-delay: 0.1s">
+                    Guía tributaria <br>
+                    <span class="highlight">inteligente.</span>
+                </h1>
+                
+                <p class="hero-description fade-in-up" style="animation-delay: 0.2s">
+                    TributoSimple es la plataforma desarrollada por el estudio contable Mendieta para automatizar y optimizar el cumplimiento de rentas en Perú con tecnología de vanguardia.
+                </p>
+                
+                <div class="hero-buttons fade-in-up" style="animation-delay: 0.3s">
+                    <a href="#" class="btn btn-primary btn-large">Solicitar demostración</a>
+                    <a href="#" class="btn btn-outline btn-large">Conoce más</a>
+                </div>
+                
+                <div class="hero-trust fade-in-up" style="animation-delay: 0.4s">
+                    <div class="trust-avatars">
+                        <div class="avatar"></div>
+                        <div class="avatar"></div>
+                        <div class="avatar"></div>
+                    </div>
+                    <span>Respaldado por contadores expertos.</span>
+                </div>
+            </div>
+
+            <!-- Premium Glass Dashboard Hero -->
+            <div class="hero-visual fade-in-up" style="animation-delay: 0.2s; position: relative; perspective: 1000px; display: flex; justify-content: center; align-items: center;">
+                
+                <!-- Massive glow -->
+                <div class="glow-aura" style="background: radial-gradient(circle, rgba(16,185,129,0.3) 0%, rgba(5,61,56,0) 70%); width: 700px; height: 700px; position: absolute; z-index: -1; filter: blur(60px); animation: pulse-glow 4s infinite alternate;"></div>
+                
+                <!-- Main Dashboard Card -->
+                <div class="glass-dashboard" style="background: rgba(10, 15, 12, 0.7); border: 1px solid rgba(163, 204, 170, 0.2); backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px); border-radius: 24px; padding: 32px 40px; box-shadow: 0 40px 80px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.1); width: 100%; max-width: 480px; position: relative; z-index: 2; transform: rotateX(8deg) rotateY(-8deg); transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1); cursor: pointer;" onmouseover="this.style.transform='rotateX(0deg) rotateY(0deg) scale(1.02)'; this.style.borderColor='rgba(16,185,129,0.5)'" onmouseout="this.style.transform='rotateX(8deg) rotateY(-8deg) scale(1)'; this.style.borderColor='rgba(163, 204, 170, 0.2)'">
+                    
+                    <!-- Header -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px;">
+                        <div style="display: flex; align-items: center; gap: 16px;">
+                            <div style="width: 48px; height: 48px; border-radius: 12px; background: linear-gradient(135deg, var(--c-mint), #085a53); display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 20px rgba(16,185,129,0.2);">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                            </div>
+                            <div>
+                                <div style="font-size: 16px; color: var(--c-white); font-weight: 800; letter-spacing: -0.5px;">Panel Tributario IA</div>
+                                <div style="font-size: 13px; color: #10B981; font-weight: 600; display: flex; align-items: center; gap: 6px;">
+                                    <span style="width: 6px; height: 6px; border-radius: 50%; background: #10B981; display: inline-block; box-shadow: 0 0 8px #10B981; animation: simple-pulse 2s infinite;"></span> Sincronizado
+                                </div>
+                            </div>
+                        </div>
+                        <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--c-slate); padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: 700;">
+                            Mes Actual
+                        </div>
+                    </div>
+
+                    <!-- Main Number -->
+                    <div style="margin-bottom: 32px; position: relative;">
+                        <div style="font-size: 12px; color: var(--c-slate); text-transform: uppercase; font-weight: 800; letter-spacing: 1.5px; margin-bottom: 8px;">Ahorro Proyectado</div>
+                        <div style="display: flex; align-items: flex-end; gap: 16px;">
+                            <div style="font-size: 56px; font-weight: 900; color: var(--c-white); letter-spacing: -2px; line-height: 1; text-shadow: 0 4px 20px rgba(255,255,255,0.1);">S/ 14,500</div>
+                            <div style="background: rgba(16,185,129,0.15); color: #10B981; padding: 6px 12px; border-radius: 20px; font-weight: 800; font-size: 14px; margin-bottom: 6px; display: flex; align-items: center; gap: 4px;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+                                24.5%
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chart Graphic -->
+                    <div style="width: 100%; height: 60px; position: relative; margin-bottom: 32px;">
+                        <svg width="100%" height="100%" preserveAspectRatio="none" viewBox="0 0 100 30">
+                            <defs>
+                                <linearGradient id="line-gradient" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stop-color="#10B981" stop-opacity="0.5" />
+                                    <stop offset="100%" stop-color="#10B981" stop-opacity="0" />
+                                </linearGradient>
+                            </defs>
+                            <path d="M0,30 L0,25 Q15,28 25,18 T45,15 T65,8 T85,12 T100,2 L100,30 Z" fill="url(#line-gradient)" />
+                            <path d="M0,25 Q15,28 25,18 T45,15 T65,8 T85,12 T100,2" fill="none" stroke="#10B981" stroke-width="2.5" stroke-linecap="round" style="filter: drop-shadow(0 2px 4px rgba(16,185,129,0.5));"/>
+                        </svg>
+                    </div>
+
+                    <!-- Metric Cards -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 16px; border-radius: 16px; transition: background 0.3s;" onmouseover="this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.background='rgba(255,255,255,0.03)'">
+                            <div style="font-size: 11px; color: var(--c-slate); margin-bottom: 8px; font-weight: 600; text-transform: uppercase;">Facturas Procesadas</div>
+                            <div style="font-size: 20px; color: var(--c-white); font-weight: 800;">1,248 <span style="font-size: 12px; color: var(--c-slate); font-weight: 500;">docs</span></div>
+                        </div>
+                        <div style="background: rgba(16,185,129,0.05); border: 1px solid rgba(16,185,129,0.2); padding: 16px; border-radius: 16px; transition: background 0.3s;" onmouseover="this.style.background='rgba(16,185,129,0.1)'" onmouseout="this.style.background='rgba(16,185,129,0.05)'">
+                            <div style="font-size: 11px; color: #10B981; margin-bottom: 8px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">Estatus SUNAT</div>
+                            <div style="font-size: 20px; color: var(--c-white); font-weight: 800; display:flex; align-items:center; gap:8px;">Libre <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Floating Badge 1 (Top Right) -->
+                <div style="position: absolute; right: -20px; top: 0px; background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.3); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-radius: 16px; padding: 16px 20px; display: flex; align-items: center; gap: 16px; z-index: 3; box-shadow: 0 20px 40px rgba(0,0,0,0.5); animation: float-anim-1 6s ease-in-out infinite;">
+                    <div style="width: 38px; height: 38px; background: linear-gradient(135deg, #3B82F6, #1D4ED8); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    </div>
+                    <div>
+                        <div style="font-size: 13px; font-weight: 900; color: var(--c-white); letter-spacing: 0.5px;">AL DÍA CON SUNAT</div>
+                        <div style="font-size: 11px; color: rgba(255,255,255,0.7); font-weight: 500;">Declaraciones automáticas</div>
+                    </div>
+                </div>
+
+                <!-- Floating Badge 2 (Bottom Left) -->
+                <div style="position: absolute; left: -30px; bottom: 20px; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.3); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-radius: 16px; padding: 12px 16px; display: flex; align-items: center; gap: 12px; z-index: 3; box-shadow: 0 20px 40px rgba(0,0,0,0.5); animation: float-anim-2 5s ease-in-out infinite; animation-delay: 1s;">
+                    <div style="width: 10px; height: 10px; border-radius: 50%; background: #F59E0B; box-shadow: 0 0 10px #F59E0B; animation: simple-pulse 2s infinite;"></div>
+                    <div style="font-size: 12px; font-weight: 800; color: var(--c-white); letter-spacing: 0.5px;">AUDITORÍA IA ACTIVA</div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- EXPERT SECTION -->
+    <section class="expert-section">
+        <div class="container expert-container">
+            <!-- Left: Chat Mockup -->
+            <div class="expert-visual fade-in-up" style="position: relative;">
+                <div class="glow-aura primary-aura"></div>
+                <div class="chat-mockup">
+                    <div class="float-tag miliseconds">
+                        <div class="ms-icon">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                        </div>
+                        <div class="ms-text">
+                            <strong>MILISEGUNDOS</strong>
+                            <span>TIEMPO DE RESPUESTA</span>
+                        </div>
+                    </div>
+
+                    <div class="chat-header">
+                        <div class="chat-avatar">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg>
+                        </div>
+                        <div class="chat-title">
+                            <strong>TRIBUTOSIMPLE AI</strong>
+                            <span><span class="status-dot green"></span> SINCRONIZANDO SUNAT...</span>
+                        </div>
+                    </div>
+                    
+                    <div class="chat-body">
+                        <div class="chat-bubble bot">
+                            <div class="bubble-avatar">T</div>
+                            <div class="bubble-text">
+                                He analizado tu situación. Según tus ingresos, estás en el límite de la 3ra categoría. ¿Deseas ver las condiciones de cambio?
+                            </div>
+                        </div>
+                        <div class="chat-bubble user">
+                            <div class="bubble-text">
+                                "Sí, explícame las características y límites actuales."
+                            </div>
+                            <div class="bubble-avatar user-av">YO</div>
+                        </div>
+                    </div>
+                    
+                    <div class="chat-footer">
+                        <div class="opt-header">
+                            <span>OPTIMIZACIÓN DE EXPEDIENTE</span>
+                            <span class="opt-status"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg> Nivel Óptimo</span>
+                        </div>
+                        <div class="opt-progress">
+                            <div class="opt-bar"></div>
+                        </div>
+                        <div class="opt-footer">EFICIENCIA DE CUMPLIMIENTO PROYECTADA</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right: Features Content -->
+            <div class="expert-content fade-in-up" style="animation-delay: 0.2s">
+                <div class="badge light-badge">
+                    CAPACIDAD COGNITIVA IA
+                </div>
+                
+                <h2 class="section-title">
+                    UN EXPERTO <br>
+                    QUE NUNCA <br>
+                    DUERME.
+                </h2>
+                
+                <p class="section-quote">
+                    "TributoSimple no solo responde preguntas; analiza tu situación tributaria para que logres un expediente óptimo ante la SUNAT."
+                </p>
+                
+                <div class="feature-list">
+                    <!-- Feature 1 -->
+                    <div class="feature-item">
+                        <div class="feat-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/><path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/><path d="M17.599 6.5a3 3 0 0 0 .399-1.375"/><path d="M6.003 5.125A3 3 0 0 0 6.401 6.5"/><path d="M3.477 10.896a4 4 0 0 1 .585-.396"/><path d="M19.938 10.5a4 4 0 0 1 .585.396"/><path d="M6 18a4 4 0 0 1-1.967-.516"/><path d="M19.967 17.484A4 4 0 0 1 18 18"/></svg>
+                        </div>
+                        <div class="feat-text">
+                            <h3>CATEGORÍAS DE RENTAS</h3>
+                            <p>Entiende a qué categoría perteneces y cómo optimizar tu carga tributaria legalmente.</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Feature 2 -->
+                    <div class="feature-item">
+                        <div class="feat-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2-1 4-2 7-2 2.89 0 5.26 1 7 2a1 1 0 0 1 1 1v7z"/><path d="M9 12l2 2 4-4"/></svg>
+                        </div>
+                        <div class="feat-text">
+                            <h3>LÍMITES Y CONDICIONES</h3>
+                            <p>Conoce los techos de ingresos y las condiciones para cambiar de régimen sin multas.</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Feature 3 -->
+                    <div class="feature-item">
+                        <div class="feat-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15l2 2 4-4"/></svg>
+                        </div>
+                        <div class="feat-text">
+                            <h3>EXPEDIENTE ÓPTIMO</h3>
+                            <p>Prepara toda tu documentación para tener un perfil impecable.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SOLUTIONS SECTION -->
+    <section class="solutions-section">
+        <div class="container solutions-container">
+            <div class="solutions-header fade-in-up">
+                <div class="badge outline-badge">
+                    SOLUCIONES ESTRATÉGICAS
+                </div>
+                <h2 class="section-title center">
+                    <span class="dark-text">GESTIÓN</span> <br>
+                    <span class="light-text">SIN FRICCIONES.</span>
+                </h2>
+                <p class="section-quote center">
+                    "La mayoría de emprendedores no tiene problemas con SUNAT por evadir, <br>sino por no entender. Con TributoSimple, tienes claridad y tranquilidad."
+                </p>
+            </div>
+
+            <div class="cards-grid">
+                <!-- Card 1 -->
+                <div class="solution-card fade-in-up" style="animation-delay: 0.1s">
+                    <div class="card-icon">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    </div>
+                    <h3>GUÍA <br>PERSONALIZADA</h3>
+                    <p>No más dudas. Te acompañamos paso a paso con manuales inteligentes diseñados para tu categoría de renta específica.</p>
+                </div>
+
+                <!-- Card 2 -->
+                <div class="solution-card fade-in-up" style="animation-delay: 0.2s">
+                    <div class="card-icon">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                    </div>
+                    <h3>ALERTAS <br>INTELIGENTES</h3>
+                    <p>Cero sorpresas con SUNAT. Notificaciones preventivas sobre límites, condiciones de cambio y vencimientos.</p>
+                </div>
+
+                <!-- Card 3 -->
+                <div class="solution-card fade-in-up" style="animation-delay: 0.3s">
+                    <div class="card-icon">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="16" y1="14" x2="16" y2="14"/><line x1="16" y1="10" x2="16" y2="10"/><line x1="12" y1="10" x2="12" y2="10"/><line x1="12" y1="14" x2="12" y2="14"/><line x1="8" y1="10" x2="8" y2="10"/><line x1="8" y1="14" x2="8" y2="14"/></svg>
+                    </div>
+                    <h3>OPTIMIZACIÓN <br>REAL</h3>
+                    <p>Tu IA te ayuda a entender qué debes hacer para tener un expediente óptimo, aprovechando beneficios fiscales vigentes.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- DATA SECTION -->
+    <section class="data-section">
+        <div class="data-bg-pattern"></div>
+        <div class="container expert-container">
+            <!-- Left: Chart visual -->
+            <div class="data-visual fade-in-up" style="position: relative;">
+                <div class="glow-aura mint-aura"></div>
+                <div class="visual-base">
+                    <div class="chart-mockup-card">
+                        <div class="chart-header">
+                            <div class="chart-title">
+                                <span>CARGA TRIBUTARIA</span>
+                                <strong>S/ 1,240.00</strong>
+                            </div>
+                            <div class="chart-icon">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>
+                            </div>
+                        </div>
+                        <div class="chart-bars-container">
+                            <div class="cb-col"><div class="cb-bar" style="height: 35%;"></div><span>CAT 1</span></div>
+                            <div class="cb-col"><div class="cb-bar" style="height: 55%;"></div><span>CAT 2</span></div>
+                            <div class="cb-col"><div class="cb-bar" style="height: 40%;"></div><span>CAT 3</span></div>
+                            <div class="cb-col"><div class="cb-bar" style="height: 90%;"></div><span>CAT 4</span></div>
+                            <div class="cb-col"><div class="cb-bar" style="height: 50%;"></div><span>CAT 5</span></div>
+                            <div class="cb-col"><div class="cb-bar" style="height: 65%;"></div><span>RER</span></div>
+                            <div class="cb-col"><div class="cb-bar" style="height: 45%;"></div><span>MYPE</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Text content -->
+            <div class="data-content fade-in-up" style="animation-delay: 0.2s">
+                <div class="badge light-badge">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg> COMPRENSIÓN TOTAL
+                </div>
+                
+                <h2 class="section-title">
+                    DOMINA TU <br>
+                    RENTA CON <br>
+                    <span class="highlight-green">DATOS <br>REALES.</span>
+                </h2>
+                
+                <p class="section-quote">
+                    "TributoSimple te enseña las características de cada régimen para que entiendas de dónde viene cada obligación."
+                </p>
+                
+                <div class="data-bullets">
+                    <div class="bullet-item"><span class="bullet-dot"></span> CATEGORÍAS DE RENTAS</div>
+                    <div class="bullet-item"><span class="bullet-dot"></span> LÍMITES MENSUALES</div>
+                    <div class="bullet-item"><span class="bullet-dot"></span> CONDICIONES DE CAMBIO</div>
+                    <div class="bullet-item"><span class="bullet-dot"></span> ESCENARIOS SUNAT</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- RISK SECTION -->
+    <section class="risk-section">
+        <div class="risk-bg-pattern"></div>
+        <div class="container expert-container">
+            <!-- Left: Text Content -->
+            <div class="risk-content fade-in-up">
+                <div class="badge orange-badge">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> PREVENCIÓN ACTIVA
+                </div>
+                
+                <h2 class="section-title">
+                    TU <br>
+                    EXPEDIENTE <br>
+                    FISCAL <br>
+                    <span class="highlight-orange">SIN RIESGOS.</span>
+                </h2>
+                
+                <p class="section-quote risk-quote">
+                    Nuestro sistema monitorea tus límites en tiempo real. Si estás por exceder una categoría, TributoSimple te avisa al instante.
+                </p>
+                
+                <div class="status-indicators">
+                    <div class="status-item"><div class="s-dot optimum"></div> ÓPTIMO</div>
+                    <div class="status-item"><div class="s-dot alert"></div> ALERTA</div>
+                    <div class="status-item"><div class="s-dot risk"></div> RIESGO</div>
+                </div>
+            </div>
+
+            <!-- Right: Alert Visual -->
+            <div class="risk-visual fade-in-up" style="animation-delay: 0.2s; position: relative;">
+                <div class="glow-aura orange-aura"></div>
+                <div class="visual-base dark-base">
+                    <div class="alert-mockup-card">
+                        <div class="alert-icon-ring">
+                            <div class="alert-icon-inner">
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                            </div>
+                        </div>
+                        <h3>ALERTA</h3>
+                        <p>CERCA DEL LÍMITE DE CATEGORÍA.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ACADEMY SECTION -->
+    <section class="academy-section">
+        <div class="academy-bg-pattern"></div>
+        <div class="container expert-container">
+            <!-- Left: Visual Float -->
+            <div class="academy-visual fade-in-up" style="position: relative;">
+                <div class="glow-aura blue-aura"></div>
+                <div class="visual-base">
+                    <div style="position: relative;">
+                        <!-- Base Window -->
+                        <div class="academy-window base-window">
+                            <div class="win-header">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                                <span>TRIBUTOSIMPLE EXPERT</span>
+                            </div>
+                            <div class="win-body">
+                                <div class="skeleton-line" style="width: 40%"></div>
+                                <div class="skeleton-line" style="width: 80%"></div>
+                                <div class="skeleton-box"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Floating Window 1: Video -->
+                        <div class="academy-window float-video">
+                            <div class="video-thumbnail">
+                                <div class="play-btn">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                                </div>
+                            </div>
+                            <div class="vid-content">
+                                <strong>TUTORIAL IA</strong>
+                                <span>CATEGORÍAS DE RENTAS</span>
+                            </div>
+                        </div>
+
+                        <!-- Floating Window 2: Alert -->
+                        <div class="academy-window float-alert">
+                            <div class="alert-head">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" class="blue-icon" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                                <span>ALERTA TRIBUTARIA</span>
+                            </div>
+                            <p>Nuevos límites para el RER Abril 2026</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Text Content -->
+            <div class="academy-content fade-in-up" style="animation-delay: 0.2s">
+                <div class="badge blue-badge">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg> KNOWLEDGE HUB
+                </div>
+                
+                <h2 class="section-title academy-title">
+                    APRENDE CON <br>
+                    LA <br>
+                    <span class="highlight-blue">ACADEMIA <br>TRIBUTARIA.</span>
+                </h2>
+                
+                <p class="section-quote risk-quote text-dark">
+                    Eliminamos los tecnicismos. Accede a herramientas, guías y consultas directas con nuestra IA sobre el mundo tributario peruano.
+                </p>
+                
+                <div class="academy-bullets">
+                    <div class="aca-bullet">
+                        <div class="aca-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2.5" ry="2.5"/><polygon points="10 8 16 12 10 16 10 8"/></svg></div>
+                        <span>TUTORIALES DE RENTAS</span>
+                    </div>
+                    <div class="aca-bullet">
+                        <div class="aca-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg></div>
+                        <span>GUÍAS DE CAMBIO</span>
+                    </div>
+                    <div class="aca-bullet">
+                        <div class="aca-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"/><rect x="9" y="9" width="6" height="6"/></svg></div>
+                        <span>HERRAMIENTAS RELACIONADAS</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FIRMA SECTION -->
+    <section class="firma-section">
+        <div class="container expert-container">
+            <!-- Left: Text Content -->
+            <div class="firma-content fade-in-up">
+                <div class="badge green-dark-badge">
+                    RESPALDO INSTITUCIONAL
+                </div>
+                
+                <h2 class="section-title firma-title">
+                    FIRMA <br>
+                    <span class="highlight-mint">REAL.</span>
+                </h2>
+                
+                <p class="section-quote firma-quote">
+                    "TributoSimple es la digitalización del estudio contable Mendieta, con décadas de experiencia auditando el éxito empresarial en el país."
+                </p>
+                
+                <div class="firma-metrics">
+                    <div class="metric">
+                        <h3>+10</h3>
+                        <span>AÑOS DE EXPERIENCIA</span>
+                    </div>
+                    <div class="metric">
+                        <h3>500+</h3>
+                        <span>EMPRESAS AUDITADAS</span>
+                    </div>
+                    <div class="metric">
+                        <h3>24/7</h3>
+                        <span>INTELIGENCIA ACTIVA</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Validation Card -->
+            <div class="firma-visual fade-in-up" style="animation-delay: 0.2s">
+                <div class="validation-card">
+                    <div class="val-header">
+                        <div class="avatar-group">
+                            <div class="avatar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" class="avatar-icon" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+                            <div class="avatar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" class="avatar-icon" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+                            <div class="avatar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" class="avatar-icon" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+                            <div class="avatar count">+15</div>
+                        </div>
+                        <div class="val-title">
+                            <strong>SENIORS</strong>
+                            <span>VALIDACIÓN HUMANA 24/7</span>
+                        </div>
+                    </div>
+                    
+                    <div class="val-list">
+                        <div class="val-item">
+                            <div class="check-circle"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div>
+                            <span>CONTADORES COLEGIADOS CERTIFICADOS</span>
+                        </div>
+                        <div class="val-item">
+                            <div class="check-circle"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div>
+                            <span>ESPECIALISTAS EN REGÍMENES MYPE</span>
+                        </div>
+                        <div class="val-item">
+                            <div class="check-circle"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div>
+                            <span>PROCESOS AUDITADOS POR MENDIETA S.A.C.</span>
+                        </div>
+                        <div class="val-item">
+                            <div class="check-circle"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div>
+                            <span>SOPORTE DIRECTIVA ANTE SUNAT</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div>
+    </section>
+
+
+
+    <!-- PRICING SECTION -->
+    <section class="pricing-section">
+        <div class="pricing-bg-pattern"></div>
+        <div class="container pricing-container">
+            <div class="pricing-header fade-in-up">
+                <div class="badge outline-badge">
+                    INVERSIÓN INTELIGENTE
+                </div>
+                <h2 class="section-title center">
+                    <span class="dark-text">PLANES</span> <br>
+                    <span class="mint-text">A TU MEDIDA.</span>
+                </h2>
+                
+                <div class="pricing-toggle-wrapper">
+                    <span class="toggle-label" id="label-monthly">Mensual</span>
+                    <div class="toggle-switch active" id="pricing-toggle">
+                        <div class="toggle-knob"></div>
+                    </div>
+                    <span class="toggle-label active" id="label-annual">Anual <span class="discount-pill">AHORRA 20%</span></span>
+                </div>
+            </div>
+
+            <div class="pricing-grid">
+                <!-- Card 1 -->
+                <div class="pricing-card fade-in-up" style="animation-delay: 0.1s">
+                    <div class="card-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    </div>
+                    <h3>PLAN BÁSICO</h3>
+                    <span class="plan-target">PERSONAS NATURALES</span>
+                    <div class="price">
+                        <strong><span class="currency">S/</span> <span class="price-amount" data-monthly="19.9" data-annual="15.9">15.9</span></strong><span class="billing-period">/MES</span>
+                    </div>
+                    <ul class="features-list">
+                        <li><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Asistente IA 24/7</li>
+                        <li><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Alertas de Vencimiento</li>
+                        <li><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Historial de Declaraciones</li>
+                    </ul>
+                    <a href="#" class="btn btn-outline">PRUEBA 7 DÍAS GRATIS</a>
+                </div>
+
+                <!-- Card 2 -->
+                <div class="pricing-card popular-card fade-in-up" style="animation-delay: 0.2s">
+                    <div class="popular-badge">MÁS ELEGIDO</div>
+                    <div class="card-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><rect x="9" y="14" width="6" height="8"/><line x1="9" y1="6" x2="15" y2="6"/><line x1="9" y1="10" x2="15" y2="10"/></svg>
+                    </div>
+                    <h3>PLAN PRO</h3>
+                    <span class="plan-target">RER Y MYPE TRIBUTARIO</span>
+                    <div class="price">
+                        <strong><span class="currency">S/</span> <span class="price-amount" data-monthly="49.9" data-annual="39.9">39.9</span></strong><span class="billing-period">/MES</span>
+                    </div>
+                    <ul class="features-list">
+                        <li><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Consultas Ilimitadas</li>
+                        <li><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Escalamiento a Contador</li>
+                        <li><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Cálculo de Impuestos</li>
+                        <li><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Dashboard Financiero</li>
+                    </ul>
+                    <a href="#" class="btn btn-primary">PRUEBA 7 DÍAS GRATIS</a>
+                </div>
+
+                <!-- Card 3 -->
+                <div class="pricing-card fade-in-up" style="animation-delay: 0.3s">
+                    <div class="card-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                    </div>
+                    <h3>PLAN PREMIUM</h3>
+                    <span class="plan-target">RÉGIMEN GENERAL</span>
+                    <div class="price">
+                        <strong><span class="currency">S/</span> <span class="price-amount" data-monthly="99.0" data-annual="79.0">79.0</span></strong><span class="billing-period">/MES</span>
+                    </div>
+                    <ul class="features-list">
+                        <li><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Contador Dedicado</li>
+                        <li><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Auditoría Mensual</li>
+                        <li><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Soporte SUNAT Directo</li>
+                        <li><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Multiusuario</li>
+                    </ul>
+                    <a href="#" class="btn btn-outline">PRUEBA 7 DÍAS GRATIS</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER SECTION -->
+    <footer class="site-footer">
+        <div class="footer-huge-bg">TRIBUTOSIMPLE</div>
+        <div class="container footer-container">
+            <div class="footer-top fade-in-up">
+                <div class="footer-brand">
+                    <div class="f-logo">
+                        <div class="f-logo-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 2L14.5 8.5L21 11L14.5 13.5L12 20L9.5 13.5L3 11L9.5 8.5L12 2Z"/></svg>
+                        </div>
+                        <span style="font-size: 20px; font-weight: 900; color: white; letter-spacing: 2.5px;">TRIBUTOSIMPLE</span>
+                    </div>
+                    <p class="f-quote">
+                        "Potenciando el futuro contable de los peruanos mediante inteligencia artificial y educación tributaria experta."
+                    </p>
+                    <div class="f-socials">
+                        <a href="#"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" class="icon" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg></a>
+                        <a href="#"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" class="icon" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg></a>
+                        <a href="#"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" class="icon" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg></a>
+                    </div>
+                </div>
+
+                <div class="footer-links-grid">
+                    <div class="f-col">
+                        <h4>SOLUCIONES</h4>
+                        <a href="#">Guía de Rentas</a>
+                        <a href="#">Planes y Beneficios</a>
+                        <a href="#">Funciones IA</a>
+                    </div>
+                    <div class="f-col">
+                        <h4>FIRMA</h4>
+                        <a href="#">Acerca de Mendieta</a>
+                        <a href="#">Términos</a>
+                        <a href="#">Privacidad</a>
+                        <a href="#">Devoluciones</a>
+                    </div>
+                    <div class="f-col">
+                        <h4>SOPORTE</h4>
+                        <a href="#">Centro de Ayuda</a>
+                        <a href="#">Contacto</a>
+                        <a href="#" class="reclamaciones">
+                            <span class="r-dot"></span> Libro de Reclamaciones
+                        </a>
+                        <div class="f-book-icon">
+                            <svg width="84" height="84" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="footer-bottom fade-in-up" style="animation-delay: 0.2s">
+                <div class="f-copy">© 2026 MENDIETA S.A.C. TODOS LOS DERECHOS RESERVADOS.</div>
+                <div class="f-made">HECHO EN PERÚ CON CORAZÓN E IA</div>
+                <div class="f-status">
+                    <span class="status-dot"></span>
+                    SISTEMAS 100% OPERATIVOS
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- INTERSECTION OBSERVER ANIMATIONS -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Animaciones al Scroll
+            const observerOptions = {
+                root: null,
+                rootMargin: '0px',
+                threshold: 0.15
+            };
+
+            const observer = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                        observer.unobserve(entry.target); 
+                    }
+                });
+            }, observerOptions);
+
+            const animatedElements = document.querySelectorAll('.fade-in-up');
+            animatedElements.forEach(el => observer.observe(el));
+
+            // Navbar Glass Effect al Scrollear
+            const navbar = document.querySelector('.navbar');
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 20) {
+                    navbar.classList.add('scrolled');
+                } else {
+                    navbar.classList.remove('scrolled');
+                }
+            });
+
+
+
+            // PRICING TOGGLE (ANUAL / MENSUAL)
+            const toggleWrapper = document.getElementById('pricing-toggle');
+            const labelMonthly = document.getElementById('label-monthly');
+            const labelAnnual = document.getElementById('label-annual');
+            const priceAmounts = document.querySelectorAll('.price-amount');
+            let isAnnual = true; // Empieza en plan Anual por defecto
+
+            if(toggleWrapper) {
+                priceAmounts.forEach(el => el.style.transition = 'opacity 0.2s ease');
+
+                toggleWrapper.addEventListener('click', () => {
+                    isAnnual = !isAnnual;
+                    
+                    if(isAnnual) {
+                        toggleWrapper.classList.add('active');
+                        labelAnnual.classList.add('active');
+                        labelMonthly.classList.remove('active');
+                    } else {
+                        toggleWrapper.classList.remove('active');
+                        labelAnnual.classList.remove('active');
+                        labelMonthly.classList.add('active');
+                    }
+                    
+                    priceAmounts.forEach(el => {
+                        el.style.opacity = 0;
+                        setTimeout(() => {
+                            el.textContent = isAnnual ? el.getAttribute('data-annual') : el.getAttribute('data-monthly');
+                            el.style.opacity = 1;
+                        }, 200);
+                    });
+                });
+            }
+        });
+    </script>
+</body>
+</html>
