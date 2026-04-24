@@ -185,6 +185,21 @@ class StoreInvoiceRequest extends FormRequest
     }
 
     /**
+     * Normaliza el número para que un valor manual como "50" se guarde como "00000050".
+     * Esto evita duplicados lógicos entre "50" y "00000050" y permite que el correlativo siga avanzando.
+     */
+    protected function prepareForValidation(): void
+    {
+        $numero = trim((string) $this->input('numero_documento', ''));
+
+        if ($numero !== '' && ctype_digit($numero)) {
+            $this->merge([
+                'numero_documento' => str_pad($numero, 8, '0', STR_PAD_LEFT),
+            ]);
+        }
+    }
+
+    /**
      * Validaciones adicionales de coherencia de totales.
      * Solo aplica a Facturas/Boletas (no a GRE tipo 09).
      */

@@ -155,8 +155,7 @@
                     <div class="form-group">
                       <label>Número *</label>
                       <input type="number" name="numero_documento" id="numero_documento" min="1" class="form-input"
-                        style="background:#f3f4f6; cursor:default;"
-                        value="{{ old('numero_documento', $suggestions['01']['numero'] ?? 1) }}" readonly required>
+                        value="{{ old('numero_documento', $suggestions['01']['numero'] ?? 1) }}" required>
                       @error('numero_documento')<p class="form-error">{{ $message }}</p>@enderror
                     </div>
 
@@ -1260,6 +1259,8 @@ updateGreVisibility();
 document.getElementById('numero_orden_compra')?.addEventListener('input', function () {
   this.dataset.userEdited = this.value ? '1' : '';
 });
+
+numeroInput?.addEventListener('input', updateDocCodes);
 
 function newItemRow(i) {
   const isGre = tipoSelect?.value === '09';
