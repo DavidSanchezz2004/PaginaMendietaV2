@@ -55,13 +55,22 @@ class StoreGRERequest extends FormRequest
 
             // ── Punto de partida ──────────────────────────────────────────
             'gre_punto_partida'                         => ['required', 'array'],
-            'gre_punto_partida.ubigeo_punto_partida'    => ['required', 'string', 'max:10'],
+            'gre_punto_partida.ubigeo_punto_partida'    => ['required', 'string', 'regex:/^[0-9]{6}$/'],
             'gre_punto_partida.direccion_punto_partida' => ['required', 'string', 'max:300'],
 
             // ── Punto de llegada ──────────────────────────────────────────
             'gre_punto_llegada'                        => ['required', 'array'],
-            'gre_punto_llegada.ubigeo_punto_llegada'   => ['required', 'string', 'max:10'],
+            'gre_punto_llegada.ubigeo_punto_llegada'   => ['required', 'string', 'regex:/^[0-9]{6}$/'],
             'gre_punto_llegada.direccion_punto_llegada'=> ['required', 'string', 'max:300'],
+
+            // ── Documentos relacionados (opcional) ───────────────────────
+            'gre_documentos_relacionados'                                     => ['nullable', 'array', 'max:20'],
+            'gre_documentos_relacionados.*.codigo_tipo_documento'             => ['required_with:gre_documentos_relacionados', 'nullable', 'string', 'max:2'],
+            'gre_documentos_relacionados.*.descripcion_tipo_documento'        => ['nullable', 'string', 'max:80'],
+            'gre_documentos_relacionados.*.serie_documento'                   => ['required_with:gre_documentos_relacionados', 'nullable', 'string', 'max:10'],
+            'gre_documentos_relacionados.*.numero_documento'                  => ['required_with:gre_documentos_relacionados', 'nullable', 'string', 'max:20'],
+            'gre_documentos_relacionados.*.codigo_tipo_documento_emisor'      => ['nullable', 'string', 'max:2'],
+            'gre_documentos_relacionados.*.numero_documento_emisor'           => ['nullable', 'string', 'max:20'],
 
             // ── Transportista (solo modalidad 01 - Transporte Público) ────
             'gre_transportista'                                        => $esPublico ? ['required', 'array'] : ['nullable'],
@@ -106,9 +115,14 @@ class StoreGRERequest extends FormRequest
             'gre_destinatario.numero_documento_destinatario.required' => 'Ingresa el documento del destinatario.',
             'gre_destinatario.nombre_razon_social_destinatario.required' => 'Ingresa la razón social o nombre del destinatario.',
             'gre_punto_partida.ubigeo_punto_partida.required' => 'Ingresa el ubigeo del punto de partida.',
+            'gre_punto_partida.ubigeo_punto_partida.regex' => 'El ubigeo del punto de partida debe tener 6 dígitos.',
             'gre_punto_partida.direccion_punto_partida.required' => 'Ingresa la dirección del punto de partida.',
             'gre_punto_llegada.ubigeo_punto_llegada.required' => 'Ingresa el ubigeo del punto de llegada.',
+            'gre_punto_llegada.ubigeo_punto_llegada.regex' => 'El ubigeo del punto de llegada debe tener 6 dígitos.',
             'gre_punto_llegada.direccion_punto_llegada.required' => 'Ingresa la dirección del punto de llegada.',
+            'gre_documentos_relacionados.*.codigo_tipo_documento.required_with' => 'Selecciona el tipo del documento relacionado.',
+            'gre_documentos_relacionados.*.serie_documento.required_with' => 'Ingresa la serie del documento relacionado.',
+            'gre_documentos_relacionados.*.numero_documento.required_with' => 'Ingresa el número del documento relacionado.',
             'gre_transportista.required'          => 'Para Transporte Público ingresa los datos del transportista.',
             'gre_vehiculos.required'              => 'Para Transporte Privado ingresa al menos un vehículo.',
             'gre_vehiculos.*.numero_placa.required' => 'Ingresa la placa del vehículo.',

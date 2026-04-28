@@ -29,12 +29,14 @@ use App\Http\Controllers\Facturador\CreditDebitNoteController;
 use App\Http\Controllers\Facturador\ProductController;
 use App\Http\Controllers\Facturador\SpotDetraccionPresetController;
 use App\Http\Controllers\Facturador\SunatLoginController;
+use App\Http\Controllers\Facturador\UbigeoController;
 use App\Http\Controllers\FinalDocumentController;
 use App\Http\Controllers\ObligationController;
 use App\Http\Controllers\CredentialController;
 use App\Http\Controllers\PortalSunat\PortalSunatController;
 use App\Http\Controllers\BandejaEntrada\BandejaEntradaController;
 use App\Http\Controllers\Profile\ProfileController;
+use App\Http\Controllers\SunatComprobanteController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\User\CompanyUserController;
 use App\Enums\RoleEnum;
@@ -136,6 +138,16 @@ Route::middleware('auth')->group(function (): void {
     // Noticias y Tutoriales
     Route::resource('news', \App\Http\Controllers\NewsController::class)->except(['index', 'show'])->parameters(['news' => 'news']);
     Route::resource('tutorials', \App\Http\Controllers\TutorialController::class)->except(['index', 'show']);
+
+    Route::prefix('sunat/comprobantes')->name('sunat.comprobantes.')->group(function (): void {
+        Route::get('validar', [SunatComprobanteController::class, 'index'])->name('validar.index');
+        Route::post('validar', [SunatComprobanteController::class, 'validar'])->name('validar');
+        Route::get('historial', [SunatComprobanteController::class, 'historial'])->name('historial');
+        Route::get('historial/{validacion}', [SunatComprobanteController::class, 'show'])->name('show');
+        Route::get('credenciales', [SunatComprobanteController::class, 'configurarCredenciales'])->name('credenciales');
+        Route::post('credenciales', [SunatComprobanteController::class, 'guardarCredenciales'])->name('credenciales.store');
+        Route::post('probar-conexion', [SunatComprobanteController::class, 'probarConexion'])->name('probar');
+    });
 	});
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -165,6 +177,9 @@ Route::middleware('auth')->group(function (): void {
             // Catálogo de Productos
             Route::resource('products', ProductController::class)
                 ->except(['show']);
+
+            Route::get('ubigeos/search', [UbigeoController::class, 'search'])
+                ->name('ubigeos.search');
 
             // Catálogo de Clientes
             Route::get('clients/lookup-doc', [ClientController::class, 'lookupDoc'])

@@ -99,6 +99,28 @@ class GREController extends Controller
             $validated['gre_transportista'] = null;
         }
 
+        $validated['gre_documentos_relacionados'] = collect($validated['gre_documentos_relacionados'] ?? [])
+            ->filter(fn (array $document): bool =>
+                ! empty($document['codigo_tipo_documento'])
+                && ! empty($document['serie_documento'])
+                && ! empty($document['numero_documento'])
+            )
+            ->values()
+            ->map(function (array $document, int $index): array {
+                $tipo = (string) ($document['codigo_tipo_documento'] ?? '01');
+
+                return [
+                    'correlativo' => $index + 1,
+                    'codigo_tipo_documento' => $tipo,
+                    'descripcion_tipo_documento' => $document['descripcion_tipo_documento'] ?? $this->documentTypeLabel($tipo),
+                    'serie_documento' => strtoupper(trim((string) ($document['serie_documento'] ?? ''))),
+                    'numero_documento' => trim((string) ($document['numero_documento'] ?? '')),
+                    'codigo_tipo_documento_emisor' => $document['codigo_tipo_documento_emisor'] ?? '6',
+                    'numero_documento_emisor' => trim((string) ($document['numero_documento_emisor'] ?? '')),
+                ];
+            })
+            ->all() ?: null;
+
         // Ítems GRE sin montos financieros
         $items = array_values(array_map(fn (array $item): array => array_merge([
             'correlativo'             => 1,
@@ -124,6 +146,16 @@ class GREController extends Controller
         return redirect()
             ->route('facturador.gre.show', $invoice)
             ->with('success', "Guía de Remisión {$invoice->serie_numero} creada como borrador.");
+    }
+
+    private function documentTypeLabel(string $code): string
+    {
+        return [
+            '01' => 'Factura',
+            '03' => 'Boleta',
+            '07' => 'Nota de crédito',
+            '08' => 'Nota de débito',
+        ][$code] ?? 'Documento';
     }
 
     public function extractPdf(Request $request): JsonResponse

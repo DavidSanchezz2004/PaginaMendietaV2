@@ -330,6 +330,15 @@ return [
                     'can'     => 'viewAny',
                     'model'   => \App\Models\Company::class,
                 ],
+                [
+                    'label'   => 'Validar Comprobantes',
+                    'icon'    => 'bx bx-check-shield',
+                    'route'   => 'sunat.comprobantes.validar.index',
+                    'active'  => ['sunat.comprobantes.*'],
+                    'enabled' => true,
+                    'can'     => 'viewAny',
+                    'model'   => \App\Models\Company::class,
+                ],
             ],
         ],
         [

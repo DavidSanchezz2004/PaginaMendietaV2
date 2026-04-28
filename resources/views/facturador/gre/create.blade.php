@@ -18,6 +18,18 @@
     .form-control { width:100%; border:1px solid var(--clr-border-light,#d1d5db); border-radius:9px; padding:.55rem .8rem; font-size:.9rem; background:var(--clr-bg-input,#fff); color:var(--clr-text-main,#111827); transition:border-color .15s; }
     .form-control:focus { outline:none; border-color:var(--clr-active-bg,#1a6b57); box-shadow:0 0 0 3px rgba(26,107,87,.12); }
     .invalid-feedback { color:#dc2626; font-size:.78rem; margin-top:.25rem; }
+    .ubigeo-picker { position:relative; }
+    .ubigeo-results { position:absolute; left:0; right:0; top:calc(100% + 4px); z-index:40; display:none; max-height:260px; overflow:auto; background:var(--clr-bg-card,#fff); border:1px solid var(--clr-border-light,#d1d5db); border-radius:10px; box-shadow:0 14px 34px rgba(15,23,42,.16); }
+    .ubigeo-results.is-open { display:block; }
+    .ubigeo-option { width:100%; border:0; background:transparent; padding:.65rem .75rem; text-align:left; cursor:pointer; color:var(--clr-text-main,#111827); border-bottom:1px solid var(--clr-border-light,#f1f5f9); }
+    .ubigeo-option:hover { background:rgba(26,107,87,.08); }
+    .ubigeo-option strong { display:block; font-size:.86rem; }
+    .ubigeo-option span { display:block; font-size:.76rem; color:var(--clr-text-muted,#64748b); margin-top:.12rem; }
+    .ubigeo-help { display:block; margin-top:.25rem; font-size:.74rem; color:var(--clr-text-muted,#64748b); }
+    .ubigeo-error { display:none; margin-top:.25rem; font-size:.76rem; color:#dc2626; font-weight:700; }
+    .js-ubigeo-search.is-invalid-client { border-color:#dc2626; box-shadow:0 0 0 3px rgba(220,38,38,.12); }
+    .js-ubigeo-search.is-invalid-client ~ .ubigeo-results + .ubigeo-error { display:block; }
+    @media(max-width:900px){ .related-doc-row { grid-template-columns:1fr !important; } }
 
     /* Modalidad toggle */
     .modal-tabs { display:flex; gap:.5rem; margin-bottom:1rem; }
@@ -284,10 +296,15 @@
                   <p style="font-size:.8rem; font-weight:700; color:var(--clr-active-bg,#1a6b57); margin-bottom:.5rem;">PUNTO DE PARTIDA</p>
                   <div style="margin-bottom:.75rem;">
                     <label class="field-label">Ubigeo *</label>
-                    <input type="text" name="gre_punto_partida[ubigeo_punto_partida]"
-                           value="{{ old('gre_punto_partida.ubigeo_punto_partida') }}"
-                           class="form-control @error('gre_punto_partida.ubigeo_punto_partida') is-invalid @enderror"
-                           placeholder="Ej: 150101" maxlength="10" required>
+                    <div class="ubigeo-picker">
+                      <input type="text" name="gre_punto_partida[ubigeo_punto_partida]"
+                             value="{{ old('gre_punto_partida.ubigeo_punto_partida') }}"
+                             class="form-control js-ubigeo-search @error('gre_punto_partida.ubigeo_punto_partida') is-invalid @enderror"
+                             placeholder="Código, distrito, provincia..." maxlength="6" pattern="[0-9]{6}" autocomplete="off" required>
+                      <div class="ubigeo-results" role="listbox"></div>
+                      <div class="ubigeo-error">El ubigeo debe tener exactamente 6 dígitos.</div>
+                    </div>
+                    <small class="ubigeo-help">Busca por código, distrito, provincia o departamento.</small>
                     @error('gre_punto_partida.ubigeo_punto_partida')<div class="invalid-feedback">{{ $message }}</div>@enderror
                   </div>
                   <div>
@@ -303,10 +320,15 @@
                   <p style="font-size:.8rem; font-weight:700; color:var(--clr-active-bg,#1a6b57); margin-bottom:.5rem;">PUNTO DE LLEGADA</p>
                   <div style="margin-bottom:.75rem;">
                     <label class="field-label">Ubigeo *</label>
-                    <input type="text" name="gre_punto_llegada[ubigeo_punto_llegada]"
-                           value="{{ old('gre_punto_llegada.ubigeo_punto_llegada') }}"
-                           class="form-control @error('gre_punto_llegada.ubigeo_punto_llegada') is-invalid @enderror"
-                           placeholder="Ej: 040101" maxlength="10" required>
+                    <div class="ubigeo-picker">
+                      <input type="text" name="gre_punto_llegada[ubigeo_punto_llegada]"
+                             value="{{ old('gre_punto_llegada.ubigeo_punto_llegada') }}"
+                             class="form-control js-ubigeo-search @error('gre_punto_llegada.ubigeo_punto_llegada') is-invalid @enderror"
+                             placeholder="Código, distrito, provincia..." maxlength="6" pattern="[0-9]{6}" autocomplete="off" required>
+                      <div class="ubigeo-results" role="listbox"></div>
+                      <div class="ubigeo-error">El ubigeo debe tener exactamente 6 dígitos.</div>
+                    </div>
+                    <small class="ubigeo-help">Busca por código, distrito, provincia o departamento.</small>
                     @error('gre_punto_llegada.ubigeo_punto_llegada')<div class="invalid-feedback">{{ $message }}</div>@enderror
                   </div>
                   <div>
@@ -465,6 +487,53 @@
                 <button type="button" class="btn-add-row" style="margin-top:.5rem;" onclick="addConductor()">
                   <i class='bx bx-plus'></i> Agregar Conductor
                 </button>
+              </div>
+            </div>
+
+            {{-- ── Documentos relacionados ─────────────────────────── --}}
+            <div class="form-section">
+              <h4><i class='bx bx-link'></i> Documento Relacionado</h4>
+              <div style="display:flex; justify-content:space-between; gap:1rem; align-items:center; flex-wrap:wrap; margin-bottom:.75rem;">
+                <p style="margin:0; color:var(--clr-text-muted,#6b7280); font-size:.84rem;">Opcional. Úsalo cuando la guía está relacionada a una factura, boleta, nota de crédito o nota de débito.</p>
+                <button type="button" class="btn-add-row" onclick="addRelatedDocument()">
+                  <i class='bx bx-plus'></i> Agregar documento
+                </button>
+              </div>
+              <div id="related-documents-container">
+                @foreach(old('gre_documentos_relacionados', []) as $di => $document)
+                  <div class="related-doc-row" data-related-document style="display:grid; grid-template-columns:140px 90px 130px 90px 150px 40px; gap:.5rem; align-items:end; margin-bottom:.55rem;">
+                    <div>
+                      <label class="field-label">Tipo</label>
+                      <select name="gre_documentos_relacionados[{{ $di }}][codigo_tipo_documento]" class="form-control related-doc-type">
+                        <option value="01" @selected(($document['codigo_tipo_documento'] ?? '') === '01')>Factura</option>
+                        <option value="03" @selected(($document['codigo_tipo_documento'] ?? '') === '03')>Boleta</option>
+                        <option value="07" @selected(($document['codigo_tipo_documento'] ?? '') === '07')>N. Crédito</option>
+                        <option value="08" @selected(($document['codigo_tipo_documento'] ?? '') === '08')>N. Débito</option>
+                      </select>
+                      <input type="hidden" name="gre_documentos_relacionados[{{ $di }}][descripcion_tipo_documento]" value="{{ $document['descripcion_tipo_documento'] ?? 'Factura' }}" class="related-doc-label">
+                    </div>
+                    <div>
+                      <label class="field-label">Serie</label>
+                      <input type="text" name="gre_documentos_relacionados[{{ $di }}][serie_documento]" value="{{ $document['serie_documento'] ?? '' }}" class="form-control" maxlength="10" placeholder="F001">
+                    </div>
+                    <div>
+                      <label class="field-label">Número</label>
+                      <input type="text" name="gre_documentos_relacionados[{{ $di }}][numero_documento]" value="{{ $document['numero_documento'] ?? '' }}" class="form-control" maxlength="20" placeholder="00000001">
+                    </div>
+                    <div>
+                      <label class="field-label">Tipo emisor</label>
+                      <select name="gre_documentos_relacionados[{{ $di }}][codigo_tipo_documento_emisor]" class="form-control">
+                        <option value="6" @selected(($document['codigo_tipo_documento_emisor'] ?? '6') === '6')>RUC</option>
+                        <option value="1" @selected(($document['codigo_tipo_documento_emisor'] ?? '') === '1')>DNI</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label class="field-label">Doc. emisor</label>
+                      <input type="text" name="gre_documentos_relacionados[{{ $di }}][numero_documento_emisor]" value="{{ $document['numero_documento_emisor'] ?? '' }}" class="form-control" maxlength="20" placeholder="RUC emisor">
+                    </div>
+                    <button type="button" class="btn-remove-row" onclick="removeRelatedDocument(this)"><i class='bx bx-trash'></i></button>
+                  </div>
+                @endforeach
               </div>
             </div>
 
@@ -854,6 +923,184 @@ function lookupConductor(btn) {
   });
 }
 
+// ── Ubigeo picker ───────────────────────────────────────────────────────────
+const UBIGEO_SEARCH_URL = @json(route('facturador.ubigeos.search'));
+const ubigeoTimers = new WeakMap();
+
+function closeUbigeoResults(except = null) {
+  document.querySelectorAll('.ubigeo-results.is-open').forEach(function(box) {
+    if (box !== except) box.classList.remove('is-open');
+  });
+}
+
+function renderUbigeoResults(input, results) {
+  const box = input.closest('.ubigeo-picker')?.querySelector('.ubigeo-results');
+  if (!box) return;
+
+  box.innerHTML = '';
+  if (!results.length) {
+    box.innerHTML = '<div class="ubigeo-option" style="cursor:default;"><strong>Sin resultados</strong><span>Importa el Excel de ubigeos o prueba otra búsqueda.</span></div>';
+    box.classList.add('is-open');
+    return;
+  }
+
+  results.forEach(function(item) {
+    const option = document.createElement('button');
+    option.type = 'button';
+    option.className = 'ubigeo-option';
+    option.innerHTML = `<strong>${item.code} - ${item.district}</strong><span>${item.department} / ${item.province}${item.legal_capital ? ' / Capital: ' + item.legal_capital : ''}</span>`;
+    option.addEventListener('click', function() {
+      input.value = item.code;
+      input.dataset.ubigeoLabel = item.label;
+      box.classList.remove('is-open');
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    box.appendChild(option);
+  });
+  closeUbigeoResults(box);
+  box.classList.add('is-open');
+}
+
+document.querySelectorAll('.js-ubigeo-search').forEach(function(input) {
+  const validateUbigeo = function() {
+    const isValid = /^\d{6}$/.test(input.value.trim());
+    input.classList.toggle('is-invalid-client', input.value.trim() !== '' && !isValid);
+    input.setCustomValidity(isValid ? '' : 'El ubigeo debe tener exactamente 6 dígitos.');
+    return isValid;
+  };
+
+  input.addEventListener('input', function() {
+    const raw = input.value.trim();
+    input.value = raw.match(/^\d+$/) ? raw.replace(/\D/g, '').slice(0, 6) : raw;
+    const term = input.value.trim();
+    validateUbigeo();
+
+    window.clearTimeout(ubigeoTimers.get(input));
+    if (term.length < 2) {
+      closeUbigeoResults();
+      return;
+    }
+
+    ubigeoTimers.set(input, window.setTimeout(async function() {
+      try {
+        const res = await fetch(`${UBIGEO_SEARCH_URL}?q=${encodeURIComponent(term)}`, {
+          headers: { 'Accept': 'application/json' },
+        });
+        const json = await res.json();
+        renderUbigeoResults(input, json.results || []);
+      } catch (e) {
+        renderUbigeoResults(input, []);
+      }
+    }, 180));
+  });
+
+  input.addEventListener('focus', function() {
+    if (input.value.trim().length >= 2) {
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+  });
+
+  input.addEventListener('blur', validateUbigeo);
+});
+
+document.addEventListener('click', function(event) {
+  if (!event.target.closest('.ubigeo-picker')) {
+    closeUbigeoResults();
+  }
+});
+
+document.getElementById('gre-form')?.addEventListener('submit', function(event) {
+  const invalid = Array.from(document.querySelectorAll('.js-ubigeo-search'))
+    .find(function(input) {
+      const isValid = /^\d{6}$/.test(input.value.trim());
+      input.classList.toggle('is-invalid-client', !isValid);
+      input.setCustomValidity(isValid ? '' : 'El ubigeo debe tener exactamente 6 dígitos.');
+      return !isValid;
+    });
+
+  if (invalid) {
+    event.preventDefault();
+    invalid.reportValidity();
+    invalid.focus();
+  }
+});
+
+// ── Documentos relacionados ────────────────────────────────────────────────
+const relatedDocLabels = {
+  '01': 'Factura',
+  '03': 'Boleta',
+  '07': 'Nota de crédito',
+  '08': 'Nota de débito',
+};
+
+function escapeAttr(value) {
+  return String(value ?? '').replace(/[&<>"']/g, function(char) {
+    return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[char];
+  });
+}
+
+function relatedDocumentTemplate(index, values = {}) {
+  const selected = values.codigo_tipo_documento || '01';
+  const label = values.descripcion_tipo_documento || relatedDocLabels[selected] || 'Documento';
+  return `
+    <div class="related-doc-row" data-related-document style="display:grid; grid-template-columns:140px 90px 130px 90px 150px 40px; gap:.5rem; align-items:end; margin-bottom:.55rem;">
+      <div>
+        <label class="field-label">Tipo</label>
+        <select name="gre_documentos_relacionados[${index}][codigo_tipo_documento]" class="form-control related-doc-type">
+          ${Object.entries(relatedDocLabels).map(([code, text]) => `<option value="${code}" ${selected === code ? 'selected' : ''}>${text}</option>`).join('')}
+        </select>
+        <input type="hidden" name="gre_documentos_relacionados[${index}][descripcion_tipo_documento]" value="${escapeAttr(label)}" class="related-doc-label">
+      </div>
+      <div>
+        <label class="field-label">Serie</label>
+        <input type="text" name="gre_documentos_relacionados[${index}][serie_documento]" value="${escapeAttr(values.serie_documento)}" class="form-control" maxlength="10" placeholder="F001">
+      </div>
+      <div>
+        <label class="field-label">Número</label>
+        <input type="text" name="gre_documentos_relacionados[${index}][numero_documento]" value="${escapeAttr(values.numero_documento)}" class="form-control" maxlength="20" placeholder="00000001">
+      </div>
+      <div>
+        <label class="field-label">Tipo emisor</label>
+        <select name="gre_documentos_relacionados[${index}][codigo_tipo_documento_emisor]" class="form-control">
+          <option value="6" ${(values.codigo_tipo_documento_emisor || '6') === '6' ? 'selected' : ''}>RUC</option>
+          <option value="1" ${values.codigo_tipo_documento_emisor === '1' ? 'selected' : ''}>DNI</option>
+        </select>
+      </div>
+      <div>
+        <label class="field-label">Doc. emisor</label>
+        <input type="text" name="gre_documentos_relacionados[${index}][numero_documento_emisor]" value="${escapeAttr(values.numero_documento_emisor)}" class="form-control" maxlength="20" placeholder="RUC emisor">
+      </div>
+      <button type="button" class="btn-remove-row" onclick="removeRelatedDocument(this)"><i class='bx bx-trash'></i></button>
+    </div>
+  `;
+}
+
+function reindexRelatedDocuments() {
+  document.querySelectorAll('#related-documents-container [data-related-document]').forEach(function(row, index) {
+    row.querySelectorAll('[name^="gre_documentos_relacionados["]').forEach(function(input) {
+      input.name = input.name.replace(/gre_documentos_relacionados\[\d+\]/, `gre_documentos_relacionados[${index}]`);
+    });
+  });
+}
+
+function addRelatedDocument(values = {}) {
+  const container = document.getElementById('related-documents-container');
+  if (!container) return;
+  const index = container.querySelectorAll('[data-related-document]').length;
+  container.insertAdjacentHTML('beforeend', relatedDocumentTemplate(index, values));
+}
+
+function removeRelatedDocument(button) {
+  button.closest('[data-related-document]')?.remove();
+  reindexRelatedDocuments();
+}
+
+document.addEventListener('change', function(event) {
+  if (!event.target.classList.contains('related-doc-type')) return;
+  const label = event.target.closest('[data-related-document]')?.querySelector('.related-doc-label');
+  if (label) label.value = relatedDocLabels[event.target.value] || 'Documento';
+});
+
 // ── Product picker ────────────────────────────────────────────────────────────
 document.addEventListener('change', function(e) {
   if (!e.target.classList.contains('gre-product-picker')) return;
@@ -957,6 +1204,18 @@ function applyGreExtractedData(data) {
   if (data.documento_relacionado) {
     const obs = document.querySelector('[name="observacion"]');
     if (obs && !obs.value.trim()) obs.value = 'Doc. relacionado: ' + data.documento_relacionado;
+  }
+
+  const documentosRelacionados = Array.isArray(data.lista_documentos_relacionados)
+    ? data.lista_documentos_relacionados
+    : (Array.isArray(data.gre_documentos_relacionados) ? data.gre_documentos_relacionados : []);
+
+  if (documentosRelacionados.length) {
+    const container = document.getElementById('related-documents-container');
+    if (container) container.innerHTML = '';
+    documentosRelacionados.forEach(function(documento) {
+      addRelatedDocument(documento);
+    });
   }
 }
 

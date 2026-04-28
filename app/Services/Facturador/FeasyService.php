@@ -658,6 +658,7 @@ class FeasyService
         $vehiculos      = $invoice->gre_vehiculos     ?? [];
         $conductores    = $invoice->gre_conductores   ?? [];
         $transportista  = $invoice->gre_transportista ?? [];
+        $documentosRelacionados = $invoice->gre_documentos_relacionados ?? [];
         $modalidad      = $invoice->codigo_modalidad_traslado;
 
         $payload = [
@@ -697,6 +698,7 @@ class FeasyService
             ],
             'lista_items' => $invoice->items->map(fn (\App\Models\InvoiceItem $item) => [
                 'correlativo'          => $item->correlativo,
+                'codigo_interno'       => $item->codigo_interno,
                 'codigo_unidad_medida' => $item->codigo_unidad_medida,
                 'descripcion'          => $item->descripcion,
                 'cantidad'             => round((float) $item->cantidad, 4),
@@ -726,6 +728,20 @@ class FeasyService
                     'nombre', 'apellido', 'numero_licencia', 'indicador_principal',
                 ]));
             }, $conductores));
+        }
+
+        if (! empty($documentosRelacionados)) {
+            $payload['lista_documentos_relacionados'] = array_values(array_map(function (array $document): array {
+                return array_intersect_key($document, array_flip([
+                    'correlativo',
+                    'codigo_tipo_documento',
+                    'descripcion_tipo_documento',
+                    'serie_documento',
+                    'numero_documento',
+                    'codigo_tipo_documento_emisor',
+                    'numero_documento_emisor',
+                ]));
+            }, $documentosRelacionados));
         }
 
         return $payload;
