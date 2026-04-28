@@ -407,6 +407,26 @@ class Invoice extends Model
         && in_array($this->codigo_tipo_documento, ['01', '03'], true);
     }
 
+    public function canBeDeleted(): bool
+    {
+        if (in_array($this->estado, [InvoiceStatusEnum::DRAFT, InvoiceStatusEnum::ERROR], true)) {
+            return true;
+        }
+
+        if ($this->codigo_tipo_documento !== '09' || $this->estado !== InvoiceStatusEnum::CONSULTED) {
+            return false;
+        }
+
+        $sunatCode = trim((string) $this->codigo_respuesta_sunat);
+        $message = strtolower((string) $this->mensaje_respuesta_sunat);
+
+        return $sunatCode !== '' && $sunatCode !== '0'
+            || str_contains($message, 'errorcode')
+            || str_contains($message, 'error:')
+            || str_contains($message, 'no corresponde')
+            || str_contains($message, 'rechaz');
+    }
+
     public function canBeExchangedToLetters(): bool
     {
         return in_array($this->estado, [

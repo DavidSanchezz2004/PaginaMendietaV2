@@ -286,6 +286,34 @@
             </div>
           @endif
 
+          {{-- ── Documentos relacionados ─────────────────────────────── --}}
+          @if(!empty($invoice->gre_documentos_relacionados))
+            <div class="info-card" style="margin-bottom:1.25rem;">
+              <h3><i class='bx bx-link'></i> Documentos Relacionados</h3>
+              <div style="overflow-x:auto;">
+                <table class="module-table">
+                  <thead>
+                    <tr>
+                      <th>#</th><th>Tipo</th><th>Serie</th><th>Número</th><th>Tipo emisor</th><th>Doc. emisor</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @foreach($invoice->gre_documentos_relacionados as $ri => $rel)
+                      <tr>
+                        <td style="color:#9ca3af;">{{ $ri + 1 }}</td>
+                        <td>{{ $rel['codigo_tipo_documento'] ?? '—' }} — {{ $rel['descripcion_tipo_documento'] ?? 'Documento' }}</td>
+                        <td>{{ $rel['serie_documento'] ?? '—' }}</td>
+                        <td>{{ $rel['numero_documento'] ?? '—' }}</td>
+                        <td>{{ $rel['codigo_tipo_documento_emisor'] ?? '—' }}</td>
+                        <td><strong>{{ $rel['numero_documento_emisor'] ?? '—' }}</strong></td>
+                      </tr>
+                    @endforeach
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          @endif
+
           {{-- ── Ítems de la guía ─────────────────────────────────────── --}}
           <div class="module-table-wrap" style="margin-bottom:1.25rem;">
             <table class="module-table">

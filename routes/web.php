@@ -394,6 +394,8 @@ Route::middleware('auth')->group(function (): void {
             Route::post('gre/extract-pdf', [GREController::class, 'extractPdf'])
                 ->name('gre.extract-pdf')
                 ->middleware('throttle:10,1');
+            Route::get('gre/related-invoices', [GREController::class, 'relatedInvoices'])
+                ->name('gre.related-invoices');
 
             Route::resource('gre', GREController::class)
                 ->except(['edit', 'update']);

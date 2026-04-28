@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Facturador;
 use App\Enums\FeasyStatusEnum;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Facturador\StoreGRERequest;
+use App\Models\Company;
 use App\Models\Invoice;
 use App\Services\Facturador\InvoiceService;
 use App\Services\Facturador\OpenAiGrePdfExtractorService;
@@ -68,8 +69,10 @@ class GREController extends Controller
             'numero_documento' => $suggestions['09']['numero'] ?? 1,
         ];
         $products     = $this->productService->allActive();
+        $company      = Company::findOrFail((int) session('company_id'));
+        $recentRelatedInvoices = $this->relatedInvoiceOptions($company);
 
-        return view('facturador.gre.create', compact('suggestion09', 'products'));
+        return view('facturador.gre.create', compact('suggestion09', 'products', 'company', 'recentRelatedInvoices'));
     }
 
     public function store(StoreGRERequest $request): RedirectResponse
@@ -99,6 +102,8 @@ class GREController extends Controller
             $validated['gre_transportista'] = null;
         }
 
+        $company = Company::findOrFail((int) session('company_id'));
+
         $validated['gre_documentos_relacionados'] = collect($validated['gre_documentos_relacionados'] ?? [])
             ->filter(fn (array $document): bool =>
                 ! empty($document['codigo_tipo_documento'])
@@ -106,8 +111,10 @@ class GREController extends Controller
                 && ! empty($document['numero_documento'])
             )
             ->values()
-            ->map(function (array $document, int $index): array {
+            ->map(function (array $document, int $index) use ($company): array {
                 $tipo = (string) ($document['codigo_tipo_documento'] ?? '01');
+                $tipoEmisor = (string) ($document['codigo_tipo_documento_emisor'] ?? '6');
+                $numeroEmisor = preg_replace('/\D/', '', (string) ($document['numero_documento_emisor'] ?? ''));
 
                 return [
                     'correlativo' => $index + 1,
@@ -115,8 +122,8 @@ class GREController extends Controller
                     'descripcion_tipo_documento' => $document['descripcion_tipo_documento'] ?? $this->documentTypeLabel($tipo),
                     'serie_documento' => strtoupper(trim((string) ($document['serie_documento'] ?? ''))),
                     'numero_documento' => trim((string) ($document['numero_documento'] ?? '')),
-                    'codigo_tipo_documento_emisor' => $document['codigo_tipo_documento_emisor'] ?? '6',
-                    'numero_documento_emisor' => trim((string) ($document['numero_documento_emisor'] ?? '')),
+                    'codigo_tipo_documento_emisor' => $tipoEmisor,
+                    'numero_documento_emisor' => $numeroEmisor !== '' ? $numeroEmisor : (string) $company->ruc,
                 ];
             })
             ->all() ?: null;
@@ -181,6 +188,75 @@ class GREController extends Controller
                 'error' => 'No se pudo extraer la GRE del PDF. Revisa que el archivo tenga texto seleccionable.',
             ], 422);
         }
+    }
+
+    public function relatedInvoices(Request $request): JsonResponse
+    {
+        $this->authorize('create', Invoice::class);
+
+        $company = Company::findOrFail((int) session('company_id'));
+        $search = trim((string) $request->query('search', ''));
+
+        $invoices = Invoice::forActiveCompany()
+            ->with('client:id,nombre_razon_social,numero_documento')
+            ->whereIn('codigo_tipo_documento', ['01', '03', '07', '08'])
+            ->whereIn('estado', ['sent', 'consulted'])
+            ->when($search !== '', function ($query) use ($search): void {
+                $like = "%{$search}%";
+                $query->where(function ($q) use ($like): void {
+                    $q->where('serie_documento', 'like', $like)
+                        ->orWhere('numero_documento', 'like', $like)
+                        ->orWhereRaw("CONCAT(serie_documento, '-', numero_documento) LIKE ?", [$like])
+                        ->orWhereHas('client', function ($clientQuery) use ($like): void {
+                            $clientQuery->where('nombre_razon_social', 'like', $like)
+                                ->orWhere('numero_documento', 'like', $like);
+                        });
+                });
+            })
+            ->latest('fecha_emision')
+            ->latest('id')
+            ->limit(12)
+            ->get();
+
+        return response()->json([
+            'items' => $invoices->map(fn (Invoice $invoice): array => $this->relatedInvoiceOption($invoice, $company))->values(),
+        ]);
+    }
+
+    private function relatedInvoiceOptions(Company $company): array
+    {
+        return Invoice::forActiveCompany()
+            ->with('client:id,nombre_razon_social,numero_documento')
+            ->whereIn('codigo_tipo_documento', ['01', '03', '07', '08'])
+            ->whereIn('estado', ['sent', 'consulted'])
+            ->latest('fecha_emision')
+            ->latest('id')
+            ->limit(30)
+            ->get()
+            ->map(fn (Invoice $invoice): array => $this->relatedInvoiceOption($invoice, $company))
+            ->values()
+            ->all();
+    }
+
+    private function relatedInvoiceOption(Invoice $invoice, Company $company): array
+    {
+        $date = $invoice->fecha_emision->isToday()
+            ? 'Hoy'
+            : ($invoice->fecha_emision->isYesterday() ? 'Ayer' : $invoice->fecha_emision->format('d/m/Y'));
+
+        return [
+            'id' => $invoice->id,
+            'label' => "{$date} · {$invoice->serie_numero} · {$invoice->client?->nombre_razon_social}",
+            'codigo_tipo_documento' => $invoice->codigo_tipo_documento,
+            'descripcion_tipo_documento' => $this->documentTypeLabel($invoice->codigo_tipo_documento),
+            'serie_documento' => $invoice->serie_documento,
+            'numero_documento' => $invoice->numero_documento,
+            'codigo_tipo_documento_emisor' => '6',
+            'numero_documento_emisor' => (string) $company->ruc,
+            'cliente' => $invoice->client?->nombre_razon_social,
+            'monto_total' => (float) $invoice->monto_total,
+            'moneda' => $invoice->codigo_moneda,
+        ];
     }
 
     public function show(Invoice $gre): View

@@ -69,8 +69,28 @@ class StoreGRERequest extends FormRequest
             'gre_documentos_relacionados.*.descripcion_tipo_documento'        => ['nullable', 'string', 'max:80'],
             'gre_documentos_relacionados.*.serie_documento'                   => ['required_with:gre_documentos_relacionados', 'nullable', 'string', 'max:10'],
             'gre_documentos_relacionados.*.numero_documento'                  => ['required_with:gre_documentos_relacionados', 'nullable', 'string', 'max:20'],
-            'gre_documentos_relacionados.*.codigo_tipo_documento_emisor'      => ['nullable', 'string', 'max:2'],
-            'gre_documentos_relacionados.*.numero_documento_emisor'           => ['nullable', 'string', 'max:20'],
+            'gre_documentos_relacionados.*.codigo_tipo_documento_emisor'      => ['nullable', 'string', 'in:1,6'],
+            'gre_documentos_relacionados.*.numero_documento_emisor'           => [
+                'required_with:gre_documentos_relacionados',
+                'nullable',
+                'string',
+                'max:20',
+                function (string $attribute, mixed $value, \Closure $fail): void {
+                    $index = explode('.', $attribute)[1] ?? null;
+                    $tipo = $index !== null
+                        ? (string) $this->input("gre_documentos_relacionados.{$index}.codigo_tipo_documento_emisor", '6')
+                        : '6';
+                    $digits = preg_replace('/\D/', '', (string) $value);
+
+                    if ($tipo === '6' && ! preg_match('/^[0-9]{11}$/', $digits)) {
+                        $fail('El RUC del emisor del documento relacionado debe tener 11 dígitos.');
+                    }
+
+                    if ($tipo === '1' && ! preg_match('/^[0-9]{8}$/', $digits)) {
+                        $fail('El DNI del emisor del documento relacionado debe tener 8 dígitos.');
+                    }
+                },
+            ],
 
             // ── Transportista (solo modalidad 01 - Transporte Público) ────
             'gre_transportista'                                        => $esPublico ? ['required', 'array'] : ['nullable'],
@@ -123,6 +143,7 @@ class StoreGRERequest extends FormRequest
             'gre_documentos_relacionados.*.codigo_tipo_documento.required_with' => 'Selecciona el tipo del documento relacionado.',
             'gre_documentos_relacionados.*.serie_documento.required_with' => 'Ingresa la serie del documento relacionado.',
             'gre_documentos_relacionados.*.numero_documento.required_with' => 'Ingresa el número del documento relacionado.',
+            'gre_documentos_relacionados.*.numero_documento_emisor.required_with' => 'Ingresa el documento del emisor del documento relacionado.',
             'gre_transportista.required'          => 'Para Transporte Público ingresa los datos del transportista.',
             'gre_vehiculos.required'              => 'Para Transporte Privado ingresa al menos un vehículo.',
             'gre_vehiculos.*.numero_placa.required' => 'Ingresa la placa del vehículo.',
@@ -136,11 +157,33 @@ class StoreGRERequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $numero = trim((string) $this->input('numero_documento', ''));
+        $companyRuc = (string) (\App\Models\Company::find((int) session('company_id'))?->ruc ?? '');
+        $documentosRelacionados = collect($this->input('gre_documentos_relacionados', []))
+            ->map(function ($document) use ($companyRuc) {
+                if (! is_array($document)) {
+                    return $document;
+                }
+
+                $document['codigo_tipo_documento_emisor'] = $document['codigo_tipo_documento_emisor'] ?? '6';
+                $document['numero_documento_emisor'] = preg_replace(
+                    '/\D/',
+                    '',
+                    (string) ($document['numero_documento_emisor'] ?? $companyRuc)
+                );
+
+                return $document;
+            })
+            ->all();
 
         if ($numero !== '' && ctype_digit($numero)) {
             $this->merge([
                 'numero_documento' => str_pad($numero, 8, '0', STR_PAD_LEFT),
+                'gre_documentos_relacionados' => $documentosRelacionados,
             ]);
+
+            return;
         }
+
+        $this->merge(['gre_documentos_relacionados' => $documentosRelacionados]);
     }
 }

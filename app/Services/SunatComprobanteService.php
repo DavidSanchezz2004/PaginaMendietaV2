@@ -69,11 +69,11 @@ class SunatComprobanteService
         }
 
         if (! $response->ok()) {
-            $message = match ($response->status()) {
-                400 => 'SUNAT rechazó la solicitud de token. Revisa client_id, client_secret y scope.',
-                401 => 'SUNAT rechazó las credenciales configuradas.',
-                default => 'SUNAT no pudo generar el token en este momento.',
-            };
+            $responseJson = $response->json();
+            $sunatError = is_array($responseJson) ? (string) ($responseJson['error'] ?? '') : '';
+            $sunatDescription = is_array($responseJson) ? (string) ($responseJson['error_description'] ?? '') : '';
+
+            $message = $this->tokenErrorMessage($response->status(), $sunatError, $sunatDescription);
 
             $this->recordCredentialError($credential, $message, null, [
                 'status' => $response->status(),
@@ -276,6 +276,21 @@ class SunatComprobanteService
             401 => 'SUNAT no autorizó la consulta. Se debe renovar el token o revisar credenciales.',
             500 => 'SUNAT presentó un error interno.',
             default => 'No se pudo completar la consulta SUNAT.',
+        };
+    }
+
+    private function tokenErrorMessage(int $status, string $sunatError = '', string $sunatDescription = ''): string
+    {
+        $detail = trim($sunatDescription ?: $sunatError);
+
+        if ($sunatError === 'unauthorized_client' || str_contains(strtolower($detail), 'cliente no autorizado')) {
+            return 'SUNAT respondió "cliente no autorizado". Revisa que el client_id y client_secret correspondan al RUC consultante, que la credencial API esté activa en Menú SOL y que tenga permiso para Consulta Integrada de Comprobante de Pago.';
+        }
+
+        return match ($status) {
+            400 => 'SUNAT rechazó la solicitud de token. Revisa client_id, client_secret y scope.',
+            401 => 'SUNAT rechazó las credenciales configuradas.',
+            default => 'SUNAT no pudo generar el token en este momento.'.($detail ? " Detalle SUNAT: {$detail}." : ''),
         };
     }
 

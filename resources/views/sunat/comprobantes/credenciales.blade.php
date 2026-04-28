@@ -41,6 +41,10 @@
       <div class="sunat-alert error" style="margin-top:1rem;">Último error: {{ $credential->last_error }}</div>
     @endif
 
+    <div class="sunat-alert" style="margin-top:1rem;">
+      Para que SUNAT entregue token, el <strong>client_id</strong> y <strong>client_secret</strong> deben ser los generados en Menú SOL para el mismo RUC consultante mostrado arriba. Si SUNAT responde <strong>cliente no autorizado</strong>, revisa que la credencial API esté activa y habilitada para Consulta Integrada de Comprobante de Pago.
+    </div>
+
     <div class="sunat-actions">
       <button type="submit" class="btn-primary"><i class='bx bx-save'></i> Guardar</button>
     </div>

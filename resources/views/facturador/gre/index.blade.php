@@ -126,6 +126,17 @@
                       <a href="{{ route('facturador.gre.show', $gre) }}" class="btn-secondary" style="padding:.3rem .65rem; font-size:.8rem;">
                         <i class='bx bx-show'></i> Ver
                       </a>
+                      @can('delete', $gre)
+                        <form method="POST" action="{{ route('facturador.gre.destroy', $gre) }}"
+                              data-confirm="¿Eliminar {{ $gre->serie_numero }}? Esta acción no se puede deshacer."
+                              style="display:inline;">
+                          @csrf
+                          @method('DELETE')
+                          <button type="submit" class="btn-secondary" style="padding:.3rem .65rem; font-size:.8rem; color:#ef4444; border-color:#fca5a5;">
+                            <i class='bx bx-trash'></i> Borrar
+                          </button>
+                        </form>
+                      @endcan
                     </td>
                   </tr>
                 @empty

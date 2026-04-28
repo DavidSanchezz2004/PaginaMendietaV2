@@ -78,7 +78,7 @@ class InvoicePolicy
     {
         return $this->canAccessFacturador($user)
             && $this->resourceBelongsToActiveCompany($invoice)
-            && in_array($invoice->estado->value, ['draft', 'error'], true);
+            && $invoice->canBeDeleted();
     }
 
     /**

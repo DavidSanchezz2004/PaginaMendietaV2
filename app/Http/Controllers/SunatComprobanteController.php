@@ -90,6 +90,9 @@ class SunatComprobanteController extends Controller
     public function guardarCredenciales(StoreSunatApiCredentialRequest $request): RedirectResponse
     {
         $data = $request->validated();
+        $data['ruc_consultante'] = preg_replace('/\D/', '', (string) $data['ruc_consultante']);
+        $data['client_id'] = trim((string) $data['client_id']);
+        $data['client_secret'] = isset($data['client_secret']) ? trim((string) $data['client_secret']) : null;
         $data['is_active'] = (bool) ($data['is_active'] ?? false);
         $data['scope'] = config('sunat.scope');
         $data['token_url'] = config('sunat.token_url');

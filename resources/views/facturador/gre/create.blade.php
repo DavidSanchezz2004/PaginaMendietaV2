@@ -501,7 +501,18 @@
               </div>
               <div id="related-documents-container">
                 @foreach(old('gre_documentos_relacionados', []) as $di => $document)
-                  <div class="related-doc-row" data-related-document style="display:grid; grid-template-columns:140px 90px 130px 90px 150px 40px; gap:.5rem; align-items:end; margin-bottom:.55rem;">
+                  <div class="related-doc-row" data-related-document style="display:grid; grid-template-columns:minmax(220px,1.4fr) 120px 90px 130px 90px 150px 40px; gap:.5rem; align-items:end; margin-bottom:.55rem;">
+                    <div>
+                      <label class="field-label">Comprobante emitido</label>
+                      <select class="form-control related-invoice-select">
+                        <option value="">Selecciona factura/boleta emitida</option>
+                        @foreach($recentRelatedInvoices as $relatedInvoice)
+                          <option value="{{ $relatedInvoice['id'] }}" @selected(($document['serie_documento'] ?? '') === $relatedInvoice['serie_documento'] && ($document['numero_documento'] ?? '') === $relatedInvoice['numero_documento'])>
+                            {{ $relatedInvoice['label'] }} · {{ $relatedInvoice['moneda'] }} {{ number_format($relatedInvoice['monto_total'], 2) }}
+                          </option>
+                        @endforeach
+                      </select>
+                    </div>
                     <div>
                       <label class="field-label">Tipo</label>
                       <select name="gre_documentos_relacionados[{{ $di }}][codigo_tipo_documento]" class="form-control related-doc-type">
@@ -529,7 +540,8 @@
                     </div>
                     <div>
                       <label class="field-label">Doc. emisor</label>
-                      <input type="text" name="gre_documentos_relacionados[{{ $di }}][numero_documento_emisor]" value="{{ $document['numero_documento_emisor'] ?? '' }}" class="form-control" maxlength="20" placeholder="RUC emisor">
+                      <input type="text" name="gre_documentos_relacionados[{{ $di }}][numero_documento_emisor]" value="{{ $document['numero_documento_emisor'] ?? $company->ruc }}" class="form-control" maxlength="20" placeholder="RUC emisor">
+                      <small style="display:block; margin-top:.25rem; color:var(--clr-text-muted,#6b7280);">Normalmente es el RUC de {{ $company->name }}.</small>
                     </div>
                     <button type="button" class="btn-remove-row" onclick="removeRelatedDocument(this)"><i class='bx bx-trash'></i></button>
                   </div>
@@ -1032,6 +1044,8 @@ const relatedDocLabels = {
   '07': 'Nota de crédito',
   '08': 'Nota de débito',
 };
+const relatedIssuerRuc = @json($company->ruc);
+const recentRelatedInvoices = @json($recentRelatedInvoices);
 
 function escapeAttr(value) {
   return String(value ?? '').replace(/[&<>"']/g, function(char) {
@@ -1042,8 +1056,22 @@ function escapeAttr(value) {
 function relatedDocumentTemplate(index, values = {}) {
   const selected = values.codigo_tipo_documento || '01';
   const label = values.descripcion_tipo_documento || relatedDocLabels[selected] || 'Documento';
+  const issuerDocument = values.numero_documento_emisor || relatedIssuerRuc || '';
+  const selectedInvoiceId = String(values.id || '');
+  const options = recentRelatedInvoices.map((invoice) => `
+    <option value="${escapeAttr(invoice.id)}" ${selectedInvoiceId === String(invoice.id) ? 'selected' : ''}>
+      ${escapeAttr(invoice.label)} · ${escapeAttr(invoice.moneda || '')} ${Number(invoice.monto_total || 0).toFixed(2)}
+    </option>
+  `).join('');
   return `
-    <div class="related-doc-row" data-related-document style="display:grid; grid-template-columns:140px 90px 130px 90px 150px 40px; gap:.5rem; align-items:end; margin-bottom:.55rem;">
+    <div class="related-doc-row" data-related-document style="display:grid; grid-template-columns:minmax(220px,1.4fr) 120px 90px 130px 90px 150px 40px; gap:.5rem; align-items:end; margin-bottom:.55rem;">
+      <div>
+        <label class="field-label">Comprobante emitido</label>
+        <select class="form-control related-invoice-select">
+          <option value="">Selecciona factura/boleta emitida</option>
+          ${options}
+        </select>
+      </div>
       <div>
         <label class="field-label">Tipo</label>
         <select name="gre_documentos_relacionados[${index}][codigo_tipo_documento]" class="form-control related-doc-type">
@@ -1068,7 +1096,8 @@ function relatedDocumentTemplate(index, values = {}) {
       </div>
       <div>
         <label class="field-label">Doc. emisor</label>
-        <input type="text" name="gre_documentos_relacionados[${index}][numero_documento_emisor]" value="${escapeAttr(values.numero_documento_emisor)}" class="form-control" maxlength="20" placeholder="RUC emisor">
+        <input type="text" name="gre_documentos_relacionados[${index}][numero_documento_emisor]" value="${escapeAttr(issuerDocument)}" class="form-control" maxlength="20" placeholder="RUC emisor">
+        <small style="display:block; margin-top:.25rem; color:var(--clr-text-muted,#6b7280);">Normalmente es el RUC de la empresa activa.</small>
       </div>
       <button type="button" class="btn-remove-row" onclick="removeRelatedDocument(this)"><i class='bx bx-trash'></i></button>
     </div>
@@ -1099,6 +1128,30 @@ document.addEventListener('change', function(event) {
   if (!event.target.classList.contains('related-doc-type')) return;
   const label = event.target.closest('[data-related-document]')?.querySelector('.related-doc-label');
   if (label) label.value = relatedDocLabels[event.target.value] || 'Documento';
+});
+
+function setRelatedField(row, field, value) {
+  const input = row.querySelector(`[name*="[${field}]"]`);
+  if (input) {
+    input.value = value ?? '';
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+}
+
+function applyRelatedInvoice(row, invoice) {
+  setRelatedField(row, 'codigo_tipo_documento', invoice.codigo_tipo_documento);
+  setRelatedField(row, 'descripcion_tipo_documento', invoice.descripcion_tipo_documento);
+  setRelatedField(row, 'serie_documento', invoice.serie_documento);
+  setRelatedField(row, 'numero_documento', invoice.numero_documento);
+  setRelatedField(row, 'codigo_tipo_documento_emisor', invoice.codigo_tipo_documento_emisor || '6');
+  setRelatedField(row, 'numero_documento_emisor', invoice.numero_documento_emisor || relatedIssuerRuc);
+}
+
+document.addEventListener('change', function(event) {
+  if (!event.target.classList.contains('related-invoice-select')) return;
+  const row = event.target.closest('[data-related-document]');
+  const invoice = recentRelatedInvoices.find((item) => String(item.id) === String(event.target.value));
+  if (row && invoice) applyRelatedInvoice(row, invoice);
 });
 
 // ── Product picker ────────────────────────────────────────────────────────────
