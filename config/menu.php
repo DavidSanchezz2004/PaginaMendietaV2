@@ -102,15 +102,6 @@ return [
             'model' => \App\Models\Obligation::class,
             'children' => [
                 [
-                    'label' => 'Calendario',
-                    'icon' => 'bx bx-calendar',
-                    'route' => 'menu.obligaciones.calendario',
-                    'active' => ['menu.obligaciones.calendario', 'obligations.*'],
-                    'enabled' => true,
-                    'can' => 'viewAny',
-                    'model' => \App\Models\Obligation::class,
-                ],
-                [
                     'label' => 'Instancias',
                     'icon' => 'bx bx-check-shield',
                     'route' => 'menu.obligaciones.instancias',
