@@ -16,13 +16,13 @@ use Symfony\Component\HttpFoundation\Response;
  *   auth → active.company → facturador.role → facturador.enabled
  *
  * Accesos permitidos:
- *   A) Role global = admin  (admin interno del estudio)
+ *   A) Role global = admin|supervisor  (equipo interno del estudio)
  *   B) Pivot company_user.role in [admin, client] AND status = active
  */
 class EnsureFacturadorRole
 {
     /** Roles globales que bypasan la restricción de pivot */
-    private const GLOBAL_BYPASS = ['admin'];
+    private const GLOBAL_BYPASS = ['admin', 'supervisor'];
 
     /** Roles de pivot permitidos en el Facturador */
     private const ALLOWED_PIVOT_ROLES = ['admin', 'client'];

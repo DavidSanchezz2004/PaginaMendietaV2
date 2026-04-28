@@ -109,6 +109,15 @@
       justify-content: flex-end;
       flex-wrap: wrap;
     }
+
+    .gre-payload-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:1rem; }
+    .gre-payload-card { background:#fff; border:1px solid var(--clr-border-light,rgba(0,0,0,.06)); border-radius:12px; padding:1rem; }
+    .gre-payload-title { font-size:.76rem; font-weight:800; color:var(--clr-text-muted,#6b7280); text-transform:uppercase; margin-bottom:.6rem; display:flex; align-items:center; gap:.35rem; }
+    .gre-dl { display:grid; gap:.45rem; }
+    .gre-dl div { display:flex; justify-content:space-between; gap:.75rem; border-bottom:1px dashed #e5e7eb; padding-bottom:.35rem; }
+    .gre-dl dt { font-size:.74rem; color:var(--clr-text-muted,#6b7280); }
+    .gre-dl dd { margin:0; font-size:.84rem; font-weight:700; color:var(--clr-text-main,#111827); text-align:right; }
+    .json-box { white-space:pre-wrap; max-height:320px; overflow:auto; background:#0f172a; color:#e5e7eb; border-radius:10px; padding:1rem; font-size:.78rem; }
   </style>
 @endpush
 
@@ -306,6 +315,121 @@
               </table>
             </div>
           </div>
+
+          @if(!empty($guia->gre_payload))
+            @php
+              $gre = $guia->gre_payload;
+              $doc = $gre['informacion_documento'] ?? [];
+              $remitente = $gre['informacion_remitente'] ?? [];
+              $destinatario = $gre['informacion_destinatario'] ?? [];
+              $partida = $gre['informacion_punto_partida'] ?? [];
+              $llegada = $gre['informacion_punto_llegada'] ?? [];
+              $vehiculos = $gre['lista_vehiculos'] ?? [];
+              $conductores = $gre['lista_conductores'] ?? [];
+              $relacionados = $gre['lista_documentos_relacionados'] ?? [];
+            @endphp
+            <div style="background:#fff; border:1px solid var(--clr-border-light,rgba(0,0,0,.06)); border-radius:14px; overflow:hidden; box-shadow:0 4px 15px rgba(0,0,0,.03); margin-bottom:1.5rem;">
+              <div style="padding:1rem 1.25rem; border-bottom:1px solid var(--clr-border-light,rgba(0,0,0,.06)); font-weight:600; font-size:.92rem; display:flex; align-items:center; gap:.5rem; background:#f8fafc;">
+                <i class='bx bx-code-curly'></i> Estructura GRE Feasy
+              </div>
+              <div style="padding:1.25rem;">
+                <div class="gre-payload-grid">
+                  <div class="gre-payload-card">
+                    <div class="gre-payload-title"><i class='bx bx-file'></i> Documento</div>
+                    <dl class="gre-dl">
+                      <div><dt>Código interno</dt><dd>{{ $doc['codigo_interno'] ?? '—' }}</dd></div>
+                      <div><dt>Serie-número</dt><dd>{{ ($doc['serie_documento'] ?? '—') }}-{{ ($doc['numero_documento'] ?? '—') }}</dd></div>
+                      <div><dt>Fecha emisión</dt><dd>{{ $doc['fecha_emision'] ?? '—' }} {{ $doc['hora_emision'] ?? '' }}</dd></div>
+                      <div><dt>Inicio traslado</dt><dd>{{ $doc['fecha_inicio_traslado'] ?? '—' }}</dd></div>
+                      <div><dt>Modalidad</dt><dd>{{ $doc['codigo_modalidad_traslado'] ?? '—' }}</dd></div>
+                      <div><dt>Peso bruto</dt><dd>{{ $doc['peso_bruto_total'] ?? '—' }} {{ $doc['codigo_unidad_medida_peso_bruto_total'] ?? '' }}</dd></div>
+                    </dl>
+                  </div>
+
+                  <div class="gre-payload-card">
+                    <div class="gre-payload-title"><i class='bx bx-building'></i> Remitente</div>
+                    <dl class="gre-dl">
+                      <div><dt>Documento</dt><dd>{{ $remitente['numero_documento_remitente'] ?? '—' }}</dd></div>
+                      <div><dt>Razón social</dt><dd>{{ $remitente['nombre_razon_social_remitente'] ?? '—' }}</dd></div>
+                    </dl>
+                  </div>
+
+                  <div class="gre-payload-card">
+                    <div class="gre-payload-title"><i class='bx bx-user-check'></i> Destinatario</div>
+                    <dl class="gre-dl">
+                      <div><dt>Documento</dt><dd>{{ $destinatario['numero_documento_destinatario'] ?? '—' }}</dd></div>
+                      <div><dt>Razón social</dt><dd>{{ $destinatario['nombre_razon_social_destinatario'] ?? '—' }}</dd></div>
+                    </dl>
+                  </div>
+
+                  <div class="gre-payload-card">
+                    <div class="gre-payload-title"><i class='bx bx-map-pin'></i> Puntos</div>
+                    <dl class="gre-dl">
+                      <div><dt>Partida</dt><dd>{{ $partida['ubigeo_punto_partida'] ?? '—' }}</dd></div>
+                      <div><dt>Dirección partida</dt><dd>{{ $partida['direccion_punto_partida'] ?? '—' }}</dd></div>
+                      <div><dt>Llegada</dt><dd>{{ $llegada['ubigeo_punto_llegada'] ?? '—' }}</dd></div>
+                      <div><dt>Dirección llegada</dt><dd>{{ $llegada['direccion_punto_llegada'] ?? '—' }}</dd></div>
+                    </dl>
+                  </div>
+
+                  <div class="gre-payload-card">
+                    <div class="gre-payload-title"><i class='bx bx-car'></i> Vehículos</div>
+                    <dl class="gre-dl">
+                      @forelse($vehiculos as $v)
+                        <div><dt>Placa {{ $v['correlativo'] ?? $loop->iteration }}</dt><dd>{{ $v['numero_placa'] ?? '—' }} {{ !empty($v['indicador_principal']) ? '(Principal)' : '' }}</dd></div>
+                      @empty
+                        <div><dt>Vehículo</dt><dd>—</dd></div>
+                      @endforelse
+                    </dl>
+                  </div>
+
+                  <div class="gre-payload-card">
+                    <div class="gre-payload-title"><i class='bx bx-id-card'></i> Conductores</div>
+                    <dl class="gre-dl">
+                      @forelse($conductores as $c)
+                        <div><dt>Documento</dt><dd>{{ $c['numero_documento'] ?? '—' }}</dd></div>
+                        <div><dt>Nombre</dt><dd>{{ trim(($c['nombre'] ?? '') . ' ' . ($c['apellido'] ?? '')) ?: '—' }}</dd></div>
+                        <div><dt>Licencia</dt><dd>{{ $c['numero_licencia'] ?? '—' }}</dd></div>
+                      @empty
+                        <div><dt>Conductor</dt><dd>—</dd></div>
+                      @endforelse
+                    </dl>
+                  </div>
+                </div>
+
+                @if(!empty($relacionados))
+                  <div style="margin-top:1rem;">
+                    <div class="gre-payload-title"><i class='bx bx-link'></i> Documentos relacionados</div>
+                    <table class="items-table">
+                      <thead>
+                        <tr>
+                          <th>Tipo</th>
+                          <th>Serie</th>
+                          <th>Número</th>
+                          <th>Emisor</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @foreach($relacionados as $rel)
+                          <tr>
+                            <td>{{ $rel['codigo_tipo_documento'] ?? '—' }} — {{ $rel['descripcion_tipo_documento'] ?? '' }}</td>
+                            <td>{{ $rel['serie_documento'] ?? '—' }}</td>
+                            <td>{{ $rel['numero_documento'] ?? '—' }}</td>
+                            <td>{{ $rel['numero_documento_emisor'] ?? '—' }}</td>
+                          </tr>
+                        @endforeach
+                      </tbody>
+                    </table>
+                  </div>
+                @endif
+
+                <details style="margin-top:1rem;">
+                  <summary style="cursor:pointer; font-weight:700; color:var(--clr-active-bg,#1a6b57);">Ver JSON completo</summary>
+                  <pre class="json-box">{{ json_encode($gre, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</pre>
+                </details>
+              </div>
+            </div>
+          @endif
 
           {{-- Factura vinculada (si existe) --}}
           @if($guia->invoice)

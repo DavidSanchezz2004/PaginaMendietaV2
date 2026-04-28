@@ -49,6 +49,12 @@
     .detrac-monto-row .val { font-size:1.1rem; font-weight:800; color:#92400e; font-family:monospace; }
     .detrac-alert { display:flex; align-items:center; gap:.4rem; font-size:.78rem; color:#78350f; margin-top:.5rem; }
     .detrac-alert i { color:#f59e0b; font-size:1rem; }
+    .detrac-quick-row { display:grid; grid-template-columns:minmax(0, 1fr) auto; gap:.5rem; align-items:end; margin:.75rem 0 .2rem; }
+    .detrac-quick-row label { display:block; font-size:.78rem; font-weight:600; color:#78350f; margin-bottom:.25rem; }
+    .detrac-quick-actions { display:flex; gap:.35rem; align-items:center; }
+    .detrac-mini-btn { border:1px solid #f59e0b; background:#fff7ed; color:#92400e; border-radius:7px; min-height:38px; padding:.45rem .65rem; font-size:.78rem; font-weight:700; cursor:pointer; white-space:nowrap; }
+    .detrac-mini-btn:hover { background:#ffedd5; }
+    @media (max-width:640px) { .detrac-quick-row { grid-template-columns:1fr; } .detrac-quick-actions { justify-content:flex-start; } }
 
     /* ── Guías de Remisión ────────────────────────────────────────────── */
     .guias-box { background:#f0fdf4; border:1px solid #bbf7d0; border-left:4px solid #16a34a; border-radius:10px; padding:.85rem 1rem; margin-top:1rem; }
@@ -456,7 +462,7 @@
                             <td><input type="text" name="items[{{ $i }}][descripcion]" class="descripcion" value="{{ $item['descripcion'] ?? '' }}" required></td>
                             <td>
                               <select name="items[{{ $i }}][codigo_unidad_medida]">
-                                @foreach(['NIU','ZZ','KGM','MTR','LTR'] as $u)
+                                @foreach(['NIU','ZZ','KGM','MIL','MTR','LTR'] as $u)
                                   <option value="{{ $u }}" {{ ($item['codigo_unidad_medida'] ?? 'NIU') == $u ? 'selected' : '' }}>{{ $u }}</option>
                                 @endforeach
                               </select>
@@ -553,6 +559,28 @@
                           <button type="button" onclick="toggleDetrac(false)" style="margin-left:auto; font-size:.75rem; background:none; border:none; color:#92400e; cursor:pointer; font-weight:600;">✕ Quitar</button>
                         </div>
 
+                        <div class="detrac-quick-row">
+                          <div>
+                            <label>Carga rápida</label>
+                            <select id="detrac-preset-select" class="form-input">
+                              <option value="">— Seleccionar preset —</option>
+                              @foreach($spotDetraccionPresets as $preset)
+                                <option value="{{ $preset->id }}">
+                                  {{ $preset->name }} — {{ $preset->codigo_bbss_sujeto_detraccion }} ({{ number_format($preset->porcentaje_detraccion, 2) }}%)
+                                </option>
+                              @endforeach
+                            </select>
+                          </div>
+                          <div class="detrac-quick-actions">
+                            <button type="button" class="detrac-mini-btn" onclick="applySelectedDetracPreset()">
+                              <i class='bx bx-bolt-circle'></i> Aplicar
+                            </button>
+                            <button type="button" class="detrac-mini-btn" onclick="saveCurrentDetracPreset()">
+                              <i class='bx bx-save'></i> Guardar
+                            </button>
+                          </div>
+                        </div>
+
                         <div class="detrac-fields">
                           <div class="form-group">
                             <label>Bien / Servicio sujeto a detracción *</label>
@@ -588,7 +616,7 @@
 
                           <div class="form-group">
                             <label>Medio de pago detracción</label>
-                            <select name="informacion_detraccion[codigo_medio_pago_detraccion]" class="form-input">
+                            <select name="informacion_detraccion[codigo_medio_pago_detraccion]" id="detrac-medio" class="form-input">
                               <option value="001" {{ old('informacion_detraccion.codigo_medio_pago_detraccion','001') == '001' ? 'selected' : '' }}>001 — Depósito en cuenta</option>
                               <option value="002" {{ old('informacion_detraccion.codigo_medio_pago_detraccion') == '002' ? 'selected' : '' }}>002 — Giro</option>
                               <option value="003" {{ old('informacion_detraccion.codigo_medio_pago_detraccion') == '003' ? 'selected' : '' }}>003 — Transferencia de fondos</option>
@@ -1276,7 +1304,7 @@ function newItemRow(i) {
     <td><input type="text" name="items[${i}][descripcion]" class="descripcion" required></td>
     <td><select name="items[${i}][codigo_unidad_medida]">
       <option value="NIU">NIU</option><option value="ZZ">ZZ</option>
-      <option value="KGM">KGM</option><option value="MTR">MTR</option><option value="LTR">LTR</option>
+      <option value="KGM">KGM</option><option value="MIL">MIL</option><option value="MTR">MTR</option><option value="LTR">LTR</option>
     </select></td>
     <td><input type="number" name="items[${i}][cantidad]" class="qty" min="0.001" step="0.001" required></td>
     <td class="item-monetary-td"${mHide}><input type="number" name="items[${i}][monto_precio_unitario]" class="price" min="0" step="0.00000001" ${isGre ? '' : 'required'}></td>
@@ -1489,6 +1517,9 @@ document.getElementById('forma-pago-select')?.addEventListener('change', toggleF
 toggleFechaVencimiento();
 
 // ── Detracción SPOT ────────────────────────────────────────────────────
+const detracPresets = @json($spotDetraccionPresetOptions);
+const detracPresetStoreUrl = @json(route('facturador.invoices.spot-detraccion-presets.store'));
+
 // El bloque solo es visible cuando: tipo=01 (Factura) y total > 700 PEN.
 function updateDetracWrapper(total) {
   const tipo    = document.getElementById('tipo-doc-select')?.value;
@@ -1528,6 +1559,103 @@ function onDetracCodigoChange(sel) {
   const pctInput = document.getElementById('detrac-pct');
   if (pctInput) { pctInput.value = pct; }
   recalcDetrac();
+}
+
+function applyDetracPreset(preset) {
+  if (!preset) return;
+  toggleDetrac(true);
+
+  const codigo = document.getElementById('detrac-codigo');
+  const pct = document.getElementById('detrac-pct');
+  const cuenta = document.getElementById('detrac-cuenta');
+  const medio = document.getElementById('detrac-medio');
+
+  if (codigo) codigo.value = preset.codigo_bbss_sujeto_detraccion || '';
+  if (pct) pct.value = parseFloat(preset.porcentaje_detraccion || 0).toFixed(2);
+  if (cuenta) cuenta.value = (preset.cuenta_banco_detraccion || '').replace(/[^0-9]/g, '').slice(0, 11);
+  if (medio) medio.value = preset.codigo_medio_pago_detraccion || '001';
+
+  recalcDetrac();
+}
+
+function applySelectedDetracPreset() {
+  const id = document.getElementById('detrac-preset-select')?.value;
+  const preset = detracPresets.find(item => String(item.id) === String(id));
+  if (!preset) {
+    Swal.fire({icon:'info', title:'Carga rápida', text:'Seleccione un preset de detracción.'});
+    return;
+  }
+  applyDetracPreset(preset);
+}
+
+function appendOrReplaceDetracPresetOption(preset) {
+  const index = detracPresets.findIndex(item => String(item.id) === String(preset.id));
+  if (index >= 0) detracPresets[index] = preset;
+  else detracPresets.push(preset);
+
+  const select = document.getElementById('detrac-preset-select');
+  if (!select) return;
+
+  let option = [...select.options].find(opt => String(opt.value) === String(preset.id));
+  if (!option) {
+    option = new Option('', preset.id);
+    select.add(option);
+  }
+  option.textContent = `${preset.name} — ${preset.codigo_bbss_sujeto_detraccion} (${Number(preset.porcentaje_detraccion || 0).toFixed(2)}%)`;
+  select.value = preset.id;
+}
+
+async function saveCurrentDetracPreset() {
+  const codigo = document.getElementById('detrac-codigo')?.value || '';
+  const pct = document.getElementById('detrac-pct')?.value || '';
+  const cuenta = document.getElementById('detrac-cuenta')?.value || '';
+  const medio = document.getElementById('detrac-medio')?.value || '001';
+
+  if (!codigo) {
+    Swal.fire({icon:'warning', title:'Preset de detracción', text:'Seleccione el código SUNAT antes de guardar.'});
+    return;
+  }
+
+  const result = await Swal.fire({
+    title: 'Guardar carga rápida',
+    input: 'text',
+    inputLabel: 'Nombre del preset',
+    inputPlaceholder: 'Ej: Servicios frecuentes',
+    showCancelButton: true,
+    confirmButtonText: 'Guardar',
+    cancelButtonText: 'Cancelar',
+    inputValidator: value => !value?.trim() ? 'Ingrese un nombre.' : undefined,
+  });
+
+  if (!result.isConfirmed) return;
+
+  try {
+    const response = await fetch(detracPresetStoreUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+      },
+      body: JSON.stringify({
+        name: result.value.trim(),
+        codigo_bbss_sujeto_detraccion: codigo,
+        porcentaje_detraccion: pct,
+        cuenta_banco_detraccion: cuenta,
+        codigo_medio_pago_detraccion: medio,
+      }),
+    });
+
+    const payload = await response.json();
+    if (!response.ok) {
+      throw new Error(payload.message || 'No se pudo guardar el preset.');
+    }
+
+    appendOrReplaceDetracPresetOption(payload.preset);
+    Swal.fire({icon:'success', title:'Carga rápida guardada', timer:1400, showConfirmButton:false});
+  } catch (error) {
+    Swal.fire({icon:'error', title:'No se guardó', text:error.message || 'Revise los datos e intente nuevamente.'});
+  }
 }
 
 // Devuelve la base real sobre la que se calculan las cuotas:

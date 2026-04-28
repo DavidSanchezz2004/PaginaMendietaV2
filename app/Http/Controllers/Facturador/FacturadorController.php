@@ -58,8 +58,8 @@ class FacturadorController extends Controller
             ? $user->role->value
             : (string) $user->role;
 
-        // Admin global: ve todas las empresas con facturador habilitado
-        if ($globalRole === 'admin') {
+        // Equipo interno global: ve todas las empresas con facturador habilitado
+        if (in_array($globalRole, ['admin', 'supervisor'], true)) {
             return Company::where('facturador_enabled', true)
                 ->where('status', 'active')
                 ->orderBy('name')

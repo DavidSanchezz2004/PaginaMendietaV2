@@ -58,6 +58,7 @@ class PagoLetra extends Model
             'cheque'        => 'Cheque',
             'yape'          => 'Yape',
             'plin'          => 'Plin',
+            'compensacion'  => 'Endoso / Compensación',
             default         => ucfirst($this->medio_pago),
         };
     }

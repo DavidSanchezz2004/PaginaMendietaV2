@@ -43,7 +43,8 @@ class GuiaRemisionService
         Purchase $purchase,
         ClientAddress $address,
         ?string $motivo = 'Venta',
-        array $itemPrices = []
+        array $itemPrices = [],
+        ?array $grePayload = null
     ): GuiaRemision {
         // VALIDACIONES
         if ($purchase->status !== 'assigned') {
@@ -69,7 +70,7 @@ class GuiaRemisionService
         // CREAR GUÍA (transacción para atomicidad)
         // GENERAR NÚMERO ÚNICO DENTRO de la transacción para evitar race conditions
         try {
-            $guia = DB::transaction(function () use ($purchase, $address, $motivo, $itemPrices) {
+            $guia = DB::transaction(function () use ($purchase, $address, $motivo, $itemPrices, $grePayload) {
                 // Generar número DENTRO de transacción (garantiza unicidad por purchase_id)
                 $numero = $this->generate_numero_for_purchase($purchase);
                 // Crear guía
@@ -81,6 +82,7 @@ class GuiaRemisionService
                     'numero' => $numero,
                     'fecha_emision' => now(),
                     'motivo' => $motivo,
+                    'gre_payload' => $grePayload,
                     'estado' => 'generated',
                 ]);
 

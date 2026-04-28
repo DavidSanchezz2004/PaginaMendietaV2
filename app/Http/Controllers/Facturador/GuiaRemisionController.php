@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Facturador;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Facturador\GenerateGuiaRequest;
 use App\Models\ClientAddress;
+use App\Models\CompanyGrePreset;
 use App\Models\GuiaRemision;
 use App\Models\Purchase;
 use App\Services\GuiaRemisionService;
@@ -50,7 +51,7 @@ class GuiaRemisionController extends Controller
         }
 
         // Cargar datos
-        $purchase->load('provider', 'client', 'items');
+        $purchase->load('provider', 'client', 'company', 'items');
         
         Log::info("Purchase loaded", [
             'client_id' => $purchase->client?->id,
@@ -80,6 +81,10 @@ class GuiaRemisionController extends Controller
             'purchase' => $purchase,
             'addresses' => $addresses,
             'preview' => $preview,
+            'grePresets' => CompanyGrePreset::where('company_id', session('company_id'))
+                ->orderByDesc('is_default')
+                ->orderBy('name')
+                ->get(),
         ]);
     }
 
@@ -97,7 +102,8 @@ class GuiaRemisionController extends Controller
                 $purchase,
                 $address,
                 $request->motivo,
-                $request->items_prices ?? []
+                $request->items_prices ?? [],
+                $request->filled('gre_payload') ? json_decode($request->gre_payload, true) : null
             );
 
             Log::info("Guía generada exitosamente: {$guia->numero}", [

@@ -4,20 +4,26 @@ namespace App\Http\Controllers\Facturador;
 
 use App\Enums\AccountingStatusEnum;
 use App\Exports\InvoiceExport;
+use App\Exports\InvoiceImportTemplateExport;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Facturador\StoreInvoiceRequest;
 use App\Models\Invoice;
 use App\Models\InvoicePayment;
+use App\Models\CompanySpotDetraccionPreset;
 use App\Models\SpotDetraccion;
 use App\Services\Facturador\ClientService;
 use App\Services\Facturador\FeasyService;
+use App\Services\Facturador\InvoiceExcelImportService;
 use App\Services\Facturador\InvoiceService;
 use App\Services\Facturador\LetraService;
 use App\Services\Facturador\ProductService;
+use App\Services\Facturador\RetentionAdditionalInfoService;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Maatwebsite\Excel\Facades\Excel;
 use RuntimeException;
@@ -41,6 +47,7 @@ class InvoiceController extends Controller
         private readonly ProductService $productService,
         private readonly LetraService   $letraService,
         private readonly FeasyService   $feasyService,
+        private readonly RetentionAdditionalInfoService $retentionAdditionalInfoService,
     ) {
     }
 
@@ -48,44 +55,64 @@ class InvoiceController extends Controller
     {
         $this->authorize('viewAny', Invoice::class);
 
-        $filters  = $request->only(['estado', 'serie', 'search']);
+        $filters  = $request->only(['estado', 'serie', 'search', 'month']);
         $invoices = $this->invoiceService->paginate(15, $filters);
 
+        $selectedMonth = preg_match('/^\d{4}-\d{2}$/', (string) $request->input('month'))
+            ? Carbon::createFromFormat('Y-m', (string) $request->input('month'))->startOfMonth()
+            : now()->startOfMonth();
+        $monthStart = $selectedMonth->copy()->startOfMonth();
+        $monthEnd = $selectedMonth->copy()->endOfMonth();
+        $previousStart = $selectedMonth->copy()->subMonthNoOverflow()->startOfMonth();
+        $previousEnd = $previousStart->copy()->endOfMonth();
+
+        $monthlyBase = fn () => Invoice::forActiveCompany()
+            ->whereBetween('fecha_emision', [$monthStart->toDateString(), $monthEnd->toDateString()]);
+        $previousBase = fn () => Invoice::forActiveCompany()
+            ->whereBetween('fecha_emision', [$previousStart->toDateString(), $previousEnd->toDateString()]);
+
+        $totalMes = (float) $monthlyBase()
+            ->where('estado', '!=', 'voided')
+            ->sum('monto_total');
+        $previousTotal = (float) $previousBase()
+            ->where('estado', '!=', 'voided')
+            ->sum('monto_total');
         $stats = [
-            'total_mes'         => (float) Invoice::forActiveCompany()
-                                    ->whereYear('fecha_emision', now()->year)
-                                    ->whereMonth('fecha_emision', now()->month)
-                                    ->where('estado', '!=', 'voided')
-                                    ->sum('monto_total'),
-            'total_mes_sin_igv' => (float) Invoice::forActiveCompany()
-                                    ->whereYear('fecha_emision', now()->year)
-                                    ->whereMonth('fecha_emision', now()->month)
+            'selected_month'    => $selectedMonth->format('Y-m'),
+            'selected_month_label' => $selectedMonth->locale('es')->translatedFormat('F Y'),
+            'previous_month_label' => $previousStart->locale('es')->translatedFormat('F Y'),
+            'total_mes'         => $totalMes,
+            'total_mes_sin_igv' => (float) $monthlyBase()
                                     ->where('estado', '!=', 'voided')
                                     ->sum('monto_total_gravado'),
-            'total_mes_igv'     => (float) Invoice::forActiveCompany()
-                                    ->whereYear('fecha_emision', now()->year)
-                                    ->whereMonth('fecha_emision', now()->month)
+            'total_mes_igv'     => (float) $monthlyBase()
                                     ->where('estado', '!=', 'voided')
                                     ->sum('monto_total_igv'),
-            'aceptados_count' => Invoice::forActiveCompany()
+            'totals_by_currency' => $monthlyBase()
+                                    ->where('estado', '!=', 'voided')
+                                    ->selectRaw('codigo_moneda, SUM(monto_total) as total')
+                                    ->groupBy('codigo_moneda')
+                                    ->orderBy('codigo_moneda')
+                                    ->pluck('total', 'codigo_moneda')
+                                    ->map(fn ($total) => (float) $total)
+                                    ->toArray(),
+            'previous_total'    => $previousTotal,
+            'month_variation_pct' => $previousTotal > 0
+                                    ? round((($totalMes - $previousTotal) / $previousTotal) * 100, 1)
+                                    : null,
+            'aceptados_count' => $monthlyBase()
                                     ->whereIn('estado', ['sent', 'consulted'])
-                                    ->whereYear('fecha_emision', now()->year)
-                                    ->whereMonth('fecha_emision', now()->month)
                                     ->count(),
-            'aceptados_monto' => (float) Invoice::forActiveCompany()
+            'aceptados_monto' => (float) $monthlyBase()
                                     ->whereIn('estado', ['sent', 'consulted'])
-                                    ->whereYear('fecha_emision', now()->year)
-                                    ->whereMonth('fecha_emision', now()->month)
                                     ->sum('monto_total'),
-            'atencion_count'  => Invoice::forActiveCompany()
+            'atencion_count'  => $monthlyBase()
                                     ->whereIn('estado', ['draft', 'ready', 'error'])
                                     ->count(),
-            'error_count'     => Invoice::forActiveCompany()
+            'error_count'     => $monthlyBase()
                                     ->where('estado', 'error')
                                     ->count(),
-            'por_tipo'        => Invoice::forActiveCompany()
-                                    ->whereYear('fecha_emision', now()->year)
-                                    ->whereMonth('fecha_emision', now()->month)
+            'por_tipo'        => $monthlyBase()
                                     ->where('estado', '!=', 'voided')
                                     ->selectRaw('codigo_tipo_documento, COUNT(*) as total')
                                     ->groupBy('codigo_tipo_documento')
@@ -106,8 +133,29 @@ class InvoiceController extends Controller
         $products    = $this->productService->allActive();
         $suggestions = $this->invoiceService->getDocumentSuggestions();
         $spotDetracciones = SpotDetraccion::activos()->get();
+        $spotDetraccionPresets = CompanySpotDetraccionPreset::where('company_id', session('company_id'))
+            ->orderByDesc('is_default')
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
+        $spotDetraccionPresetOptions = $spotDetraccionPresets->map(fn (CompanySpotDetraccionPreset $preset): array => [
+            'id' => $preset->id,
+            'name' => $preset->name,
+            'codigo_bbss_sujeto_detraccion' => $preset->codigo_bbss_sujeto_detraccion,
+            'porcentaje_detraccion' => (float) $preset->porcentaje_detraccion,
+            'cuenta_banco_detraccion' => $preset->cuenta_banco_detraccion,
+            'codigo_medio_pago_detraccion' => $preset->codigo_medio_pago_detraccion,
+            'is_default' => (bool) $preset->is_default,
+        ])->values();
 
-        return view('facturador.invoices.create', compact('clients', 'products', 'suggestions', 'spotDetracciones'));
+        return view('facturador.invoices.create', compact(
+            'clients',
+            'products',
+            'suggestions',
+            'spotDetracciones',
+            'spotDetraccionPresets',
+            'spotDetraccionPresetOptions',
+        ));
     }
 
     public function store(StoreInvoiceRequest $request): RedirectResponse
@@ -246,16 +294,20 @@ class InvoiceController extends Controller
             $validated['total_before_retention'] = $total;
             $validated['total_after_retention'] = $validated['net_total'];
 
-            $codigoRet = $validated['informacion_retencion']['codigo_retencion'];
             $monedaRet = $validated['codigo_moneda'] ?? 'PEN';
+            $retentionExchangeRate = $this->retentionAdditionalInfoService->saleRateForInvoiceData($validated);
+            if ($monedaRet === 'USD' && empty($validated['monto_tipo_cambio']) && $retentionExchangeRate !== null) {
+                $validated['monto_tipo_cambio'] = $retentionExchangeRate;
+            }
             $validated['informacion_adicional'] = $validated['informacion_adicional'] ?? [];
-            $validated['informacion_adicional']['informacion_adicional_3'] =
-                "Informacion Retencion:\n" .
-                "Codigo retencion: {$codigoRet}\n" .
-                "Base imponible retencion: {$monedaRet} " . number_format($total, 2, '.', ',') . "\n" .
-                "Porcentaje retencion: " . number_format($pct, 2) . "%\n" .
-                "Monto retencion: {$monedaRet} " . number_format($validated['retention_amount'], 2, '.', ',') . "\n" .
-                "Monto neto pendiente de pago: {$monedaRet} " . number_format($validated['net_total'], 2, '.', ',');
+            $validated['informacion_adicional']['informacion_adicional_3'] = $this->retentionAdditionalInfoService->build(
+                $monedaRet,
+                $total,
+                $pct,
+                (float) $validated['retention_amount'],
+                (float) $validated['net_total'],
+                $retentionExchangeRate
+            );
         } else {
             // Limpiar si no hay retención
             $validated['indicador_retencion'] = false;
@@ -273,17 +325,7 @@ class InvoiceController extends Controller
 
         $invoice = $this->invoiceService->create($validated, $items);
 
-        // ── Generar letras de cambio si es crédito ─────────────────────────────────
-        if ((string) $validated['forma_pago'] === '2' && !empty($validated['lista_cuotas'])) {
-            $letras = $this->letraService->generateFromInvoice($invoice);
-            if ($letras->count() > 0) {
-                $msg = "Comprobante {$invoice->serie_numero} creado. Se generaron {$letras->count()} letras de cambio.";
-            } else {
-                $msg = "Comprobante {$invoice->serie_numero} creado como borrador.";
-            }
-        } else {
-            $msg = "Comprobante {$invoice->serie_numero} creado como borrador.";
-        }
+        $msg = "Comprobante {$invoice->serie_numero} creado como borrador.";
 
         $label = $tipoDoc === '09' ? 'Guía de Remisión' : 'Comprobante';
 
@@ -296,7 +338,7 @@ class InvoiceController extends Controller
         $this->authorize('view', $invoice);
 
         $invoice = $this->invoiceService->findWithItems($invoice->id);
-        $invoice->load('payments');
+        $invoice->load('payments', 'letras');
 
         return view('facturador.invoices.show', compact('invoice'));
     }
@@ -314,6 +356,41 @@ class InvoiceController extends Controller
         }
 
         return response()->json($data, 200, [], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    }
+
+    public function downloadImportTemplate(): BinaryFileResponse
+    {
+        $this->authorize('create', Invoice::class);
+
+        return Excel::download(
+            new InvoiceImportTemplateExport(),
+            'plantilla_importacion_facturas.xlsx'
+        );
+    }
+
+    public function importExcel(Request $request, InvoiceExcelImportService $importService): RedirectResponse
+    {
+        $this->authorize('create', Invoice::class);
+
+        $validated = $request->validate([
+            'archivo' => ['required', 'file', 'mimes:xlsx,xls', 'max:10240'],
+        ]);
+
+        try {
+            $result = $importService->import(
+                $validated['archivo'],
+                (int) session('company_id'),
+                (int) $request->user()->id
+            );
+        } catch (RuntimeException $e) {
+            return redirect()
+                ->route('facturador.invoices.index')
+                ->with('error', 'No se importó el Excel: ' . $e->getMessage());
+        }
+
+        return redirect()
+            ->route('facturador.invoices.index')
+            ->with('success', "Se crearon {$result['created']} comprobante(s) como borrador: " . implode(', ', $result['invoices']));
     }
 
     // ══════════════════════════════════════════════════════════════════════
@@ -476,6 +553,39 @@ class InvoiceController extends Controller
 
         return redirect()->route('facturador.invoices.show', $invoice)
             ->with('success', 'Cobro eliminado correctamente.');
+    }
+
+    public function exchangeToLetters(Request $request, Invoice $invoice): RedirectResponse
+    {
+        $this->authorize('view', $invoice);
+
+        $validated = $request->validate([
+            'currency' => ['required', 'string', 'in:PEN,USD'],
+            'observation' => ['nullable', 'string', 'max:500'],
+            'letters' => ['required', 'array', 'min:1', 'max:36'],
+            'letters.*.due_date' => ['required', 'date'],
+            'letters.*.amount' => ['required', 'numeric', 'min:0.01'],
+            'letters.*.observation' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        try {
+            $letters = $this->letraService->exchangeIssuedInvoice(
+                $invoice,
+                $validated['letters'],
+                $validated['currency'],
+                $validated['observation'] ?? null
+            );
+        } catch (ValidationException $exception) {
+            throw $exception;
+        } catch (\Throwable $exception) {
+            throw ValidationException::withMessages([
+                'letters' => $exception->getMessage(),
+            ]);
+        }
+
+        return redirect()
+            ->route('facturador.invoices.show', $invoice)
+            ->with('success', "Factura {$invoice->serie_numero} canjeada a {$letters->count()} letra(s).");
     }
 
     // ══════════════════════════════════════════════════════════════════════
@@ -710,11 +820,6 @@ class InvoiceController extends Controller
             }
             
             $invoice = $invoiceService->create_from_guia($guia, $validated);
-
-            // Si forma_pago es crédito, generar letras automáticamente
-            if ($request->forma_pago === '2' && $request->lista_cuotas) {
-                $this->letraService->generateFromInvoice($invoice);
-            }
 
             return redirect(route('facturador.invoices.show', $invoice))
                 ->with('success', "Factura {$invoice->serie_numero} creada desde guía {$guia->numero}");

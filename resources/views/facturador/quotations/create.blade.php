@@ -24,6 +24,29 @@
     .plantillas-bar strong { color:#013b33; margin-right:.25rem; }
     .btn-plantilla { display:inline-flex; align-items:center; gap:.35rem; background:#013b33; color:#fff; border:none; border-radius:7px; padding:.35rem .85rem; font-size:.83rem; cursor:pointer; transition:.15s; }
     .btn-plantilla:hover { background:#025c47; }
+    .quote-brand-card { border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; background:#fff; }
+    .quote-brand-head { padding:1rem; color:#fff; background:{{ $settings->primary_color ?? '#013b33' }}; display:flex; align-items:center; justify-content:space-between; gap:.8rem; }
+    .quote-brand-logo { width:84px; height:48px; border-radius:8px; background:rgba(255,255,255,.14); display:flex; align-items:center; justify-content:center; overflow:hidden; font-size:.72rem; }
+    .quote-brand-logo img { max-width:78px; max-height:42px; object-fit:contain; }
+    .quote-brand-body { padding:1rem; background:{{ $settings->secondary_color ?? '#eef7f5' }}; }
+    .quote-brand-body p { margin:.25rem 0; font-size:.82rem; color:#475569; }
+    .quote-brand-body strong { color:#111827; }
+    .send-modal-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:100;display:none;align-items:center;justify-content:center;padding:1rem}
+    .send-modal-backdrop.open{display:flex}
+    .send-modal{width:min(760px,96vw);background:#fff;border-radius:14px;box-shadow:0 24px 60px rgba(15,23,42,.28);overflow:hidden}
+    .send-modal-head{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;border-bottom:1px solid #e5e7eb}
+    .send-modal-head h2{font-size:1.1rem;margin:0}
+    .send-modal-body{padding:1.25rem}
+    .send-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.7rem;margin-bottom:1rem}
+    .send-summary div{background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;padding:.75rem}
+    .send-summary span{display:block;font-size:.72rem;font-weight:800;color:#64748b;text-transform:uppercase}
+    .send-summary strong{display:block;margin-top:.18rem;color:#111827}
+    .send-tabs{display:flex;gap:.5rem;margin-bottom:.8rem}
+    .send-tab{border:1px solid #dbe3ea;background:#fff;border-radius:999px;padding:.45rem .85rem;font-weight:800;cursor:pointer}
+    .send-tab.active{background:#eef7f5;color:#0f766e;border-color:#b7d9d0}
+    .send-message{width:100%;min-height:150px;border:1px solid #dbe3ea;border-radius:10px;padding:.8rem;font:inherit;resize:vertical;box-sizing:border-box}
+    .send-actions{display:flex;justify-content:flex-end;gap:.6rem;flex-wrap:wrap;padding:1rem 1.25rem;border-top:1px solid #e5e7eb;background:#f8fafc}
+    @media(max-width:760px){.send-summary{grid-template-columns:1fr}.send-actions{justify-content:stretch}.send-actions>*{flex:1;justify-content:center}}
   </style>
 @endpush
 
@@ -64,7 +87,18 @@
 
         <div class="placeholder-content module-card-wide">
           <div class="module-toolbar">
-            <h1>Cotizador</h1>
+            <div>
+              <h1>Cotizador</h1>
+              <p style="margin:.25rem 0 0;color:#64748b;">Usa la configuración de marca de {{ $company->name }}.</p>
+            </div>
+            <div style="display:flex;gap:.6rem;flex-wrap:wrap;">
+              <a href="{{ route('facturador.cotizaciones.index') }}" class="btn-secondary" style="display:inline-flex;align-items:center;gap:.35rem;text-decoration:none;">
+                <i class='bx bx-table'></i> Ver cotizaciones
+              </a>
+              <a href="{{ route('facturador.quote-settings.edit') }}" class="btn-secondary" style="display:inline-flex;align-items:center;gap:.35rem;text-decoration:none;">
+                <i class='bx bx-palette'></i> Configurar
+              </a>
+            </div>
           </div>
 
           <form method="POST" action="{{ route('facturador.quotations.preview') }}" id="cot-form" target="_blank">
@@ -81,7 +115,7 @@
                   <div class="form-group">
                     <label>N° Cotización *</label>
                     <input type="text" name="cot_number" class="form-input"
-                      value="{{ old('cot_number', 'COT-' . date('Y') . '-001') }}" required maxlength="50">
+                      value="{{ old('cot_number', 'COT-' . date('Y') . '-001') }}" required maxlength="30">
                     @error('cot_number')<p class="form-error">{{ $message }}</p>@enderror
                   </div>
                   <div class="form-group">
@@ -178,6 +212,24 @@
 
               {{-- ===== DERECHA: TOTALES ===== --}}
               <div>
+                <div class="quote-brand-card">
+                  <div class="quote-brand-head">
+                    <div class="quote-brand-logo">
+                      @if($settings->quote_logo_src)
+                        <img src="{{ $settings->quote_logo_src }}" alt="Logo cotizador">
+                      @else
+                        LOGO
+                      @endif
+                    </div>
+                    <strong>COTIZACIÓN</strong>
+                  </div>
+                  <div class="quote-brand-body">
+                    <strong>{{ $settings->company_name ?: $company->name }}</strong>
+                    <p>RUC: {{ $settings->ruc ?: $company->ruc ?: 'Sin configurar' }}</p>
+                    <p>{{ $settings->show_bank_accounts ? 'Datos de pago visibles' : 'Datos de pago ocultos' }}</p>
+                  </div>
+                </div>
+
                 <p class="form-section-title">Totales</p>
                 <div class="totals-box">
                   <div class="totals-row">
@@ -225,6 +277,33 @@
     </main>
   </section>
 </div>
+
+<div class="send-modal-backdrop" id="sendQuoteModal" aria-hidden="true">
+  <div class="send-modal" role="dialog" aria-modal="true" aria-labelledby="sendQuoteTitle">
+    <div class="send-modal-head">
+      <h2 id="sendQuoteTitle">Cotización generada</h2>
+      <button type="button" id="closeSendQuoteModal" title="Cerrar" style="width:34px;height:34px;border:1px solid #dbe3ea;border-radius:8px;background:#fff;color:#0f766e;"><i class='bx bx-x'></i></button>
+    </div>
+    <div class="send-modal-body">
+      <div class="send-summary">
+        <div><span>Número</span><strong id="sendQuoteNumber">-</strong></div>
+        <div><span>Cliente</span><strong id="sendQuoteClient">-</strong></div>
+        <div><span>Total</span><strong id="sendQuoteTotal">-</strong></div>
+      </div>
+      <div class="send-tabs">
+        <button type="button" class="send-tab active" data-message-type="whatsapp"><i class='bx bx-message-rounded'></i> WhatsApp</button>
+        <button type="button" class="send-tab" data-message-type="email"><i class='bx bx-envelope'></i> Correo</button>
+      </div>
+      <textarea id="sendQuoteMessage" class="send-message"></textarea>
+      <p style="margin:.55rem 0 0;color:#64748b;font-size:.8rem;">El texto es editable antes de copiarlo. El enlace abre la cotización guardada.</p>
+    </div>
+    <div class="send-actions">
+      <button type="button" class="btn-secondary" id="copySendQuoteMessage"><i class='bx bx-copy'></i> Copiar mensaje</button>
+      <a href="#" class="btn-secondary" id="openGeneratedQuote" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;gap:.35rem;text-decoration:none;"><i class='bx bx-file'></i> Abrir PDF</a>
+      <a href="#" class="btn-primary" id="openMailQuote" style="display:none;align-items:center;gap:.35rem;text-decoration:none;"><i class='bx bx-envelope'></i> Abrir correo</a>
+    </div>
+  </div>
+</div>
 @endsection
 
 @push('scripts')
@@ -232,6 +311,7 @@
 (function () {
   /* ── utilidades ──────────────────────────────────────── */
   const fmt = v => parseFloat(v || 0).toFixed(2);
+  let generatedQuotePayload = null;
 
   function recalcRow(tr) {
     const qty   = parseFloat(tr.querySelector('.item-qty')?.value   || 0);
@@ -400,6 +480,99 @@
   document.getElementById('btn-tpl-rer').addEventListener('click',  () => cargarPlantilla('rer'));
   document.getElementById('btn-tpl-rus').addEventListener('click',  () => cargarPlantilla('rus'));
   document.getElementById('btn-tpl-mype').addEventListener('click', () => cargarPlantilla('mype'));
+
+  function copyText(text) {
+    if (navigator.clipboard) return navigator.clipboard.writeText(text);
+    const tmp = document.createElement('textarea');
+    tmp.value = text;
+    document.body.appendChild(tmp);
+    tmp.select();
+    document.execCommand('copy');
+    tmp.remove();
+    return Promise.resolve();
+  }
+
+  function setMessageType(type) {
+    if (!generatedQuotePayload) return;
+    document.querySelectorAll('.send-tab').forEach(btn => btn.classList.toggle('active', btn.dataset.messageType === type));
+    const message = type === 'email' ? generatedQuotePayload.email_body : generatedQuotePayload.whatsapp_message;
+    document.getElementById('sendQuoteMessage').value = message || '';
+    const mailLink = document.getElementById('openMailQuote');
+    if (type === 'email') {
+      mailLink.href = `mailto:?subject=${encodeURIComponent(generatedQuotePayload.email_subject || 'Cotización')}&body=${encodeURIComponent(message || '')}`;
+      mailLink.style.display = 'inline-flex';
+    } else {
+      mailLink.style.display = 'none';
+    }
+  }
+
+  function openSendModal(payload) {
+    generatedQuotePayload = payload;
+    document.getElementById('sendQuoteNumber').textContent = payload.quote_number || '-';
+    document.getElementById('sendQuoteClient').textContent = payload.client_name || '-';
+    document.getElementById('sendQuoteTotal').textContent = payload.total || '-';
+    document.getElementById('openGeneratedQuote').href = payload.pdf_url || '#';
+    setMessageType('whatsapp');
+    const modal = document.getElementById('sendQuoteModal');
+    modal.classList.add('open');
+    modal.setAttribute('aria-hidden', 'false');
+  }
+
+  document.querySelectorAll('.send-tab').forEach(btn => btn.addEventListener('click', () => setMessageType(btn.dataset.messageType)));
+
+  document.getElementById('closeSendQuoteModal')?.addEventListener('click', () => {
+    const modal = document.getElementById('sendQuoteModal');
+    modal.classList.remove('open');
+    modal.setAttribute('aria-hidden', 'true');
+  });
+
+  document.getElementById('sendQuoteModal')?.addEventListener('click', e => {
+    if (e.target.id === 'sendQuoteModal') {
+      e.currentTarget.classList.remove('open');
+      e.currentTarget.setAttribute('aria-hidden', 'true');
+    }
+  });
+
+  document.getElementById('copySendQuoteMessage')?.addEventListener('click', function(){
+    copyText(document.getElementById('sendQuoteMessage').value || '').then(() => {
+      const original = this.innerHTML;
+      this.innerHTML = "<i class='bx bx-check'></i> Copiado";
+      setTimeout(() => this.innerHTML = original, 1300);
+    });
+  });
+
+  document.getElementById('cot-form')?.addEventListener('submit', function(e){
+    e.preventDefault();
+    const submitBtn = this.querySelector('[type="submit"]');
+    const original = submitBtn?.innerHTML;
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Generando...";
+    }
+
+    fetch(this.action, {
+      method: 'POST',
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest',
+        'Accept': 'application/json'
+      },
+      body: new FormData(this)
+    })
+    .then(async response => {
+      const data = await response.json().catch(() => null);
+      if (!response.ok || !data?.ok) {
+        throw new Error(data?.message || 'No se pudo generar la cotización.');
+      }
+      openSendModal(data);
+    })
+    .catch(error => Swal.fire({ icon:'error', title:'No se pudo generar', text:error.message || 'Revise los datos e intente nuevamente.' }))
+    .finally(() => {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = original;
+      }
+    });
+  });
 })();
 </script>
 @endpush

@@ -4,8 +4,10 @@ namespace App\Services\Facturador;
 
 use App\Models\Invoice;
 use App\Models\LetraCambio;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 use RuntimeException;
 
 /**
@@ -122,6 +124,86 @@ class LetraService
     }
 
     /**
+     * Canjea una factura de venta emitida a letras definidas manualmente.
+     *
+     * @param array<int, array<string, mixed>> $letters
+     * @return Collection<int, LetraCambio>
+     */
+    public function exchangeIssuedInvoice(Invoice $invoice, array $letters, string $currency, ?string $observation = null): Collection
+    {
+        $invoice->loadMissing(['company', 'client', 'letras', 'payments']);
+
+        if (! $invoice->canBeExchangedToLetters()) {
+            throw ValidationException::withMessages([
+                'invoice' => 'La factura debe estar emitida, no anulada y no debe tener letras generadas previamente.',
+            ]);
+        }
+
+        if ($currency !== $invoice->codigo_moneda) {
+            throw ValidationException::withMessages([
+                'currency' => 'La moneda de las letras debe coincidir con la moneda de la factura.',
+            ]);
+        }
+
+        $pendingAmount = $invoice->pendingAmountForLetters();
+        $totalLetters = round(array_sum(array_map(fn ($letter) => (float) ($letter['amount'] ?? 0), $letters)), 2);
+
+        if (abs($totalLetters - $pendingAmount) > 0.01) {
+            throw ValidationException::withMessages([
+                'letters' => 'La suma de las letras debe ser igual al total pendiente de la factura.',
+            ]);
+        }
+
+        return DB::transaction(function () use ($invoice, $letters, $currency, $observation): Collection {
+            $created = collect();
+            $company = $invoice->company;
+            $sequence = $this->nextSequence($company->id);
+            $year = now()->format('y');
+            $totalLetters = count($letters);
+
+            foreach (array_values($letters) as $index => $letter) {
+                $amount = round((float) $letter['amount'], 2);
+                $number = str_pad($sequence + $index, 3, '0', STR_PAD_LEFT).'-'.$year;
+
+                $created->push(LetraCambio::create([
+                    'company_id' => $company->id,
+                    'invoice_id' => $invoice->id,
+                    'user_id' => auth()->id(),
+                    'numero_letra' => $number,
+                    'referencia' => $invoice->serie_numero,
+                    'tenedor_nombre' => $company->razon_social ?? $company->name,
+                    'tenedor_ruc' => $company->ruc,
+                    'tenedor_domicilio' => $company->direccion_fiscal,
+                    'aceptante_nombre' => $invoice->client?->nombre_razon_social ?? '',
+                    'aceptante_ruc' => $invoice->client?->numero_documento,
+                    'aceptante_domicilio' => $invoice->client?->direccion,
+                    'aceptante_telefono' => $invoice->client?->telefono ?? null,
+                    'aceptante_doi' => $invoice->client?->numero_documento,
+                    'lugar_giro' => $company->distrito ?? 'LIMA',
+                    'fecha_giro' => now()->toDateString(),
+                    'fecha_vencimiento' => $letter['due_date'],
+                    'codigo_moneda' => $currency,
+                    'monto' => $amount,
+                    'monto_letras' => $this->monetaryToWords($amount),
+                    'cuenta_contable' => '1212',
+                    'estado' => 'pendiente',
+                    'monto_pagado' => 0,
+                    'observaciones' => trim((string) ($letter['observation'] ?? '')) ?: "Letra ".($index + 1)." de {$totalLetters} de factura {$invoice->serie_numero}",
+                ]));
+            }
+
+            $invoice->update([
+                'letter_exchange_status' => 'exchanged',
+                'letter_exchanged_at' => now(),
+                'letter_exchange_observation' => $observation,
+                'forma_pago' => '2',
+            ]);
+
+            return $created;
+        });
+    }
+
+    /**
      * Marcar una letra como pagada.
      * 
      * @param LetraCambio $letra Letra a marcar como pagada
@@ -187,6 +269,21 @@ class LetraService
 
         $numero = str_pad($count + 1, 3, '0', STR_PAD_LEFT);
         return "{$numero}-{$año}";
+    }
+
+    private function nextSequence(int $companyId): int
+    {
+        $year = now()->format('y');
+        $lastNumber = LetraCambio::where('company_id', $companyId)
+            ->whereYear('created_at', now()->year)
+            ->orderByDesc('id')
+            ->value('numero_letra');
+
+        if ($lastNumber && preg_match('/^(\d+)-'.$year.'$/', $lastNumber, $matches)) {
+            return (int) $matches[1] + 1;
+        }
+
+        return 1;
     }
 
     /**

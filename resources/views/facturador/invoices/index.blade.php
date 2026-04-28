@@ -76,6 +76,34 @@
     .sc-amber .stat-card__icon { background:rgba(245,158,11,.12); color:#d97706; }
     .sc-slate .stat-card__icon { background:rgba(107,114,128,.12); color:#6b7280; }
     body.dark-mode .stat-card  { background:var(--clr-bg-card); border-color:var(--clr-border-light); }
+    .month-summary-head { display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap; margin-bottom:1rem; }
+    .month-selector { display:inline-flex; align-items:center; gap:.45rem; background:var(--clr-bg-card,#fff); border:1px solid var(--clr-border-light,#e5e7eb); border-radius:10px; padding:.45rem .6rem; }
+    .month-selector label { font-size:.78rem; font-weight:800; color:var(--clr-text-muted,#6b7280); text-transform:uppercase; letter-spacing:.04em; }
+    .month-selector input { border:none; outline:none; background:transparent; color:var(--clr-text-main,#111827); font-weight:700; font-size:.9rem; }
+    .invoice-head { display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; flex-wrap:wrap; margin-bottom:1.35rem; }
+    .invoice-head h1 { margin:0; display:flex; align-items:center; gap:.55rem; font-size:1.65rem; line-height:1.1; color:var(--clr-text-main,#111827); }
+    .invoice-actions { display:flex; justify-content:flex-end; gap:.55rem; align-items:center; flex-wrap:wrap; max-width:760px; }
+    .invoice-actions .btn-primary, .invoice-actions .btn-secondary, .invoice-actions button { min-height:42px; }
+    @media(max-width:860px){ .invoice-head { flex-direction:column; } .invoice-actions { justify-content:flex-start; width:100%; } }
+    .btn-letter-exchange { color:#0f766e; }
+    .letter-modal-backdrop { position:fixed; inset:0; z-index:90; display:none; align-items:center; justify-content:center; padding:1rem; background:rgba(15,23,42,.55); }
+    .letter-modal-backdrop.is-open { display:flex; }
+    .letter-modal { width:min(760px,100%); max-height:92vh; overflow:auto; background:var(--clr-bg-card,#fff); border-radius:10px; box-shadow:0 24px 80px rgba(15,23,42,.28); }
+    .letter-modal__head { display:flex; justify-content:space-between; gap:1rem; align-items:center; padding:1rem 1.2rem; border-bottom:1px solid var(--clr-border-light,#e5e7eb); }
+    .letter-modal__head h2 { margin:0; font-size:1.05rem; color:var(--clr-text-main,#111827); }
+    .letter-modal__body { padding:1.2rem; display:grid; gap:.85rem; }
+    .letter-summary { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.7rem; }
+    .letter-summary div { border:1px solid var(--clr-border-light,#e5e7eb); border-radius:8px; padding:.7rem; background:rgba(15,23,42,.02); }
+    .letter-summary span { display:block; color:var(--clr-text-muted,#6b7280); font-size:.72rem; text-transform:uppercase; font-weight:800; }
+    .letter-summary strong { color:var(--clr-text-main,#111827); font-size:.95rem; overflow-wrap:anywhere; }
+    .letter-grid { display:grid; grid-template-columns:1fr 130px 150px 38px; gap:.55rem; align-items:end; }
+    .letter-grid label { font-size:.72rem; text-transform:uppercase; color:var(--clr-text-muted,#6b7280); font-weight:800; }
+    .letter-input { width:100%; border:1px solid var(--clr-border-light,#d1d5db); border-radius:7px; min-height:38px; padding:.5rem .65rem; background:transparent; color:var(--clr-text-main,#111827); }
+    .letter-remove { width:38px; height:38px; border:1px solid #fecaca; color:#dc2626; background:#fff; border-radius:7px; cursor:pointer; }
+    .letter-total-line { display:flex; justify-content:space-between; align-items:center; gap:1rem; border-top:1px solid var(--clr-border-light,#e5e7eb); padding-top:.75rem; font-weight:800; }
+    .letter-total-line.is-invalid { color:#dc2626; }
+    .letter-modal__footer { display:flex; justify-content:flex-end; gap:.6rem; padding:1rem 1.2rem; border-top:1px solid var(--clr-border-light,#e5e7eb); background:rgba(15,23,42,.03); }
+    @media(max-width:720px){ .letter-summary { grid-template-columns:1fr; } .letter-grid { grid-template-columns:1fr; } .letter-remove { width:100%; } }
   </style>
 @endpush
 
@@ -116,9 +144,14 @@
           @endforeach
 
           <div class="placeholder-content module-card-wide">
-            <div class="module-toolbar">
-              <h1 style="display:flex; align-items:center; gap:0.5rem;"><i class='bx bx-receipt' style="color:var(--clr-text-main);"></i> Comprobantes Emitidos</h1>
-              <div style="display:flex; gap:.5rem; align-items:center; flex-wrap:wrap;">
+            <div class="invoice-head">
+              <h1><i class='bx bx-receipt'></i> Comprobantes Emitidos</h1>
+              <div class="invoice-actions">
+                @can('create', \App\Models\Invoice::class)
+                  <a href="{{ route('facturador.invoices.create') }}" class="btn-primary">
+                    <i class='bx bx-plus'></i> Nueva Factura/Boleta
+                  </a>
+                @endcan
                 <button type="button" id="btn-toggle-detalle" class="btn-secondary" style="font-size:.85rem;" title="Ver todos los comprobantes con más columnas">
                   <i class='bx bx-table'></i> Más detalle
                 </button>
@@ -135,28 +168,61 @@
                   <i class='bx bx-building'></i> Cambiar empresa
                 </a>
                 @can('create', \App\Models\Invoice::class)
-                  <a href="{{ route('facturador.invoices.create') }}" class="btn-primary">
-                    <i class='bx bx-plus'></i> Nueva Factura/Boleta
+                  <a href="{{ route('facturador.invoices.import-template') }}" class="btn-secondary" style="font-size:.85rem;">
+                    <i class='bx bx-download'></i> Plantilla Excel
                   </a>
+                  <form method="POST" action="{{ route('facturador.invoices.import-excel') }}" enctype="multipart/form-data" id="invoice-import-form" style="display:inline-flex;">
+                    @csrf
+                    <input type="file" name="archivo" id="invoice-import-file" accept=".xlsx,.xls" style="display:none;">
+                    <button type="button" class="btn-secondary" style="font-size:.85rem;" onclick="document.getElementById('invoice-import-file')?.click();">
+                      <i class='bx bx-upload'></i> Importar Excel
+                    </button>
+                  </form>
                 @endcan
               </div>
             </div>
 
             {{-- ── Tarjetas de resumen ── --}}
             @php
-              $mesTxt  = now()->locale('es')->translatedFormat('F Y');
+              $mesTxt  = $stats['selected_month_label'];
               $tipoMap = ['01'=>'Facturas','03'=>'Boletas','07'=>'N. Crédito','08'=>'N. Débito','09'=>'Guías'];
             @endphp
+            <div class="month-summary-head">
+              <div>
+                <h2 style="margin:0; font-size:1rem; color:var(--clr-text-main,#111827);">Resumen mensual</h2>
+                <p style="margin:.15rem 0 0; color:var(--clr-text-muted,#6b7280); font-size:.82rem;">Indicadores de {{ $mesTxt }}</p>
+              </div>
+              <form method="GET" class="month-selector">
+                <label for="month">Mes</label>
+                <input type="month" id="month" name="month" value="{{ $stats['selected_month'] }}" onchange="this.form.submit()">
+                @if(!empty($filters['search']))<input type="hidden" name="search" value="{{ $filters['search'] }}">@endif
+                @if(!empty($filters['serie']))<input type="hidden" name="serie" value="{{ $filters['serie'] }}">@endif
+                @if(!empty($filters['estado']))<input type="hidden" name="estado" value="{{ $filters['estado'] }}">@endif
+              </form>
+            </div>
             <div class="stat-cards">
 
               <div class="stat-card sc-green">
                 <div class="stat-card__icon"><i class='bx bx-dollar-circle'></i></div>
                 <span class="stat-card__lbl">Total Facturado</span>
-                <span class="stat-card__val">PEN {{ number_format($stats['total_mes'], 2) }}</span>
+                <span class="stat-card__val" style="font-size:1.1rem; line-height:1.35;">
+                  @forelse($stats['totals_by_currency'] as $currency => $amount)
+                    <span style="display:block;">{{ $currency }} {{ number_format($amount, 2) }}</span>
+                  @empty
+                    <span>PEN 0.00</span>
+                  @endforelse
+                </span>
                 <span class="stat-card__sub" style="line-height:1.6;">
                   Sin IGV: <strong>{{ number_format($stats['total_mes_sin_igv'], 2) }}</strong><br>
                   IGV: <strong>{{ number_format($stats['total_mes_igv'], 2) }}</strong><br>
-                  <em style="font-size:.75rem; color:var(--clr-text-muted);">{{ $mesTxt }}</em>
+                  @if($stats['month_variation_pct'] !== null)
+                    <span style="color:{{ $stats['month_variation_pct'] >= 0 ? '#059669' : '#dc2626' }}; font-weight:800;">
+                      {{ $stats['month_variation_pct'] >= 0 ? '+' : '' }}{{ $stats['month_variation_pct'] }}%
+                    </span>
+                    vs {{ $stats['previous_month_label'] }}
+                  @else
+                    <em style="font-size:.75rem; color:var(--clr-text-muted);">Sin comparación previa</em>
+                  @endif
                 </span>
               </div>
 
@@ -164,7 +230,7 @@
                 <div class="stat-card__icon"><i class='bx bx-check-shield'></i></div>
                 <span class="stat-card__lbl">Aceptados SUNAT</span>
                 <span class="stat-card__val">{{ $stats['aceptados_count'] }}</span>
-                <span class="stat-card__sub">PEN {{ number_format($stats['aceptados_monto'], 2) }} este mes</span>
+                <span class="stat-card__sub">Monto {{ number_format($stats['aceptados_monto'], 2) }} en {{ $mesTxt }}</span>
               </div>
 
               <div class="stat-card sc-amber">
@@ -196,6 +262,7 @@
 
             {{-- Filtros --}}
             <form method="GET" class="filter-bar">
+              <input type="hidden" name="month" value="{{ $stats['selected_month'] }}">
               <i class='bx bx-filter-alt' style="font-size: 1.25rem; color: var(--clr-text-muted);"></i>
               <input type="text" name="search" placeholder="Buscar cliente..." value="{{ $filters['search'] ?? '' }}">
               <input type="text" name="serie" placeholder="Serie (F001...)" value="{{ $filters['serie'] ?? '' }}" style="max-width:130px;">
@@ -270,6 +337,23 @@
                           <a href="{{ route('facturador.invoices.show', $invoice) }}" class="btn-action-icon" title="Ver detalle">
                             <i class='bx bx-show'></i>
                           </a>
+                          @if($invoice->canBeExchangedToLetters())
+                            <button type="button"
+                                    class="btn-action-icon btn-letter-exchange"
+                                    title="Canjear a letras"
+                                    data-open-letter-exchange
+                                    data-invoice-id="{{ $invoice->id }}"
+                                    data-invoice-number="{{ $invoice->serie_numero }}"
+                                    data-client="{{ $invoice->client->nombre_razon_social ?? '—' }}"
+                                    data-currency="{{ $invoice->codigo_moneda }}"
+                                    data-pending="{{ number_format($invoice->pendingAmountForLetters(), 2, '.', '') }}">
+                              <i class='bx bx-transfer'></i>
+                            </button>
+                          @elseif($invoice->hasBeenExchangedToLetters())
+                            <a href="{{ route('facturador.letras.index', ['search' => $invoice->serie_numero]) }}" class="btn-action-icon" title="Canjeada a letras">
+                              <i class='bx bx-check-double'></i>
+                            </a>
+                          @endif
                           @if($invoice->xml_path)
                             <a href="{{ route('facturador.invoices.xml', $invoice) }}" class="btn-action-icon" title="Descargar XML">
                               <i class='bx bx-download'></i>
@@ -304,7 +388,7 @@
                       </td>
                     </tr>
                   @empty
-                    <tr><td colspan="7">No hay comprobantes registrados.</td></tr>
+                    <tr><td colspan="8">No hay comprobantes registrados.</td></tr>
                   @endforelse
                 </tbody>
               </table>
@@ -395,6 +479,23 @@
                           <a href="{{ route('facturador.invoices.show', $invoice) }}" class="btn-action-icon" title="Ver detalle">
                             <i class='bx bx-show'></i>
                           </a>
+                          @if($invoice->canBeExchangedToLetters())
+                            <button type="button"
+                                    class="btn-action-icon btn-letter-exchange"
+                                    title="Canjear a letras"
+                                    data-open-letter-exchange
+                                    data-invoice-id="{{ $invoice->id }}"
+                                    data-invoice-number="{{ $invoice->serie_numero }}"
+                                    data-client="{{ $invoice->client->nombre_razon_social ?? '—' }}"
+                                    data-currency="{{ $invoice->codigo_moneda }}"
+                                    data-pending="{{ number_format($invoice->pendingAmountForLetters(), 2, '.', '') }}">
+                              <i class='bx bx-transfer'></i>
+                            </button>
+                          @elseif($invoice->hasBeenExchangedToLetters())
+                            <a href="{{ route('facturador.letras.index', ['search' => $invoice->serie_numero]) }}" class="btn-action-icon" title="Canjeada a letras">
+                              <i class='bx bx-check-double'></i>
+                            </a>
+                          @endif
                           @if($invoice->xml_path)
                             <a href="{{ route('facturador.invoices.xml', $invoice) }}" class="btn-action-icon" title="Descargar XML">
                               <i class='bx bx-download'></i>
@@ -426,7 +527,7 @@
                       </td>
                     </tr>
                   @empty
-                    <tr><td colspan="15" style="text-align:center; color:var(--clr-text-muted);">No hay comprobantes registrados.</td></tr>
+                    <tr><td colspan="16" style="text-align:center; color:var(--clr-text-muted);">No hay comprobantes registrados.</td></tr>
                   @endforelse
                 </tbody>
               </table>
@@ -437,69 +538,6 @@
             @endif
           </div>
 
-          {{-- ── Configuración: Información Adicional ─────────────────────── --}}
-          <div class="placeholder-content module-card-wide">
-            <div class="module-toolbar" style="margin-bottom:1rem;">
-              <div>
-                <h2 style="margin:0; font-size:1.05rem; display:flex; align-items:center; gap:.5rem;">
-                  <i class='bx bx-info-circle' style="color:var(--clr-active-bg,#1a6b57);"></i>
-                  Información Adicional 
-                </h2>
-                <p style="margin:.3rem 0 0; color:#64748b; font-size:.88rem;">
-                  Estos valores se envían automáticamente en el bloque <code>informacion_adicional</code>
-                  del JSON a SUNAT al emitir cualquier Factura, Boleta o comprobante con SPOT.<br>
-                  Los <strong>nombres</strong> de los campos se configuran en el portal web
-                  (<em>Configuración → Campos Adicionales</em>).
-                </p>
-              </div>
-            </div>
-
-            <form method="POST" action="{{ route('facturador.config.informacion-adicional.update') }}" class="module-form">
-              @csrf
-              @method('PUT')
-
-              @php
-                $configAdicional = $company->informacion_adicional_config ?? [];
-                // Garantizar al menos 1 fila visible por UX
-                $slots = max(1, count($configAdicional));
-                $configValues = array_values($configAdicional);
-              @endphp
-
-              <div id="ia-body" style="display:flex; flex-direction:column; gap:.5rem;">
-                @for($i = 0; $i < $slots; $i++)
-                  <div class="ia-row" style="display:flex; gap:.5rem; align-items:center;">
-                    <span style="flex:0 0 160px; font-size:.82rem; color:#64748b; font-weight:600; white-space:nowrap;">
-                      informacion_adicional_{{ $i + 1 }}
-                    </span>
-                    <input type="text"
-                      name="informacion_adicional[]"
-                      class="form-input"
-                      style="flex:1; font-size:.88rem;"
-                      placeholder="Valor (dejar vacío para no enviar)"
-                      value="{{ old("informacion_adicional.$i", $configValues[$i] ?? '') }}">
-                    <button type="button" class="btn-action-icon ia-remove" title="Quitar fila">
-                      <i class='bx bx-trash'></i>
-                    </button>
-                  </div>
-                @endfor
-              </div>
-
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-top:.85rem;">
-                <button type="button" id="ia-add" class="btn-secondary" style="font-size:.83rem; padding:.35rem .9rem;">
-                  <i class='bx bx-plus'></i> Agregar campo
-                </button>
-                <button type="submit" class="btn-primary" style="font-size:.88rem;">
-                  <i class='bx bx-save'></i> Guardar configuración
-                </button>
-              </div>
-
-              <p style="font-size:.76rem; color:#9ca3af; margin-top:.6rem;">
-                <i class='bx bx-shield-quarter' style="vertical-align:middle;"></i>
-                Máximo 10 campos. Los campos vacíos se omiten del JSON enviado.
-              </p>
-            </form>
-          </div>
-
         </div>
       </main>
     </section>
@@ -508,6 +546,57 @@
   {{-- ── Modales contables ── --}}
   @include('facturador.invoices.partials.accounting-modal')
   @include('facturador.invoices.partials.export-modal')
+
+  <div class="letter-modal-backdrop" data-letter-modal>
+    <form method="POST" class="letter-modal" data-letter-form>
+      @csrf
+      <div class="letter-modal__head">
+        <h2>Canjear factura a letras</h2>
+        <button type="button" class="btn-action-icon" data-letter-close aria-label="Cerrar"><i class='bx bx-x'></i></button>
+      </div>
+      <div class="letter-modal__body">
+        <div class="letter-summary">
+          <div><span>Comprobante</span><strong data-letter-invoice>—</strong></div>
+          <div><span>Cliente</span><strong data-letter-client>—</strong></div>
+          <div><span>Total pendiente</span><strong data-letter-pending>—</strong></div>
+        </div>
+
+        <div class="letter-grid" style="grid-template-columns:150px 1fr;">
+          <div>
+            <label>Moneda</label>
+            <select name="currency" class="letter-input" data-letter-currency>
+              <option value="PEN">PEN</option>
+              <option value="USD">USD</option>
+            </select>
+          </div>
+          <div>
+            <label>Observación general</label>
+            <input type="text" name="observation" class="letter-input" maxlength="500" placeholder="Opcional">
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:1rem;">
+          <strong style="color:var(--clr-text-main,#111827);">Letras</strong>
+          <button type="button" class="btn-secondary" data-add-letter style="font-size:.82rem;">
+            <i class='bx bx-plus'></i> Agregar letra
+          </button>
+        </div>
+
+        <div data-letter-rows></div>
+
+        <div class="letter-total-line" data-letter-total-line>
+          <span>Suma de letras</span>
+          <span><strong data-letter-total>0.00</strong> / <strong data-letter-pending-inline>0.00</strong></span>
+        </div>
+      </div>
+      <div class="letter-modal__footer">
+        <button type="button" class="btn-secondary" data-letter-close>Cancelar</button>
+        <button type="submit" class="btn-primary" data-letter-submit>
+          <i class='bx bx-save'></i> Confirmar canje
+        </button>
+      </div>
+    </form>
+  </div>
 
 @endsection
 
@@ -520,6 +609,78 @@
       save:        '{{ url('facturador/invoices') }}/:id/accounting',
       exportCount: '{{ route('facturador.invoices.export-count') }}',
     };
+    const letterModal = document.querySelector('[data-letter-modal]');
+    const letterForm = document.querySelector('[data-letter-form]');
+    const letterRows = document.querySelector('[data-letter-rows]');
+    const letterTotal = document.querySelector('[data-letter-total]');
+    const letterPendingInline = document.querySelector('[data-letter-pending-inline]');
+    const letterTotalLine = document.querySelector('[data-letter-total-line]');
+    const letterSubmit = document.querySelector('[data-letter-submit]');
+    let letterPendingAmount = 0;
+
+    const money = (value) => Number(value || 0).toFixed(2);
+    const recalcLetters = () => {
+      const total = Array.from(letterRows?.querySelectorAll('[data-letter-amount]') || [])
+        .reduce((sum, input) => sum + Number(input.value || 0), 0);
+      const valid = Math.abs(total - letterPendingAmount) <= 0.01;
+      if (letterTotal) letterTotal.textContent = money(total);
+      letterTotalLine?.classList.toggle('is-invalid', !valid);
+      if (letterSubmit) letterSubmit.disabled = !valid;
+    };
+    const addLetterRow = (amount = '') => {
+      const index = letterRows.children.length;
+      const row = document.createElement('div');
+      row.className = 'letter-grid';
+      row.innerHTML = `
+        <div>
+          <label>Fecha de vencimiento</label>
+          <input type="date" name="letters[${index}][due_date]" class="letter-input" required>
+        </div>
+        <div>
+          <label>Monto</label>
+          <input type="number" name="letters[${index}][amount]" class="letter-input" step="0.01" min="0.01" value="${amount}" data-letter-amount required>
+        </div>
+        <div>
+          <label>Observación</label>
+          <input type="text" name="letters[${index}][observation]" class="letter-input" maxlength="500" placeholder="Opcional">
+        </div>
+        <button type="button" class="letter-remove" data-remove-letter title="Quitar"><i class='bx bx-trash'></i></button>`;
+      letterRows.appendChild(row);
+      row.querySelector('[data-letter-amount]')?.addEventListener('input', recalcLetters);
+      row.querySelector('[data-remove-letter]')?.addEventListener('click', () => {
+        row.remove();
+        recalcLetters();
+      });
+      recalcLetters();
+    };
+    document.querySelectorAll('[data-open-letter-exchange]').forEach((button) => {
+      button.addEventListener('click', () => {
+        letterPendingAmount = Number(button.dataset.pending || 0);
+        letterForm.action = `{{ url('facturador/invoices') }}/${button.dataset.invoiceId}/exchange-letters`;
+        document.querySelector('[data-letter-invoice]').textContent = button.dataset.invoiceNumber || '—';
+        document.querySelector('[data-letter-client]').textContent = button.dataset.client || '—';
+        document.querySelector('[data-letter-pending]').textContent = `${button.dataset.currency} ${money(letterPendingAmount)}`;
+        if (letterPendingInline) letterPendingInline.textContent = money(letterPendingAmount);
+        const currency = document.querySelector('[data-letter-currency]');
+        if (currency) currency.value = button.dataset.currency || 'PEN';
+        letterRows.innerHTML = '';
+        addLetterRow(money(letterPendingAmount));
+        letterModal?.classList.add('is-open');
+      });
+    });
+    document.querySelector('[data-add-letter]')?.addEventListener('click', () => addLetterRow(''));
+    document.querySelectorAll('[data-letter-close]').forEach((button) => {
+      button.addEventListener('click', () => letterModal?.classList.remove('is-open'));
+    });
+    letterModal?.addEventListener('click', (event) => {
+      if (event.target === letterModal) letterModal.classList.remove('is-open');
+    });
+
+    document.getElementById('invoice-import-file')?.addEventListener('change', function () {
+      if (this.files?.length) {
+        document.getElementById('invoice-import-form')?.submit();
+      }
+    });
     document.querySelectorAll('[data-flash-message]').forEach((flash) => {
       const closeBtn = flash.querySelector('[data-flash-close]');
       if (closeBtn) closeBtn.addEventListener('click', () => flash.remove());
@@ -572,40 +733,5 @@
         });
       });
     });
-    // ── Información Adicional — tabla dinámica (Feasy) ──────────────────
-    const MAX_IA = 10;
-    function iaCount() { return document.querySelectorAll('#ia-body .ia-row').length; }
-
-    function iaRenumber() {
-      document.querySelectorAll('#ia-body .ia-row').forEach((row, i) => {
-        const lbl = row.querySelector('span');
-        if (lbl) lbl.textContent = 'informacion_adicional_' + (i + 1);
-      });
-    }
-
-    function iaAddRow() {
-      if (iaCount() >= MAX_IA) { Swal.fire({icon:'warning', title:'Límite alcanzado', text:'Máximo ' + MAX_IA + ' campos permitidos.'}); return; }
-      const n = iaCount() + 1;
-      const row = document.createElement('div');
-      row.className = 'ia-row';
-      row.style.cssText = 'display:flex; gap:.5rem; align-items:center;';
-      row.innerHTML = `
-        <span style="flex:0 0 160px; font-size:.82rem; color:#64748b; font-weight:600; white-space:nowrap;">
-          informacion_adicional_${n}
-        </span>
-        <input type="text" name="informacion_adicional[]" class="form-input"
-          style="flex:1; font-size:.88rem;" placeholder="Valor (dejar vacío para no enviar)">
-        <button type="button" class="btn-action-icon ia-remove" title="Quitar fila">
-          <i class='bx bx-trash'></i>
-        </button>`;
-      document.getElementById('ia-body').appendChild(row);
-      row.querySelector('.ia-remove').addEventListener('click', () => { row.remove(); iaRenumber(); });
-    }
-
-    // Ligar botones quitar a filas existentes (las del server-side Blade)
-    document.querySelectorAll('#ia-body .ia-remove').forEach(btn => {
-      btn.addEventListener('click', function() { this.closest('.ia-row').remove(); iaRenumber(); });
-    });
-    document.getElementById('ia-add')?.addEventListener('click', iaAddRow);
   </script>
 @endpush

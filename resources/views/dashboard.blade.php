@@ -72,6 +72,56 @@
     .metric-icon.purple { background:rgba(139,92,246,.1);  color:#8b5cf6; }
     .metric-info h3 { font-size:.8rem; color:var(--clr-text-muted,#6b7280); font-weight:700; text-transform:uppercase; letter-spacing:.05em; margin-bottom:.2rem; }
     .metric-info p  { font-size:1.65rem; color:var(--clr-text-main,#111827); font-weight:800; line-height:1; }
+    .sales-dashboard-grid { display:grid; grid-template-columns:2fr 1fr; gap:1.25rem; margin-bottom:1.25rem; }
+    @media(max-width:980px){ .sales-dashboard-grid { grid-template-columns:1fr; } }
+    .sales-bars { display:grid; grid-template-columns:repeat(6,1fr); gap:.85rem; align-items:end; min-height:150px; }
+    .sales-bar-item { display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:.42rem; min-width:0; }
+    .sales-bar-value { font-size:.74rem; font-weight:800; color:var(--clr-text-main,#111827); text-align:center; }
+    .sales-bar-track { width:100%; height:92px; display:flex; align-items:flex-end; justify-content:center; border-bottom:1px solid var(--clr-border-light,#e5e7eb); }
+    .sales-bar { width:min(44px,68%); min-height:4px; border-radius:7px 7px 0 0; background:#94a3b8; }
+    .sales-bar.current { background:#059669; }
+    .sales-bar-label { font-size:.7rem; color:var(--clr-text-muted,#6b7280); text-align:center; white-space:nowrap; }
+    .status-mini-grid { display:grid; grid-template-columns:1fr 1fr; gap:.65rem; }
+    .status-mini { border:1px solid var(--clr-border-light,#e5e7eb); border-radius:10px; padding:.8rem; background:rgba(248,250,252,.65); }
+    .status-mini strong { display:block; font-size:1.35rem; color:var(--clr-text-main,#111827); line-height:1; }
+    .status-mini span { display:block; margin-top:.3rem; font-size:.73rem; color:var(--clr-text-muted,#6b7280); font-weight:700; text-transform:uppercase; letter-spacing:.04em; }
+    .dashboard-shell { max-width:1280px; width:100%; margin:0 auto; display:flex; flex-direction:column; gap:1rem; }
+    .dashboard-hero { background:var(--clr-bg-card,#fff); border:1px solid var(--clr-border-light,#e5e7eb); border-radius:12px; padding:1.25rem 1.4rem; box-shadow:0 2px 10px rgba(15,23,42,.04); display:flex; justify-content:space-between; gap:1rem; align-items:flex-start; }
+    .dashboard-hero h1 { margin:0; color:var(--clr-text-main,#111827); font-size:1.35rem; line-height:1.2; display:flex; align-items:center; gap:.55rem; }
+    .dashboard-hero h1 i { width:34px; height:34px; border-radius:9px; display:inline-flex; align-items:center; justify-content:center; background:#e7f3ef; color:#16614f; font-size:1.2rem; }
+    .dashboard-hero p { margin:.35rem 0 0; color:var(--clr-text-muted,#64748b); font-size:.88rem; }
+    .dashboard-actions { display:flex; gap:.5rem; flex-wrap:wrap; justify-content:flex-end; }
+    .dashboard-actions a { display:inline-flex; align-items:center; gap:.35rem; border:1px solid #dbe3ef; border-radius:8px; padding:.5rem .75rem; text-decoration:none; color:#334155; background:#fff; font-size:.82rem; font-weight:800; white-space:nowrap; }
+    .dashboard-actions a.primary { background:#16614f; color:#fff; border-color:#16614f; }
+    .dashboard-filter-card { background:var(--clr-bg-card,#fff); border:1px solid var(--clr-border-light,#e5e7eb); border-radius:12px; padding:.85rem 1rem; display:flex; justify-content:space-between; gap:1rem; align-items:center; }
+    .dashboard-filter-card .year-filter select { background:#fff; min-width:92px; }
+    .kpi-grid.dashboard-kpis { grid-template-columns:repeat(5,minmax(0,1fr)); gap:.75rem; margin-bottom:0; }
+    .dashboard-kpis .kpi-card { border-radius:12px; padding:1rem; box-shadow:none; min-height:118px; }
+    .dashboard-kpis .kpi-card:hover { transform:none; }
+    .dashboard-kpis .kpi-card::before { width:3px; }
+    .dashboard-kpis .kpi-value { font-size:1.32rem; letter-spacing:0; }
+    .dashboard-kpis .kpi-sub { color:#64748b; }
+    .dashboard-main-grid { display:grid; grid-template-columns:minmax(0,1.45fr) minmax(320px,.85fr); gap:1rem; }
+    .dashboard-stack { display:flex; flex-direction:column; gap:1rem; min-width:0; }
+    .dashboard-side { display:flex; flex-direction:column; gap:1rem; min-width:0; }
+    .chart-card { border-radius:12px; box-shadow:none; }
+    .dash-section { border-radius:12px; box-shadow:none; }
+    .dashboard-quick-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.6rem; }
+    .dashboard-quick-grid a { display:flex; align-items:center; gap:.55rem; min-height:44px; padding:.65rem .75rem; border:1px solid #e5eaf0; border-radius:8px; background:#fff; color:#334155; text-decoration:none; font-size:.82rem; font-weight:800; }
+    .dashboard-quick-grid a i { font-size:1.05rem; color:#16614f; }
+    .sales-dashboard-grid { grid-template-columns:1fr; gap:1rem; margin-bottom:0; }
+    @media(max-width:1180px){
+      .kpi-grid.dashboard-kpis { grid-template-columns:repeat(3,minmax(0,1fr)); }
+      .dashboard-main-grid { grid-template-columns:1fr; }
+      .dashboard-side { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); }
+    }
+    @media(max-width:760px){
+      .dashboard-hero, .dashboard-filter-card { flex-direction:column; align-items:stretch; }
+      .dashboard-actions { justify-content:flex-start; }
+      .kpi-grid.dashboard-kpis,
+      .dashboard-side,
+      .dashboard-quick-grid { grid-template-columns:1fr; }
+    }
   </style>
 @endpush
 
@@ -122,25 +172,36 @@
         @if(!$isGlobalPanel && !empty($analytics))
         @php $an = $analytics; @endphp
 
-        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.75rem; margin-bottom:1.25rem;">
-          <div>
-            <h1 style="font-size:1.25rem; font-weight:800; color:var(--clr-text-main,#111827); margin:0; display:flex; align-items:center; gap:.5rem;">
-              <i class='bx bx-bar-chart-alt-2' style="color:#3b82f6;"></i> Analitica Financiera
-            </h1>
-            <p style="margin:0; font-size:.8rem; color:var(--clr-text-muted,#6b7280);">Resumen inteligente de ingresos y gastos</p>
+        <div class="dashboard-shell">
+          <div class="dashboard-hero">
+            <div>
+              <h1><i class='bx bx-bar-chart-alt-2'></i> Dashboard financiero</h1>
+              <p>Indicadores de facturacion, compras, estado SUNAT y actividad de la empresa activa.</p>
+            </div>
+            <div class="dashboard-actions">
+              <a href="{{ route('facturador.invoices.index') }}" class="primary"><i class='bx bx-receipt'></i> Comprobantes</a>
+              <a href="{{ route('facturador.compras.index') }}"><i class='bx bx-cart'></i> Compras</a>
+              <a href="{{ route('facturador.letras.index') }}"><i class='bx bx-file'></i> Letras</a>
+            </div>
           </div>
-          <form method="GET" class="year-filter">
-            <i class='bx bx-calendar' style="color:var(--clr-text-muted,#9ca3af);"></i>
-            <select name="year" onchange="this.form.submit()">
-              @foreach($an['anios'] as $anio)
-                <option value="{{ $anio }}" {{ $anio == $selectedYear ? 'selected' : '' }}>{{ $anio }}</option>
-              @endforeach
-            </select>
-          </form>
-        </div>
+
+          <div class="dashboard-filter-card">
+            <div>
+              <div style="font-weight:900;color:var(--clr-text-main,#111827);font-size:.95rem;">Periodo de analisis</div>
+              <div style="font-size:.78rem;color:var(--clr-text-muted,#64748b);margin-top:.1rem;">Los importes anuales usan el periodo seleccionado. El estado SUNAT usa el mes actual.</div>
+            </div>
+            <form method="GET" class="year-filter">
+              <i class='bx bx-calendar' style="color:var(--clr-text-muted,#9ca3af);"></i>
+              <select name="year" onchange="this.form.submit()">
+                @foreach($an['anios'] as $anio)
+                  <option value="{{ $anio }}" {{ $anio == $selectedYear ? 'selected' : '' }}>{{ $anio }}</option>
+                @endforeach
+              </select>
+            </form>
+          </div>
 
         {{-- KPIs del anio --}}
-        <div class="kpi-grid">
+        <div class="kpi-grid dashboard-kpis">
           <div class="kpi-card green">
             <span class="kpi-label">Ingresos {{ $selectedYear }}</span>
             <span class="kpi-value">S/ {{ number_format($an['total_ingresos'], 0) }}</span>
@@ -180,8 +241,38 @@
           @endif
         </div>
 
+          <div class="dashboard-main-grid">
+            <div class="dashboard-stack">
+              {{-- Facturacion ultimos meses --}}
+              <div class="sales-dashboard-grid">
+                <div class="chart-card">
+                  <div class="chart-card-header">
+                    <div>
+                      <div class="chart-card-title"><i class='bx bx-receipt' style="color:#059669;"></i> Facturacion de los ultimos 6 meses</div>
+                      <div class="chart-card-sub">Monto total de comprobantes no anulados</div>
+                    </div>
+                    <a href="{{ route('facturador.invoices.index') }}" style="font-size:.78rem; font-weight:700; color:#059669; text-decoration:none;">Ver comprobantes</a>
+                  </div>
+                  <div class="sales-bars">
+                    @foreach($an['ventas_ultimos_6_meses'] as $point)
+                      @php
+                        $height = max(4, round(($point['total'] / $an['ventas_ultimos_6_meses_max']) * 92));
+                        $isCurrent = $point['month'] === now()->format('Y-m');
+                      @endphp
+                      <div class="sales-bar-item">
+                        <div class="sales-bar-value">{{ number_format($point['total'], 0) }}</div>
+                        <div class="sales-bar-track">
+                          <div class="sales-bar {{ $isCurrent ? 'current' : '' }}" style="height:{{ $height }}px;"></div>
+                        </div>
+                        <div class="sales-bar-label">{{ $point['label'] }}</div>
+                      </div>
+                    @endforeach
+                  </div>
+                </div>
+              </div>
+
         {{-- Grafico principal: Ingresos vs Gastos --}}
-        <div class="chart-row chart-row-2">
+        <div class="chart-row">
           <div class="chart-card">
             <div class="chart-card-header">
               <div>
@@ -195,6 +286,41 @@
             </div>
             <div style="position:relative; height:260px;"><canvas id="chartIngresosGastos"></canvas></div>
           </div>
+        </div>
+      </div>
+
+            <div class="dashboard-side">
+          <div class="chart-card">
+            <div class="chart-card-header">
+              <div>
+                <div class="chart-card-title"><i class='bx bx-pulse' style="color:#f59e0b;"></i> Estado del mes</div>
+                <div class="chart-card-sub">Comprobantes de {{ now()->locale('es')->translatedFormat('F Y') }}</div>
+              </div>
+            </div>
+            <div class="status-mini-grid">
+              <div class="status-mini"><strong style="color:#059669;">{{ $an['estado_mes_actual']['aceptados'] }}</strong><span>Aceptados</span></div>
+              <div class="status-mini"><strong style="color:#d97706;">{{ $an['estado_mes_actual']['pendientes'] }}</strong><span>Pendientes</span></div>
+              <div class="status-mini"><strong style="color:#dc2626;">{{ $an['estado_mes_actual']['errores'] }}</strong><span>Errores</span></div>
+              <div class="status-mini"><strong style="color:#6b7280;">{{ $an['estado_mes_actual']['anulados'] }}</strong><span>Anulados</span></div>
+            </div>
+          </div>
+
+          <div class="chart-card">
+            <div class="chart-card-header">
+              <div>
+                <div class="chart-card-title"><i class='bx bx-bolt-circle' style="color:#16614f;"></i> Accesos rapidos</div>
+                <div class="chart-card-sub">Operaciones frecuentes</div>
+              </div>
+            </div>
+            <div class="dashboard-quick-grid">
+              <a href="{{ route('facturador.invoices.create') }}"><i class='bx bx-plus'></i> Nueva factura</a>
+              <a href="{{ route('facturador.compras.subir') }}"><i class='bx bx-upload'></i> Subir compra</a>
+              <a href="{{ route('facturador.letras.index') }}"><i class='bx bx-file'></i> Letras</a>
+              @can('create', App\Models\Ticket::class)
+                <a href="{{ route('tickets.create') }}"><i class='bx bx-message-square-add'></i> Consulta</a>
+              @endcan
+            </div>
+          </div>
 
           <div class="chart-card">
             <div class="chart-card-header">
@@ -206,6 +332,7 @@
             <div style="position:relative; height:200px;"><canvas id="chartTipoGasto"></canvas></div>
             <div id="legendTipo" style="display:flex; flex-wrap:wrap; gap:.4rem .8rem; margin-top:.75rem; justify-content:center;"></div>
           </div>
+        </div>
         </div>
 
         {{-- IGV y Top Proveedores --}}
@@ -333,6 +460,7 @@
             @endcan
           </div>
         </div>
+        </div>{{-- dashboard-shell --}}
 
         <script>
           window.__DASH__ = {

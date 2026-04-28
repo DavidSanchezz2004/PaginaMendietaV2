@@ -11,11 +11,18 @@ class ObligationDeclaration extends Model
         'company_id',
         'period_year',
         'period_month',
+        'due_group',
+        'due_date',
+        'presentation_date',
+        'status',
+        'observation',
         'declared_by',
         'declared_at',
     ];
 
     protected $casts = [
+        'due_date' => 'date',
+        'presentation_date' => 'date',
         'declared_at' => 'datetime',
     ];
 

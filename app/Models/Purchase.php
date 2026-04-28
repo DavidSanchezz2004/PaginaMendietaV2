@@ -59,6 +59,8 @@ class Purchase extends Model
         'otros_tributos',
         'monto_descuento',
         'monto_total',
+        'monto_pagado',
+        'estado_pago',
         'forma_pago',
         'lista_cuotas',
         'anio_emision_dua',
@@ -135,6 +137,7 @@ class Purchase extends Model
             'base_imponible_gravadas'  => 'float',
             'igv_gravadas'             => 'float',
             'monto_total'              => 'float',
+            'monto_pagado'             => 'float',
             'monto_detraccion'         => 'float',
             'monto_neto_detraccion'    => 'float',
             'informacion_detraccion'   => 'array',
@@ -197,6 +200,11 @@ class Purchase extends Model
         return $this->hasMany(LetraCambio::class);
     }
 
+    public function letterCompensationDetails(): HasMany
+    {
+        return $this->hasMany(LetterCompensationDetail::class, 'purchase_invoice_id');
+    }
+
     public function items(): HasMany
     {
         return $this->hasMany(PurchaseItem::class)->orderBy('correlativo');
@@ -209,6 +217,35 @@ class Purchase extends Model
         $serie = $this->serie_documento ?? '—';
         $num   = $this->numero_documento ?? '—';
         return "{$serie}-{$num}";
+    }
+
+    public function getMontoPagableAttribute(): float
+    {
+        $total = (float) $this->monto_total
+            - (float) ($this->monto_detraccion ?? 0)
+            - (float) ($this->monto_retencion ?? 0);
+
+        if ($total <= 0) {
+            $total = (float) ($this->net_total ?? 0)
+                ?: (float) ($this->monto_neto_detraccion ?? 0)
+                ?: (float) $this->monto_total;
+        }
+
+        return round(max(0.0, $total), 2);
+    }
+
+    public function getSaldoPendientePagoAttribute(): float
+    {
+        return round(max(0.0, $this->monto_pagable - (float) ($this->monto_pagado ?? 0)), 2);
+    }
+
+    public function getEstadoPagoLabelAttribute(): string
+    {
+        return match ($this->estado_pago) {
+            'parcial' => 'Parcialmente pagada',
+            'pagado' => 'Pagada / Cancelada',
+            default   => 'Pendiente',
+        };
     }
 
     // ── Flujo de facturaciónN: Estado y validación ──────────────────────

@@ -59,7 +59,7 @@ class QuoteService
 
         // Asignar datos
         foreach ($data as $key => $value) {
-            if (in_array($key, $quote->fillable)) {
+            if ($quote->isFillable($key)) {
                 $quote->$key = $value;
             }
         }
@@ -115,7 +115,7 @@ class QuoteService
         $version->version = $original->version + 1;
 
         foreach ($newData as $key => $value) {
-            if (in_array($key, $version->fillable)) {
+            if ($version->isFillable($key)) {
                 $version->$key = $value;
             }
         }
@@ -148,7 +148,7 @@ class QuoteService
             $quoteItem->company_id = $quote->company_id;
 
             foreach ($item as $key => $value) {
-                if (in_array($key, $quoteItem->fillable)) {
+                if ($quoteItem->isFillable($key)) {
                     $quoteItem->$key = $value;
                 }
             }
@@ -284,7 +284,7 @@ class QuoteService
         // Crear factura
         $invoice = new Invoice();
         foreach ($invoiceData as $key => $value) {
-            if (in_array($key, $invoice->fillable)) {
+            if ($invoice->isFillable($key)) {
                 $invoice->$key = $value;
             }
         }

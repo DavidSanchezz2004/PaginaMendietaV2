@@ -43,6 +43,11 @@ class Provider extends Model
         return $this->hasMany(Purchase::class);
     }
 
+    public function letterCompensations(): HasMany
+    {
+        return $this->hasMany(LetterCompensation::class, 'supplier_id');
+    }
+
     // ── Helpers ─────────────────────────────────────────────────────────
 
     public function getNombreDisplayAttribute(): string

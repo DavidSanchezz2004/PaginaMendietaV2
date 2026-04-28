@@ -38,6 +38,10 @@
 
     .conductor-row-full { display:grid; grid-template-columns:80px 1fr 1fr 1fr 1fr 120px 40px; gap:.5rem; align-items:center; margin-bottom:.5rem; }
     @media(max-width:900px){ .conductor-row-full{ grid-template-columns:1fr 1fr; } }
+    .ai-extractor { border:1px solid rgba(26,107,87,.22); background:rgba(26,107,87,.04); }
+    .ai-extractor__body { display:grid; grid-template-columns:minmax(220px,1fr) auto; gap:.75rem; align-items:end; }
+    @media(max-width:768px){ .ai-extractor__body{ grid-template-columns:1fr; } }
+    .ai-status { font-size:.8rem; color:var(--clr-text-muted,#6b7280); margin-top:.5rem; min-height:1.2rem; }
   </style>
 @endpush
 
@@ -69,7 +73,7 @@
       <div class="module-content-stack">
 
         @if($errors->any())
-          <div class="placeholder-content module-alert module-alert--error" data-flash-message>
+          <div class="placeholder-content module-alert module-alert--error" data-flash-message style="display:none;">
             <p><strong>Corrige los errores antes de continuar:</strong></p>
             <ul style="margin:.4rem 0 0 1rem;">
               @foreach($errors->all() as $err)
@@ -91,14 +95,28 @@
           <form method="POST" action="{{ route('facturador.gre.store') }}" id="gre-form" novalidate>
             @csrf
 
+            <div class="form-section ai-extractor">
+              <h4><i class='bx bx-chip'></i> Extraer desde PDF GRE</h4>
+              <div class="ai-extractor__body">
+                <div>
+                  <label class="field-label">PDF de guía de remisión</label>
+                  <input type="file" id="gre-pdf-input" accept="application/pdf,.pdf" class="form-control">
+                  <div id="gre-ai-status" class="ai-status">No cambia serie, número ni fecha de emisión; esos datos se mantienen con tu correlativo.</div>
+                </div>
+                <button type="button" id="gre-ai-extract-btn" class="btn-primary" style="height:40px; white-space:nowrap;">
+                  <i class='bx bx-search-alt'></i> Extraer con IA
+                </button>
+              </div>
+            </div>
+
             {{-- ── Datos del documento ─────────────────────────────── --}}
             <div class="form-section">
               <h4><i class='bx bx-file-blank'></i> Datos del Documento</h4>
               <div class="field-group cols-3">
                 <div>
                   <label class="field-label">Código interno *</label>
-                  <input type="text" name="codigo_interno" value="{{ old('codigo_interno') }}"
-                         class="form-control @error('codigo_interno') is-invalid @enderror" required>
+                  <input type="text" name="codigo_interno" id="codigo_interno" value="{{ old('codigo_interno') }}"
+                         class="form-control @error('codigo_interno') is-invalid @enderror" readonly required>
                   @error('codigo_interno')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
                 <div>
@@ -549,6 +567,34 @@
 
 @push('scripts')
 <script>
+@if($errors->any())
+document.addEventListener('DOMContentLoaded', function() {
+  Swal.fire({
+    icon: 'warning',
+    title: 'Faltan datos para guardar la guía',
+    html: `{!! '<ul style="text-align:left;margin:0;padding-left:1.1rem;">' . collect($errors->all())->map(fn($error) => '<li>' . e($error) . '</li>')->implode('') . '</ul>' !!}`,
+    confirmButtonText: 'Revisar campos',
+    customClass: { popup: document.body.classList.contains('dark-mode') ? 'swal2-dark' : '' }
+  });
+});
+@endif
+
+function padGreNumber(value) {
+  const raw = String(value || '').trim();
+  return /^\d+$/.test(raw) ? raw.padStart(8, '0') : raw;
+}
+
+function updateGreInternalCode() {
+  const serie = document.querySelector('[name="serie_documento"]')?.value || '';
+  const numero = document.querySelector('[name="numero_documento"]')?.value || '';
+  const codigo = document.getElementById('codigo_interno');
+  if (codigo) codigo.value = '09' + serie + padGreNumber(numero);
+}
+
+document.querySelector('[name="serie_documento"]')?.addEventListener('input', updateGreInternalCode);
+document.querySelector('[name="numero_documento"]')?.addEventListener('input', updateGreInternalCode);
+document.addEventListener('DOMContentLoaded', updateGreInternalCode);
+
 // ── Modalidad toggle ────────────────────────────────────────────────────────
 document.querySelectorAll('.modal-tab').forEach(function(btn) {
   btn.addEventListener('click', function() {
@@ -649,6 +695,15 @@ function addItem() {
   container.appendChild(row);
 }
 
+function clearItems() {
+  document.getElementById('items-container').innerHTML = '';
+}
+
+function ensureItemRows(count) {
+  clearItems();
+  for (let i = 0; i < Math.max(1, count); i++) addItem();
+}
+
 // ── Agregar vehículo ─────────────────────────────────────────────────────────
 function addVehiculo() {
   const container = document.getElementById('vehiculos-container');
@@ -661,6 +716,15 @@ function addVehiculo() {
     '<div style="padding-top:1.4rem;"><label style="display:flex;align-items:center;gap:.4rem;font-size:.85rem;cursor:pointer;"><input type="checkbox" name="gre_vehiculos[' + idx + '][indicador_principal]" value="1"> Principal</label></div>' +
     '<div style="padding-top:1.4rem;"><button type="button" class="btn-remove-row" onclick="removeRow(this,\'vehiculo\')"><i class=\'bx bx-trash\'></i></button></div>';
   container.appendChild(row);
+}
+
+function clearVehiculos() {
+  document.getElementById('vehiculos-container').innerHTML = '';
+}
+
+function ensureVehiculoRows(count) {
+  clearVehiculos();
+  for (let i = 0; i < Math.max(1, count); i++) addVehiculo();
 }
 
 // ── Agregar conductor ────────────────────────────────────────────────────────
@@ -679,6 +743,10 @@ function addConductor() {
     '<label style="display:flex;align-items:center;gap:.4rem;font-size:.82rem;cursor:pointer;padding-top:.4rem;"><input type="checkbox" name="gre_conductores[' + idx + '][indicador_principal]" value="1"> Principal</label>' +
     '<button type="button" class="btn-remove-row" style="padding-top:.4rem;" onclick="removeRow(this,\'conductor\')"><i class=\'bx bx-trash\'></i></button>';
   container.appendChild(row);
+}
+
+function clearConductores() {
+  document.getElementById('conductores-container').innerHTML = '';
 }
 
 // ── Opciones de unidades para JS ─────────────────────────────────────────────
@@ -798,6 +866,135 @@ document.addEventListener('change', function(e) {
   if (descEl   && opt.dataset.desc)   descEl.value   = opt.dataset.desc;
   if (codigoEl && opt.dataset.codigo) codigoEl.value = opt.dataset.codigo;
   if (unidadEl && opt.dataset.unidad) unidadEl.value = opt.dataset.unidad;
+});
+
+// ── Extractor IA de GRE desde PDF ────────────────────────────────────────────
+function setField(name, value) {
+  if (value === null || value === undefined || value === '') return;
+  const el = document.querySelector('[name="' + name + '"]');
+  if (el) {
+    el.value = value;
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+}
+
+function setModalidad(value) {
+  if (!value) return;
+  const btn = document.querySelector('.modal-tab[data-modalidad="' + value + '"]');
+  if (btn) btn.click();
+}
+
+function applyGreExtractedData(data) {
+  setField('codigo_motivo_traslado', data.codigo_motivo_traslado);
+  setField('descripcion_motivo_traslado', data.descripcion_motivo_traslado);
+  setField('fecha_inicio_traslado', data.fecha_inicio_traslado);
+  setField('peso_bruto_total', data.peso_bruto_total);
+  setField('codigo_unidad_medida_peso_bruto', data.codigo_unidad_medida_peso_bruto);
+  setModalidad(data.codigo_modalidad_traslado || '02');
+
+  const dest = data.gre_destinatario || {};
+  setField('gre_destinatario[codigo_tipo_documento_destinatario]', dest.codigo_tipo_documento_destinatario || (dest.numero_documento_destinatario?.length === 11 ? '6' : null));
+  setField('gre_destinatario[numero_documento_destinatario]', dest.numero_documento_destinatario);
+  setField('gre_destinatario[nombre_razon_social_destinatario]', dest.nombre_razon_social_destinatario);
+
+  const partida = data.gre_punto_partida || {};
+  setField('gre_punto_partida[ubigeo_punto_partida]', partida.ubigeo_punto_partida);
+  setField('gre_punto_partida[direccion_punto_partida]', partida.direccion_punto_partida);
+
+  const llegada = data.gre_punto_llegada || {};
+  setField('gre_punto_llegada[ubigeo_punto_llegada]', llegada.ubigeo_punto_llegada);
+  setField('gre_punto_llegada[direccion_punto_llegada]', llegada.direccion_punto_llegada);
+
+  const vehiculos = Array.isArray(data.gre_vehiculos) ? data.gre_vehiculos : [];
+  if (vehiculos.length) {
+    ensureVehiculoRows(vehiculos.length);
+    document.querySelectorAll('#vehiculos-container [data-vehiculo]').forEach(function(row, idx) {
+      const veh = vehiculos[idx] || {};
+      const placa = row.querySelector('[name*="[numero_placa]"]');
+      const principal = row.querySelector('[name*="[indicador_principal]"]');
+      if (placa && veh.numero_placa) placa.value = veh.numero_placa;
+      if (principal) principal.checked = idx === 0 || !!veh.indicador_principal;
+    });
+  }
+
+  const conductores = Array.isArray(data.gre_conductores) ? data.gre_conductores : [];
+  if (conductores.length) {
+    clearConductores();
+    conductores.forEach(function(conductor, idx) {
+      addConductor();
+      const row = document.querySelectorAll('#conductores-container [data-conductor]')[idx];
+      if (!row) return;
+      const setRow = function(field, value) {
+        const el = row.querySelector('[name*="[' + field + ']"]');
+        if (el && value !== null && value !== undefined) el.value = value;
+      };
+      setRow('codigo_tipo_documento', conductor.codigo_tipo_documento || '1');
+      setRow('numero_documento', conductor.numero_documento);
+      setRow('nombre', conductor.nombre);
+      setRow('apellido', conductor.apellido);
+      setRow('numero_licencia', conductor.numero_licencia);
+      const principal = row.querySelector('[name*="[indicador_principal]"]');
+      if (principal) principal.checked = idx === 0 || !!conductor.indicador_principal;
+    });
+  }
+
+  const items = Array.isArray(data.items) ? data.items : [];
+  if (items.length) {
+    ensureItemRows(items.length);
+    document.querySelectorAll('#items-container [data-item]').forEach(function(row, idx) {
+      const item = items[idx] || {};
+      const setRow = function(field, value) {
+        const el = row.querySelector('[name*="[' + field + ']"]');
+        if (el && value !== null && value !== undefined) el.value = value;
+      };
+      setRow('descripcion', item.descripcion);
+      setRow('codigo_unidad_medida', item.codigo_unidad_medida || 'NIU');
+      setRow('codigo_interno', item.codigo_interno || ('GRE' + String(idx + 1).padStart(3, '0')));
+      setRow('cantidad', item.cantidad || 1);
+    });
+  }
+
+  if (data.documento_relacionado) {
+    const obs = document.querySelector('[name="observacion"]');
+    if (obs && !obs.value.trim()) obs.value = 'Doc. relacionado: ' + data.documento_relacionado;
+  }
+}
+
+document.getElementById('gre-ai-extract-btn')?.addEventListener('click', async function() {
+  const input = document.getElementById('gre-pdf-input');
+  const status = document.getElementById('gre-ai-status');
+  const file = input?.files?.[0];
+
+  if (!file) {
+    Swal.fire({ icon:'warning', title:'Selecciona un PDF', text:'Sube el PDF de la GRE para extraer los datos.' });
+    return;
+  }
+
+  const fd = new FormData();
+  fd.append('pdf', file);
+  this.disabled = true;
+  const original = this.innerHTML;
+  this.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Extrayendo...";
+  status.textContent = 'Leyendo PDF y completando datos operativos...';
+
+  try {
+    const res = await fetch(@json(route('facturador.gre.extract-pdf')), {
+      method: 'POST',
+      headers: { 'X-CSRF-TOKEN': @json(csrf_token()), 'Accept': 'application/json' },
+      body: fd,
+    });
+    const json = await res.json();
+    if (!res.ok || !json.ok) throw new Error(json.error || 'No se pudo extraer el PDF.');
+    applyGreExtractedData(json.data || {});
+    status.textContent = 'Datos extraídos. Revisa ubigeos, direcciones, placa, conductor e ítems antes de guardar.';
+    Swal.fire({ icon:'success', title:'Datos cargados', text:'La GRE fue prellenada. Revisa los campos antes de guardar.' });
+  } catch (e) {
+    status.textContent = e.message || 'No se pudo procesar el PDF.';
+    Swal.fire({ icon:'error', title:'Error al extraer', text:e.message || 'No se pudo procesar el PDF.' });
+  } finally {
+    this.disabled = false;
+    this.innerHTML = original;
+  }
 });
 </script>
 @endpush

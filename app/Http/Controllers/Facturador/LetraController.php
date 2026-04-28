@@ -46,15 +46,35 @@ class LetraController extends Controller
         $thisMonth = $allLetras->where('estado', 'cobrado')
             ->filter(fn($l) => now()->isSameMonth($l->updated_at ?? $l->created_at));
         
+        $openStates = ['pendiente', 'compensada_parcial'];
         $stats = [
-            'total_pendiente'   => $allLetras->where('estado', 'pendiente')->sum('monto'),
-            'count_pendiente'   => $allLetras->where('estado', 'pendiente')->count(),
+            'total_pendiente'   => $allLetras->whereIn('estado', $openStates)->sum('saldo'),
+            'count_pendiente'   => $allLetras->whereIn('estado', $openStates)->count(),
             'count_vencidas'    => $allLetras->where('estado', 'vencida')->count(),
             'total_cobrado_mes' => $thisMonth->sum('monto'),
             'count_cobrado'     => $allLetras->where('estado', 'cobrado')->count(),
         ];
+        $groupedSummary = $allLetras
+            ->groupBy(fn (LetraCambio $letra) => ($letra->invoice_id ?: 'sin_factura') . '|' . $letra->codigo_moneda)
+            ->map(function ($grupo) {
+                $first = $grupo->first();
 
-        return view('facturador.letras.index', compact('letras', 'filters', 'stats'));
+                return [
+                    'invoice_id' => $first->invoice_id,
+                    'label' => $first->invoice?->serie_numero ?? $first->referencia ?? 'Sin factura',
+                    'cliente' => $first->aceptante_nombre,
+                    'ruc' => $first->aceptante_ruc,
+                    'moneda' => $first->codigo_moneda,
+                    'count' => $grupo->count(),
+                    'total' => $grupo->sum('monto'),
+                    'saldo' => $grupo->sum('saldo'),
+                    'proximo_vencimiento' => optional($grupo->sortBy('fecha_vencimiento')->first()?->fecha_vencimiento)->format('d/m/Y'),
+                ];
+            })
+            ->sortBy('proximo_vencimiento')
+            ->values();
+
+        return view('facturador.letras.index', compact('letras', 'filters', 'stats', 'groupedSummary'));
     }
 
     /**
@@ -70,6 +90,12 @@ class LetraController extends Controller
             abort(403, 'Esta letra es de compra, no de venta.');
         }
 
+        $letra->load([
+            'invoice.client',
+            'pagos.user',
+            'compensations.supplier',
+            'compensations.details.purchaseInvoice',
+        ]);
         $pagos = $letra->pagos()->orderBy('fecha_pago', 'desc')->get();
 
         return view('facturador.letras.show', compact('letra', 'pagos'));
@@ -176,7 +202,7 @@ class LetraController extends Controller
     {
         $query = LetraCambio::where('company_id', session('company_id'))
             ->whereNotNull('invoice_id') // Solo letras de venta
-            ->with(['invoice', 'company', 'pagos']);
+            ->with(['invoice', 'invoice.client', 'company', 'pagos']);
 
         // Filtro por búsqueda
         if (!empty($filtros['search'])) {
@@ -185,7 +211,10 @@ class LetraController extends Controller
                 $q->where('numero_letra', 'like', $search)
                   ->orWhere('referencia', 'like', $search)
                   ->orWhere('aceptante_nombre', 'like', $search)
-                  ->orWhereHas('invoice', fn ($q) => $q->where('serie_numero', 'like', $search));
+                  ->orWhereHas('invoice', fn ($q) => $q
+                      ->where('serie_documento', 'like', $search)
+                      ->orWhere('numero_documento', 'like', $search)
+                      ->orWhereRaw("CONCAT(serie_documento, '-', numero_documento) LIKE ?", [$search]));
             });
         }
 

@@ -1,332 +1,351 @@
 @extends('layouts.app')
 
-@section('title', 'Cronograma de Obligaciones | Portal Mendieta')
+@section('title', 'Cronograma de Obligaciones Mensuales | Portal Mendieta')
 
 @push('styles')
-<style>
-/* Responsive Cronograma Obligaciones */
-.cronograma-filtros {
-  display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-.cronograma-filtros > * {
-  min-width: 120px;
-}
-.cronograma-table-wrap {
-  width: 100%;
-  overflow-x: auto;
-}
-.cronograma-table {
-  min-width: 800px;
-  width: 100%;
-}
-@media (max-width: 1400px) and (min-width: 901px) {
-  .cronograma-filtros {
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-  }
-  .cronograma-table {
-    min-width: 700px;
-    font-size: 1rem;
-  }
-}
-@media (max-width: 900px) {
-  .cronograma-filtros {
-    flex-direction: column;
-    gap: 0.7rem;
-  }
-  .cronograma-filtros > * {
-    width: 100%;
-    min-width: 0;
-  }
-  .cronograma-table-wrap {
-    overflow-x: auto;
-    margin-bottom: 1rem;
-  }
-  .cronograma-table {
-    min-width: 600px;
-    font-size: 0.95rem;
-  }
-}
-@media (max-width: 600px) {
-  .cronograma-filtros {
-    padding: 0.5rem;
-  }
-  .cronograma-table {
-    min-width: 400px;
-    font-size: 0.9rem;
-  }
-}
-</style>
   <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
   <link rel="stylesheet" href="{{ asset('css/sidebar.css') }}">
   <link rel="stylesheet" href="{{ asset('css/dashboard.css') }}">
   <style>
-    /* ── Filtros ─────────────────────────────────────────────────────── */
-    .cron-filter-wrap {
-      display: flex;
-      flex-wrap: wrap;
+    .excel-shell {
+      display: grid;
       gap: 1rem;
-      align-items: flex-end;
-      margin-bottom: 1.5rem;
-      padding: 1.25rem;
+    }
+    .excel-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+      margin-bottom: .85rem;
+    }
+    .excel-toolbar h1 {
+      margin: 0;
+      font-size: 1.35rem;
+      color: #0f172a;
+    }
+    .excel-toolbar p {
+      margin: .25rem 0 0;
+      color: #64748b;
+      font-size: .9rem;
+    }
+    .excel-source {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      color: #475569;
       background: #f8fafc;
       border: 1px solid #e2e8f0;
-      border-radius: 8px;
-    }
-    .cron-filter-group {
-      display: flex;
-      flex-direction: column;
-      gap: .4rem;
-      min-width: 150px;
-    }
-    .cron-filter-group label {
-      font-size: .75rem;
+      border-radius: 999px;
+      padding: .42rem .75rem;
+      font-size: .78rem;
       font-weight: 700;
-      color: #64748b;
-      text-transform: uppercase;
-      letter-spacing: .06em;
-    }
-    .cron-input {
-      padding: .48rem .75rem;
-      border: 1px solid #cbd5e1;
-      border-radius: 6px;
-      font-size: .9rem;
-      outline: none;
-      transition: border-color .15s, box-shadow .15s;
-      background: #fff;
-    }
-    .cron-input:focus {
-      border-color: #3b82f6;
-      box-shadow: 0 0 0 3px rgba(59,130,246,.1);
-    }
-    .cron-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: .35rem;
-      padding: .5rem 1.1rem;
-      border-radius: 6px;
-      font-size: .9rem;
-      font-weight: 600;
-      cursor: pointer;
-      border: 1px solid transparent;
-      transition: all .15s;
       white-space: nowrap;
-    }
-    .cron-btn-primary { background: #0f172a; color: #fff; border-color: #0f172a; }
-    .cron-btn-primary:hover { background: #1e293b; }
-    .cron-btn-outline {
-      background: #fff;
-      color: #475569;
-      border-color: #cbd5e1;
       text-decoration: none;
     }
-    .cron-btn-outline:hover {
-      background: #f1f5f9;
-      border-color: #94a3b8;
-      color: #1e293b;
+    .excel-table-wrap {
+      width: 100%;
+      overflow: auto;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      background: #fff;
     }
-
-    /* ── Toggle vista (Activas / Archivadas) ───────────────────────────── */
-    .cron-view-toggle {
-      display: inline-flex;
-      padding: .18rem;
-      border-radius: 999px;
-      background: #e5e7eb;
-      gap: .15rem;
+    .excel-table {
+      width: 100%;
+      min-width: 980px;
+      border-collapse: collapse;
+      table-layout: fixed;
+      font-size: .86rem;
     }
-    .cron-view-toggle .cron-view-btn {
-      border-radius: 999px;
-      padding: .3rem .85rem;
-      font-size: .8rem;
-      border: none;
-      background: transparent;
-      color: #4b5563;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background .15s, color .15s;
+    .excel-table th,
+    .excel-table td {
+      border: 1px solid #cbd5e1;
+      vertical-align: top;
     }
-    .cron-view-toggle .cron-view-btn.is-active {
-      background: #0f172a;
-      color: #fff;
+    .excel-table th {
+      background: #e8f0fe;
+      color: #0f172a;
+      font-size: .75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      text-align: center;
+      letter-spacing: .02em;
+      padding: .6rem .45rem;
     }
-
-    /* ── Botonera dígitos RUC ───────────────────────────────────────────── */
-    .cron-digit-filter {
+    .excel-table td {
+      min-height: 54px;
+      padding: .45rem;
+      color: #334155;
+    }
+    .company-cell {
       display: flex;
       flex-direction: column;
-      gap: .4rem;
-      min-width: 260px;
+      gap: .35rem;
+      min-height: 118px;
+      max-height: 220px;
+      overflow-y: auto;
     }
-    .cron-digit-label {
-      font-size: .75rem;
-      font-weight: 700;
-      color: #64748b;
-      text-transform: uppercase;
-      letter-spacing: .06em;
-    }
-    .cron-digit-buttons {
-      display: flex;
-      flex-wrap: wrap;
-      gap: .4rem;
-    }
-    .cron-digit-btn {
-      padding: .35rem .75rem;
-      border-radius: 999px;
-      border: 1px solid #cbd5e1;
-      background: #fff;
-      font-size: .8rem;
-      font-weight: 600;
-      color: #475569;
-      cursor: pointer;
-      transition: all .15s;
-    }
-    .cron-digit-btn:hover {
-      background: #e5edff;
-      border-color: #94a3b8;
-      color: #1e293b;
-    }
-    .cron-digit-btn.is-active {
-      background: #0f172a;
-      border-color: #0f172a;
-      color: #fff;
-    }
-
-    /* ── Stats ──────────────────────────────────────────────────────── */
-    .cron-period-title {
-      font-size: 1.05rem;
-      font-weight: 700;
-      color: #0f172a;
-      margin-bottom: .25rem;
-    }
-    .cron-period-sub {
-      font-size: .85rem;
-      color: #64748b;
-    }
-
-    /* ── Tabla ──────────────────────────────────────────────────────── */
-    .cron-table-wrap { overflow-x: auto; margin-top: .75rem; }
-    .cron-table {
+    .company-chip {
       width: 100%;
-      border-collapse: collapse;
-      font-size: .9rem;
-    }
-    .cron-table th {
-      padding: .65rem 1rem;
-      text-align: left;
-      font-size: .75rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: .06em;
-      color: #64748b;
-      border-bottom: 2px solid #e2e8f0;
-      white-space: nowrap;
-    }
-    .cron-table td {
-      padding: .75rem 1rem;
-      border-bottom: 1px solid #f1f5f9;
-      vertical-align: middle;
-    }
-    .cron-table tr:last-child td { border-bottom: none; }
-    .cron-table tr:hover td { background: #f8fafc; }
-
-    /* ── Badges ─────────────────────────────────────────────────────── */
-    .cron-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: .3rem;
-      border-radius: 999px;
-      padding: .28rem .75rem;
-      font-size: .75rem;
-      font-weight: 700;
-    }
-    .cron-badge.declarado { background: #dcfce7; color: #166534; }
-    .cron-badge.pendiente  { background: #fef3c7; color: #92400e; }
-
-    /* ── Acciones ────────────────────────────────────────────────────── */
-    .cron-btn-confirm {
-      display: inline-flex;
-      align-items: center;
-      gap: .35rem;
-      background: #16a34a;
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      padding: .45rem .9rem;
-      font-size: .82rem;
-      font-weight: 700;
-      cursor: pointer;
-      transition: background .15s;
-    }
-    .cron-btn-confirm:hover { background: #15803d; }
-    .cron-btn-revert {
-      display: inline-flex;
-      align-items: center;
-      gap: .35rem;
+      border: 1px solid #dbe4ef;
       background: #fff;
-      color: #64748b;
-      border: 1.5px solid #cbd5e1;
-      border-radius: 8px;
-      padding: .45rem .9rem;
-      font-size: .82rem;
-      font-weight: 600;
+      border-radius: 4px;
+      padding: .42rem .45rem;
+      text-align: left;
       cursor: pointer;
-      transition: all .15s;
+      transition: background .15s, border-color .15s;
     }
-    .cron-btn-revert:hover { border-color: #ef4444; color: #ef4444; }
-
-    .cron-confirmed-info {
+    .company-chip:hover {
+      background: #f0f9ff;
+      border-color: #38bdf8;
+    }
+    .company-chip strong {
+      display: block;
+      color: #0f172a;
       font-size: .78rem;
-      color: #64748b;
-      margin-top: .3rem;
+      line-height: 1.2;
+      overflow-wrap: anywhere;
     }
-
-    /* ── Dark Mode ──────────────────────────────────────────────────── */
-    body.dark-mode .cron-filter-wrap { background: var(--clr-bg-card, #1e293b); border-color: var(--clr-border-light, #334155); }
-    body.dark-mode .cron-filter-group label { color: #94a3b8; }
-    body.dark-mode .cron-input { background: var(--clr-bg-body, #0f172a); border-color: var(--clr-border-light, #334155); color: var(--clr-text-main, #f8fafc); }
-    body.dark-mode .cron-input::placeholder { color: #475569; }
-    body.dark-mode .cron-btn-outline { background: transparent; color: #cbd5e1; border-color: #475569; }
-    body.dark-mode .cron-btn-outline:hover { background: var(--clr-hover-bg, #1e293b); color: #f8fafc; }
-    body.dark-mode .cron-period-title { color: var(--clr-text-main, #f8fafc); }
-    body.dark-mode .cron-period-sub { color: #94a3b8; }
-    body.dark-mode .cron-table th { color: #94a3b8; border-bottom-color: var(--clr-border-light, #334155); }
-    body.dark-mode .cron-table td { border-bottom-color: var(--clr-border-light, #334155); }
-    body.dark-mode .cron-table tr:hover td { background: var(--clr-hover-bg, #1e293b); }
-    body.dark-mode .cron-badge.declarado { background: rgba(22,163,74,.2); color: #4ade80; }
-    body.dark-mode .cron-badge.pendiente { background: rgba(146,64,14,.2); color: #fbbf24; }
-    body.dark-mode .cron-btn-revert { background: transparent; color: #94a3b8; border-color: #475569; }
-    body.dark-mode .cron-btn-revert:hover { border-color: #ef4444; color: #f87171; }
-    body.dark-mode .cron-confirmed-info { color: #94a3b8; }
-    
-    /* Ajustes específicos para laptops (medio) */
-    @media (max-width: 1400px) and (min-width: 901px) {
-      /* Reducir ancho del sidebar para ganar espacio al contenido */
-      .sidebar-premium { width: 220px; }
-      /* Compactar paddings del main para mostrar más contenido */
-      .main-content { padding: 1.25rem; }
-      .placeholder-content { padding: 2rem; }
-      /* Filtros más compactos */
-      .cron-filter-wrap { padding: 0.8rem; gap: .6rem; }
-      .cron-filter-group { min-width: 130px; }
-      /* Tabla más compacta */
-      .cron-table th, .cron-table td { padding: .5rem .8rem; }
-      .cron-table { font-size: .88rem; }
-      .cron-table { min-width: 650px; }
+    .company-chip span {
+      display: block;
+      margin-top: .14rem;
+      color: #64748b;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: .72rem;
+    }
+    .empty-cell {
+      color: #94a3b8;
+      font-size: .78rem;
+      text-align: center;
+      padding-top: 1.25rem;
+    }
+    .schedule-table td {
+      text-align: center;
+      vertical-align: middle;
+      height: 54px;
+      padding: 0;
+    }
+    .period-cell {
+      background: #f8fafc;
+      color: #0f172a;
+      font-weight: 800;
+      text-align: left !important;
+      padding: .55rem .65rem !important;
+      width: 92px;
+    }
+    .due-cell-btn {
+      width: 100%;
+      height: 54px;
+      border: 0;
+      background: #f8fafc;
+      color: #0f172a;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform .08s, box-shadow .12s, background .12s;
+    }
+    .due-cell-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: inset 0 0 0 2px #38bdf8;
+    }
+    .due-cell-btn.tone-future { background: #f1f5f9; color: #475569; }
+    .due-cell-btn.tone-soon { background: #fef3c7; color: #92400e; }
+    .due-cell-btn.tone-overdue { background: #fee2e2; color: #991b1b; }
+    .legend-row {
+      display: flex;
+      gap: .6rem;
+      flex-wrap: wrap;
+      color: #64748b;
+      font-size: .78rem;
+      margin-top: .7rem;
+    }
+    .legend-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+    }
+    .legend-dot {
+      width: .7rem;
+      height: .7rem;
+      border-radius: 999px;
+      display: inline-block;
+    }
+    .dot-green { background: #22c55e; }
+    .dot-red { background: #ef4444; }
+    .dot-yellow { background: #f59e0b; }
+    .dot-gray { background: #94a3b8; }
+    .modal-backdrop-cron {
+      position: fixed;
+      inset: 0;
+      z-index: 80;
+      background: rgba(15, 23, 42, .55);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .modal-backdrop-cron.is-open {
+      display: flex;
+    }
+    .cron-modal {
+      width: min(680px, 100%);
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 24px 80px rgba(15, 23, 42, .28);
+      overflow: hidden;
+    }
+    .cron-modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 1rem 1.2rem;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .cron-modal-header h2 {
+      margin: 0;
+      color: #0f172a;
+      font-size: 1rem;
+    }
+    .cron-modal-close {
+      border: 0;
+      background: #f1f5f9;
+      border-radius: 6px;
+      width: 2rem;
+      height: 2rem;
+      cursor: pointer;
+    }
+    .cron-modal-body {
+      padding: 1.2rem;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: .85rem;
+    }
+    .cron-field {
+      display: flex;
+      flex-direction: column;
+      gap: .32rem;
+    }
+    .cron-field.full {
+      grid-column: 1 / -1;
+    }
+    .cron-field label {
+      font-size: .74rem;
+      text-transform: uppercase;
+      font-weight: 800;
+      color: #64748b;
+    }
+    .cron-input {
+      min-height: 2.45rem;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: .55rem .7rem;
+      font-size: .9rem;
+      color: #0f172a;
+      background: #fff;
+    }
+    textarea.cron-input {
+      min-height: 78px;
+      resize: vertical;
+    }
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+      border-radius: 999px;
+      padding: .45rem .75rem;
+      font-weight: 800;
+      font-size: .82rem;
+      width: fit-content;
+    }
+    .status-pending { background: #f1f5f9; color: #475569; }
+    .status-on-time { background: #dcfce7; color: #166534; }
+    .status-late,
+    .status-overdue { background: #fee2e2; color: #991b1b; }
+    .cron-modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: .65rem;
+      padding: 1rem 1.2rem;
+      border-top: 1px solid #e2e8f0;
+      background: #f8fafc;
+    }
+    .cron-btn {
+      border: 1px solid transparent;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+      min-height: 2.35rem;
+      padding: .45rem .85rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .cron-btn-primary {
+      background: #0f766e;
+      color: #fff;
+    }
+    .cron-btn-secondary {
+      background: #fff;
+      border-color: #cbd5e1;
+      color: #475569;
+    }
+    @media (max-width: 760px) {
+      .excel-toolbar {
+        flex-direction: column;
+      }
+      .cron-modal-body {
+        grid-template-columns: 1fr;
+      }
+    }
+    body.dark-mode .excel-toolbar h1,
+    body.dark-mode .company-chip strong,
+    body.dark-mode .period-cell,
+    body.dark-mode .cron-modal-header h2 {
+      color: #f8fafc;
+    }
+    body.dark-mode .excel-table-wrap,
+    body.dark-mode .cron-modal,
+    body.dark-mode .company-chip,
+    body.dark-mode .cron-input {
+      background: #0f172a;
+      border-color: #334155;
+      color: #f8fafc;
+    }
+    body.dark-mode .excel-table th { background: #1e293b; color: #cbd5e1; }
+    body.dark-mode .excel-table td { border-color: #334155; }
+    body.dark-mode .period-cell,
+    body.dark-mode .due-cell-btn.tone-future,
+    body.dark-mode .cron-modal-footer,
+    body.dark-mode .cron-modal-close {
+      background: #1e293b;
+      color: #cbd5e1;
     }
   </style>
 @endpush
 
 @section('content')
   @php
-    $monthNames = [
-      1 => 'Enero', 2 => 'Febrero', 3 => 'Marzo', 4 => 'Abril',
-      5 => 'Mayo', 6 => 'Junio', 7 => 'Julio', 8 => 'Agosto',
-      9 => 'Septiembre', 10 => 'Octubre', 11 => 'Noviembre', 12 => 'Diciembre',
+    $statusLabels = [
+      'pending' => 'Pendiente',
+      'presented_on_time' => 'Presentado dentro de plazo',
+      'presented_late' => 'Presentado fuera de plazo',
+      'overdue' => 'Vencido',
     ];
-    $vencMes = $month === 12 ? 1 : $month + 1;
-    $vencYear = $month === 12 ? $year + 1 : $year;
+
+    $declarationPayload = $declarations->mapWithKeys(function ($declaration) use ($statusLabels) {
+      return [
+        $declaration->company_id.'-'.$declaration->period_month => [
+          'id' => $declaration->id,
+          'company_id' => $declaration->company_id,
+          'period_month' => $declaration->period_month,
+          'due_group' => $declaration->due_group,
+          'due_date' => optional($declaration->due_date)->format('Y-m-d'),
+          'presentation_date' => optional($declaration->presentation_date)->format('Y-m-d'),
+          'status' => $declaration->status,
+          'status_label' => $statusLabels[$declaration->status] ?? 'Pendiente',
+          'observation' => $declaration->observation,
+        ],
+      ];
+    })->values();
   @endphp
 
   <div class="app-layout">
@@ -348,14 +367,12 @@
     <section class="main-wrapper">
       @include('partials.header', [
         'welcomeName' => auth()->user()?->name,
-        'userName'    => auth()->user()?->name,
-        'userEmail'   => auth()->user()?->email,
+        'userName' => auth()->user()?->name,
+        'userEmail' => auth()->user()?->email,
       ])
 
       <main class="main-content">
         <div class="module-content-stack">
-
-          {{-- Flash messages --}}
           @if(session('status'))
             <div class="placeholder-content module-alert module-flash" data-flash-message>
               <p>{{ session('status') }}</p>
@@ -365,243 +382,340 @@
             </div>
           @endif
 
-          {{-- Stats --}}
-          <div class="module-stats-grid">
-            <article class="module-stat-card">
-              <span class="module-stat-label">Periodo</span>
-              <strong class="module-stat-value">{{ $monthNames[$month] }} {{ $year }}</strong>
-            </article>
-            <article class="module-stat-card">
-              <span class="module-stat-label">Declaradas</span>
-              <strong class="module-stat-value" style="color:#16a34a;">{{ $totalDeclared }}</strong>
-            </article>
-            <article class="module-stat-card">
-              <span class="module-stat-label">Pendientes</span>
-              <strong class="module-stat-value" style="color:#d97706;">{{ $totalPending }}</strong>
-            </article>
-            <article class="module-stat-card">
-              <span class="module-stat-label">Vencimiento en</span>
-              <strong class="module-stat-value">{{ $monthNames[$vencMes] }} {{ $vencYear }}</strong>
-            </article>
-          </div>
+          @if($errors->any())
+            <div class="placeholder-content module-alert">
+              @foreach($errors->all() as $error)
+                <p>{{ $error }}</p>
+              @endforeach
+            </div>
+          @endif
 
           <div class="placeholder-content module-card-wide">
-            <div class="module-toolbar" style="margin-bottom: 1.25rem;">
+            <div class="excel-toolbar">
               <div>
-                <h1>Cronograma de Obligaciones</h1>
-                <p style="margin:.25rem 0 0; color:#6b7280; font-size:.92rem;">
-                  Control de declaraciones mensuales según cronograma SUNAT por último dígito del RUC.
-                </p>
+                <h1>Cronograma de Obligaciones Mensuales SUNAT {{ $scheduleYear }}</h1>
+                <p>Vista tipo Excel con empresas agrupadas por ultimo digito de RUC y vencimientos mensuales.</p>
               </div>
+              <a class="excel-source" href="https://www.sunat.gob.pe/orientacion/cronogramas/2026/cObligacionMensual2026.html" target="_blank" rel="noopener noreferrer">
+                <i class='bx bx-link-external'></i> Fuente SUNAT
+              </a>
             </div>
 
-            {{-- Filtros --}}
-            <form method="GET" action="{{ route('obligaciones.cronograma.index') }}" class="cron-filter-wrap">
-              <div class="cron-filter-group">
-                <label>Mes</label>
-                <select name="month" class="cron-input">
-                  @foreach($monthNames as $num => $name)
-                    <option value="{{ $num }}" {{ $month === $num ? 'selected' : '' }}>{{ $name }}</option>
-                  @endforeach
-                </select>
-              </div>
-              <div class="cron-filter-group">
-                <label>Año</label>
-                <input type="number" name="year" class="cron-input" value="{{ $year }}" min="2020" max="2030" style="width:90px;">
-              </div>
-              <div class="cron-filter-group" style="flex:1; min-width:200px;">
-                <label>Buscar empresa</label>
-                <input type="text" name="q" class="cron-input" value="{{ $filterSearch }}" placeholder="Nombre o RUC…">
-              </div>
-              <div class="cron-digit-filter">
-                <span class="cron-digit-label">Filtrar por último dígito RUC</span>
-                <div class="cron-digit-buttons">
-                  @php $currentDigit = (string)($filterDigit ?? ''); @endphp
-                  <button type="submit" name="digit" value=""
-                          class="cron-digit-btn {{ $currentDigit === '' ? 'is-active' : '' }}">
-                    Todos
-                  </button>
-                  @for($d = 0; $d <= 9; $d++)
-                    <button type="submit" name="digit" value="{{ $d }}"
-                            class="cron-digit-btn {{ $currentDigit === (string)$d ? 'is-active' : '' }}">
-                      {{ $d }}
-                    </button>
-                  @endfor
-                </div>
-              </div>
-              <div class="cron-filter-group">
-                <label>Estado</label>
-                <select name="status" class="cron-input">
-                  <option value="" {{ $filterStatus === '' ? 'selected' : '' }}>Todos</option>
-                  <option value="pendiente"  {{ $filterStatus === 'pendiente'  ? 'selected' : '' }}>Pendiente</option>
-                  <option value="declarado"  {{ $filterStatus === 'declarado'  ? 'selected' : '' }}>Declarado</option>
-                </select>
-              </div>
-              <div class="cron-filter-group">
-                <label>Asignado a</label>
-                <select name="assigned_to" class="cron-input">
-                  <option value="" {{ ($filterAssignedTo ?? '') === '' ? 'selected' : '' }}>Todos</option>
-                  @foreach($assignedUsers as $user)
-                    <option value="{{ $user->id }}" {{ (string)($filterAssignedTo ?? '') === (string)$user->id ? 'selected' : '' }}>
-                      {{ $user->name }}
-                    </option>
-                  @endforeach
-                </select>
-              </div>
-              @php $currentView = $filterView ?? 'active'; @endphp
-              <div class="cron-filter-group">
-                <label>Vista</label>
-                <div class="cron-view-toggle">
-                  <button type="submit" name="view" value="active"
-                          class="cron-view-btn {{ $currentView === 'active' ? 'is-active' : '' }}">
-                    Activas
-                  </button>
-                  <button type="submit" name="view" value="archived"
-                          class="cron-view-btn {{ $currentView === 'archived' ? 'is-active' : '' }}">
-                    Archivadas
-                  </button>
-                </div>
-              </div>
-              <div class="cron-filter-group" style="justify-content: flex-end;">
-                <label style="visibility:hidden;">Buscar</label>
-                <div style="display:flex; gap:.5rem;">
-                  <button type="submit" class="cron-btn cron-btn-primary">
-                    <i class='bx bx-search'></i> Filtrar
-                  </button>
-                  @if($filterSearch || $filterStatus || $month !== now()->month || $year !== now()->year)
-                    <a href="{{ route('obligaciones.cronograma.index') }}" class="cron-btn cron-btn-outline">
-                      <i class='bx bx-eraser'></i> Limpiar
-                    </a>
-                  @endif
-                </div>
-              </div>
-            </form>
-
-            {{-- Tabla --}}
-            <div class="cron-table-wrap">
-              <table class="cron-table">
-                <thead>
-                  <tr>
-                    <th>Empresa</th>
-                    <th>RUC</th>
-                    <th style="text-align:center;">Último dígito</th>
-                    <th>Fecha de vencimiento</th>
-                    <th>Estado declaración</th>
-                    <th>Asignado a</th>
-                    <th>Acción</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @forelse($rows as $row)
-                    @php
-                      /** @var \App\Models\Company $company */
-                      $company = $row['company'];
-                      $authUser = auth()->user();
-                      $authRole = $authUser?->role?->value ?? '';
-                      $hiddenIds = ($hiddenCompanyIds ?? collect());
-                      $isHidden  = $hiddenIds->contains($company->id);
-                    @endphp
-                    <tr>
-                      <td style="font-weight:600;">{{ $company->name }}</td>
-                      <td style="font-family:monospace; color:#475569; font-size:.88rem;">{{ $company->ruc }}</td>
-                      <td style="text-align:center; font-weight:700; font-size:1.05rem;">{{ $row['last_digit'] }}</td>
-                      <td>
-                        {{ $row['due_date']->format('d') }}
-                        {{ $monthNames[$row['due_date']->month] }}
-                        {{ $row['due_date']->year }}
-                      </td>
-                      <td>
-                        @if($row['declared'])
-                          <span class="cron-badge declarado">
-                            <i class='bx bx-check-circle'></i> Declarado
-                          </span>
-                          @if($row['declaration']?->declaredByUser)
-                            <div class="cron-confirmed-info">
-                              Por {{ $row['declaration']->declaredByUser->name }}
-                              el {{ $row['declaration']->declared_at?->format('d/m/Y H:i') }}
+            <div class="excel-shell">
+              <section>
+                <div class="excel-table-wrap">
+                  <table class="excel-table">
+                    <thead>
+                      <tr>
+                        @foreach($groups as $groupKey => $group)
+                          <th>{{ $group['label'] }}</th>
+                        @endforeach
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        @foreach($groups as $groupKey => $group)
+                          <td>
+                            <div class="company-cell">
+                              @forelse($groupedCompanies[$groupKey] as $company)
+                                <button type="button"
+                                        class="company-chip"
+                                        data-open-declaration
+                                        data-company-id="{{ $company->id }}"
+                                        data-group="{{ $groupKey }}">
+                                  <strong>{{ $company->name }}</strong>
+                                  <span>{{ $company->ruc }}</span>
+                                </button>
+                              @empty
+                                <div class="empty-cell">Sin empresas</div>
+                              @endforelse
                             </div>
-                          @endif
-                        @else
-                          <span class="cron-badge pendiente">
-                            <i class='bx bx-time-five'></i> Pendiente
-                          </span>
-                        @endif
-                      </td>
-                      <td>
-                        @php
-                          $assignedNames = $company->users->pluck('name')->all();
-                        @endphp
-                        @if(! empty($assignedNames))
-                          {{ implode(', ', $assignedNames) }}
-                        @else
-                          <span style="color:#94a3b8; font-size:.8rem;">Sin asignar</span>
-                        @endif
-                      </td>
-                      <td>
-                        <div style="display:flex; flex-direction:column; gap:.35rem;">
-                          @if(! $row['declared'])
-                            <form method="POST" action="{{ route('obligaciones.cronograma.confirm', $company) }}">
-                              @csrf
-                              <input type="hidden" name="year"  value="{{ $year }}">
-                              <input type="hidden" name="month" value="{{ $month }}">
-                              <button type="submit" class="cron-btn-confirm">
-                                <i class='bx bx-check'></i> Confirmar declaración
-                              </button>
-                            </form>
-                          @else
-                            <form method="POST" action="{{ route('obligaciones.cronograma.revert', $company) }}">
-                              @csrf
-                              <input type="hidden" name="year"  value="{{ $year }}">
-                              <input type="hidden" name="month" value="{{ $month }}">
-                              <button type="submit" class="cron-btn-revert">
-                                <i class='bx bx-undo'></i> Revertir
-                              </button>
-                            </form>
-                          @endif
+                          </td>
+                        @endforeach
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </section>
 
-                          @if(in_array($authRole, ['admin', 'supervisor'], true))
-                            <form method="POST" action="{{ $isHidden
-                                  ? route('portal-sunat.unhide', $company)
-                                  : route('portal-sunat.hide', $company) }}">
-                              @csrf
-                              <button type="submit" class="cron-btn-revert" style="border-style:dashed;">
-                                <i class='bx {{ $isHidden ? "bx-show" : "bx-low-vision" }}'></i>
-                                {{ $isHidden ? 'Mostrar en mi lista' : 'Ocultar para mí' }}
+              <section>
+                <div class="excel-table-wrap">
+                  <table class="excel-table schedule-table">
+                    <thead>
+                      <tr>
+                        <th style="width:92px;">Periodo</th>
+                        @foreach($groups as $group)
+                          <th>{{ $group['label'] }}</th>
+                        @endforeach
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @foreach($scheduleRows as $row)
+                        <tr>
+                          <td class="period-cell">{{ $row['period'] }}</td>
+                          @foreach($groups as $groupKey => $group)
+                            @php $cell = $row['cells'][$groupKey]; @endphp
+                            <td>
+                              <button type="button"
+                                      class="due-cell-btn tone-{{ $cell['tone'] }}"
+                                      data-open-declaration
+                                      data-period-month="{{ $row['month'] }}"
+                                      data-group="{{ $groupKey }}"
+                                      data-due-date="{{ $cell['date'] }}">
+                                {{ $cell['label'] }}
                               </button>
-                            </form>
-                          @endif
-                        </div>
-                      </td>
-                    </tr>
-                  @empty
-                    <tr>
-                      <td colspan="7" style="text-align:center; color:#94a3b8; padding:2rem;">
-                        <i class='bx bx-calendar-x' style="font-size:2rem; display:block; margin-bottom:.5rem;"></i>
-                        No se encontraron empresas con esos filtros.
-                      </td>
-                    </tr>
-                  @endforelse
-                </tbody>
-              </table>
+                            </td>
+                          @endforeach
+                        </tr>
+                      @endforeach
+                    </tbody>
+                  </table>
+                </div>
+
+                <div class="legend-row">
+                  <span class="legend-pill"><span class="legend-dot dot-green"></span>Presentado dentro de plazo</span>
+                  <span class="legend-pill"><span class="legend-dot dot-red"></span>Vencido o fuera de plazo</span>
+                  <span class="legend-pill"><span class="legend-dot dot-yellow"></span>Proximo a vencer</span>
+                  <span class="legend-pill"><span class="legend-dot dot-gray"></span>Periodo futuro</span>
+                </div>
+              </section>
             </div>
-
-            <p style="margin-top:.75rem; font-size:.8rem; color:#94a3b8;">
-              {{ $rows->count() }} empresa(s) mostrada(s).
-              &nbsp;·&nbsp;
-              Periodo: {{ $monthNames[$month] }} {{ $year }}
-              &nbsp;·&nbsp;
-              Vencimiento en: {{ $monthNames[$vencMes] }} {{ $vencYear }}
-            </p>
           </div>
-
         </div>
       </main>
     </section>
+  </div>
+
+  <div class="modal-backdrop-cron" data-cron-modal>
+    <form method="POST" action="{{ route('obligaciones.cronograma.store') }}" class="cron-modal" data-cron-form>
+      @csrf
+      <div class="cron-modal-header">
+        <h2>Registrar declaracion mensual</h2>
+        <button type="button" class="cron-modal-close" data-cron-close aria-label="Cerrar">
+          <i class='bx bx-x'></i>
+        </button>
+      </div>
+
+      <div class="cron-modal-body">
+        <div class="cron-field full">
+          <label>Empresa</label>
+          <select name="company_id" class="cron-input" data-company-select required></select>
+        </div>
+
+        <div class="cron-field">
+          <label>RUC</label>
+          <input type="text" class="cron-input" data-ruc-output readonly>
+        </div>
+
+        <div class="cron-field">
+          <label>Periodo</label>
+          <select name="period_month" class="cron-input" data-period-select required>
+            @foreach($monthLabels as $monthNumber => $label)
+              <option value="{{ $monthNumber }}">{{ $label }}</option>
+            @endforeach
+          </select>
+        </div>
+
+        <div class="cron-field">
+          <label>Grupo de vencimiento</label>
+          <select name="due_group" class="cron-input" data-group-select required>
+            @foreach($groups as $groupKey => $group)
+              <option value="{{ $groupKey }}">{{ $group['label'] }}</option>
+            @endforeach
+          </select>
+        </div>
+
+        <div class="cron-field">
+          <label>Fecha de vencimiento</label>
+          <input type="text" class="cron-input" data-due-date-output readonly>
+        </div>
+
+        <div class="cron-field">
+          <label>Fecha real de presentacion</label>
+          <input type="date" name="presentation_date" class="cron-input" data-presentation-date>
+        </div>
+
+        <div class="cron-field">
+          <label>Estado</label>
+          <span class="status-pill status-pending" data-status-output>Pendiente</span>
+        </div>
+
+        <div class="cron-field full">
+          <label>Observacion opcional</label>
+          <textarea name="observation" class="cron-input" data-observation placeholder="Detalle interno para el equipo contable"></textarea>
+        </div>
+      </div>
+
+      <div class="cron-modal-footer">
+        <button type="button" class="cron-btn cron-btn-secondary" data-cron-close>Cancelar</button>
+        <button type="submit" class="cron-btn cron-btn-primary">
+          <i class='bx bx-save'></i> Guardar registro
+        </button>
+      </div>
+    </form>
   </div>
 @endsection
 
 @push('scripts')
 <script>
+  const companies = @json($companyOptions);
+  const schedule = @json($scheduleRows);
+  const declarations = @json($declarationPayload);
+  const groups = @json($groups);
+  const today = '{{ $today }}';
+  const currentPeriodMonth = {{ min(12, max(1, now()->month)) }};
+
+  const modal = document.querySelector('[data-cron-modal]');
+  const form = document.querySelector('[data-cron-form]');
+  const companySelect = document.querySelector('[data-company-select]');
+  const periodSelect = document.querySelector('[data-period-select]');
+  const groupSelect = document.querySelector('[data-group-select]');
+  const rucOutput = document.querySelector('[data-ruc-output]');
+  const dueDateOutput = document.querySelector('[data-due-date-output]');
+  const presentationDate = document.querySelector('[data-presentation-date]');
+  const statusOutput = document.querySelector('[data-status-output]');
+  const observation = document.querySelector('[data-observation]');
+
+  const declarationMap = new Map(declarations.map((item) => [`${item.company_id}-${item.period_month}`, item]));
+  let fixedGroup = null;
+
+  const statusLabels = {
+    pending: 'Pendiente',
+    presented_on_time: 'Presentado dentro de plazo',
+    presented_late: 'Presentado fuera de plazo',
+    overdue: 'Vencido',
+  };
+
+  const statusClasses = {
+    pending: 'status-pending',
+    presented_on_time: 'status-on-time',
+    presented_late: 'status-late',
+    overdue: 'status-overdue',
+  };
+
+  const formatDate = (isoDate) => {
+    if (!isoDate) return '';
+    const [year, month, day] = isoDate.split('-');
+    return `${day}/${month}/${year}`;
+  };
+
+  const getDueDate = (month, groupKey) => {
+    const row = schedule.find((item) => String(item.month) === String(month));
+    return row?.cells?.[groupKey]?.date || '';
+  };
+
+  const resolveStatus = () => {
+    const due = getDueDate(periodSelect.value, groupSelect.value);
+    const submitted = presentationDate.value;
+
+    if (submitted) {
+      return submitted <= due ? 'presented_on_time' : 'presented_late';
+    }
+
+    return today > due ? 'overdue' : 'pending';
+  };
+
+  const setStatus = (status) => {
+    statusOutput.className = `status-pill ${statusClasses[status] || 'status-pending'}`;
+    statusOutput.textContent = statusLabels[status] || statusLabels.pending;
+  };
+
+  const selectedCompany = () => companies.find((company) => String(company.id) === String(companySelect.value));
+
+  const fillCompanies = (groupKey, selectedId = '') => {
+    const filtered = groupKey
+      ? companies.filter((company) => company.groups.includes(groupKey))
+      : companies;
+
+    companySelect.innerHTML = filtered.map((company) => (
+      `<option value="${company.id}">${company.name} - ${company.ruc}</option>`
+    )).join('');
+
+    if (selectedId && filtered.some((company) => String(company.id) === String(selectedId))) {
+      companySelect.value = selectedId;
+    }
+  };
+
+  const applyDeclaration = () => {
+    const company = selectedCompany();
+    if (!company) return;
+
+    const declaration = declarationMap.get(`${company.id}-${periodSelect.value}`);
+    if (declaration) {
+      groupSelect.value = declaration.due_group || groupSelect.value;
+      presentationDate.value = declaration.presentation_date || '';
+      observation.value = declaration.observation || '';
+    } else {
+      presentationDate.value = '';
+      observation.value = '';
+      if (!fixedGroup) {
+        groupSelect.value = company.groups[0];
+      }
+    }
+  };
+
+  const refreshModal = () => {
+    const company = selectedCompany();
+    rucOutput.value = company?.ruc || '';
+
+    if (fixedGroup) {
+      groupSelect.value = fixedGroup;
+    }
+
+    dueDateOutput.value = formatDate(getDueDate(periodSelect.value, groupSelect.value));
+    setStatus(resolveStatus());
+  };
+
+  const openModal = ({ companyId = '', periodMonth = currentPeriodMonth, groupKey = null } = {}) => {
+    fixedGroup = groupKey;
+    fillCompanies(groupKey, companyId);
+    periodSelect.value = periodMonth;
+    groupSelect.disabled = Boolean(groupKey);
+
+    if (groupKey) {
+      groupSelect.value = groupKey;
+    }
+
+    applyDeclaration();
+    refreshModal();
+    modal.classList.add('is-open');
+  };
+
+  document.querySelectorAll('[data-open-declaration]').forEach((trigger) => {
+    trigger.addEventListener('click', () => {
+      openModal({
+        companyId: trigger.dataset.companyId || '',
+        periodMonth: trigger.dataset.periodMonth || currentPeriodMonth,
+        groupKey: trigger.dataset.group || null,
+      });
+    });
+  });
+
+  document.querySelectorAll('[data-cron-close]').forEach((button) => {
+    button.addEventListener('click', () => modal.classList.remove('is-open'));
+  });
+
+  modal.addEventListener('click', (event) => {
+    if (event.target === modal) {
+      modal.classList.remove('is-open');
+    }
+  });
+
+  companySelect.addEventListener('change', () => {
+    applyDeclaration();
+    refreshModal();
+  });
+  periodSelect.addEventListener('change', () => {
+    applyDeclaration();
+    refreshModal();
+  });
+  groupSelect.addEventListener('change', refreshModal);
+  presentationDate.addEventListener('change', refreshModal);
+
+  form.addEventListener('submit', () => {
+    groupSelect.disabled = false;
+  });
+
   document.querySelectorAll('[data-flash-message]').forEach((flash) => {
     const closeBtn = flash.querySelector('[data-flash-close]');
     if (closeBtn) closeBtn.addEventListener('click', () => flash.remove());

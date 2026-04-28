@@ -4,18 +4,21 @@ namespace App\Policies;
 
 use App\Models\Quote;
 use App\Models\User;
+use App\Policies\Concerns\FacturadorPolicyTrait;
 
 /**
  * Policy de autorización para Cotizaciones.
  */
 class QuotePolicy
 {
+    use FacturadorPolicyTrait;
+
     /**
      * ¿Puede ver todas las cotizaciones?
      */
     public function viewAny(User $user): bool
     {
-        return $this->hasFacturadorRole($user);
+        return $this->canAccessFacturador($user);
     }
 
     /**
@@ -23,8 +26,8 @@ class QuotePolicy
      */
     public function view(User $user, Quote $quote): bool
     {
-        return $quote->company_id === session('company_id')
-            && $this->hasFacturadorRole($user);
+        return $this->canAccessFacturador($user)
+            && $this->resourceBelongsToActiveCompany($quote);
     }
 
     /**
@@ -32,7 +35,7 @@ class QuotePolicy
      */
     public function create(User $user): bool
     {
-        return $this->hasFacturadorRole($user);
+        return $this->canAccessFacturador($user);
     }
 
     /**
@@ -40,8 +43,8 @@ class QuotePolicy
      */
     public function update(User $user, Quote $quote): bool
     {
-        return $quote->company_id === session('company_id')
-            && $this->hasFacturadorRole($user)
+        return $this->canAccessFacturador($user)
+            && $this->resourceBelongsToActiveCompany($quote)
             && $quote->estado === 'draft'; // Solo si está en draft
     }
 
@@ -50,26 +53,8 @@ class QuotePolicy
      */
     public function delete(User $user, Quote $quote): bool
     {
-        return $quote->company_id === session('company_id')
-            && $this->hasFacturadorRole($user)
+        return $this->canAccessFacturador($user)
+            && $this->resourceBelongsToActiveCompany($quote)
             && $quote->estado === 'draft'; // Solo si está en draft
-    }
-
-    /**
-     * Helper: ¿Tiene rol de facturación?
-     */
-    private function hasFacturadorRole(User $user): bool
-    {
-        $companyId = session('company_id');
-
-        if (!$companyId) {
-            return false;
-        }
-
-        $role = $user->companyUsers()
-            ->where('company_id', $companyId)
-            ->value('role');
-
-        return in_array($role, ['admin', 'auxiliar', 'supervisor']);
     }
 }

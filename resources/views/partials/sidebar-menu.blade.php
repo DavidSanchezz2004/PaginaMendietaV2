@@ -1,6 +1,12 @@
 @php
   $menu = config('menu.items', []);
   $userRole = auth()->user()?->role?->value ?? (string) auth()->user()?->role;
+  $quoteEnabledForCompany = true;
+
+  if ($userRole !== 'admin' && session('company_id')) {
+    $storedQuoteEnabled = \App\Models\CompanySetting::where('company_id', session('company_id'))->value('quote_enabled');
+    $quoteEnabledForCompany = $storedQuoteEnabled === null ? true : (bool) $storedQuoteEnabled;
+  }
 
   // Helpers
   $isActive = function(array $patterns) {
@@ -22,12 +28,21 @@
     }
     return true;
   };
+
+  $isFeatureAllowed = function($item) use ($quoteEnabledForCompany) {
+    if (! empty($item['requires_quote_enabled']) && ! $quoteEnabledForCompany) {
+      return false;
+    }
+
+    return true;
+  };
 @endphp
 
 <ul class="nav-list">
   @foreach($menu as $item)
     @continue(empty($item['enabled']))
     @continue(!$isRoleAllowed($item))
+    @continue(!$isFeatureAllowed($item))
 
     {{-- Protección de Seguridad vía Policy --}}
     @php
@@ -57,6 +72,7 @@
             @foreach($item['children'] as $child)
               @continue(empty($child['enabled']))
               @continue(!$isRoleAllowed($child))
+              @continue(!$isFeatureAllowed($child))
 
               {{-- Protección de Submenú vía Policy --}}
               @php

@@ -12,7 +12,7 @@ class PurchaseRepository implements PurchaseRepositoryInterface
     public function paginate(int $perPage = 15, array $filters = []): LengthAwarePaginator
     {
         $query = Purchase::forActiveCompany()
-            ->with(['provider', 'user'])
+            ->with(['provider', 'user', 'client', 'guias.invoice'])
             ->orderBy('fecha_emision', 'desc')
             ->orderBy('id', 'desc');
 
@@ -22,6 +22,10 @@ class PurchaseRepository implements PurchaseRepositoryInterface
 
         if (! empty($filters['tipo_documento'])) {
             $query->where('codigo_tipo_documento', $filters['tipo_documento']);
+        }
+
+        if (! empty($filters['flow_status'])) {
+            $query->where('status', $filters['flow_status']);
         }
 
         if (! empty($filters['fecha_desde'])) {

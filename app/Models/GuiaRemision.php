@@ -28,6 +28,7 @@ class GuiaRemision extends Model
         'numero',
         'fecha_emision',
         'motivo',
+        'gre_payload',
         'estado',
         'invoice_id',
     ];
@@ -40,6 +41,7 @@ class GuiaRemision extends Model
     {
         return [
             'fecha_emision' => 'date',
+            'gre_payload' => 'array',
         ];
     }
 

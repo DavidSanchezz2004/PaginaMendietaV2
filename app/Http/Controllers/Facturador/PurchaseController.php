@@ -31,7 +31,7 @@ class PurchaseController extends Controller
     {
         $this->authorize('viewAny', Purchase::class);
 
-        $filters   = $request->only(['search', 'accounting_status', 'tipo_documento', 'fecha_desde', 'fecha_hasta']);
+        $filters   = $request->only(['search', 'accounting_status', 'tipo_documento', 'fecha_desde', 'fecha_hasta', 'flow_status']);
         $purchases = $this->purchaseService->paginate(15, $filters);
 
         $stats = [
@@ -122,7 +122,13 @@ class PurchaseController extends Controller
         }
 
         $this->authorize('view', $purchase);
-        $purchase->load(['provider', 'user', 'items']);
+        $purchase->load([
+            'provider',
+            'user',
+            'items',
+            'letterCompensationDetails.compensation.letraCambio.invoice.client',
+            'letterCompensationDetails.compensation.supplier',
+        ]);
 
         return view('facturador.compras.show', compact('purchase'));
     }

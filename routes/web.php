@@ -11,6 +11,7 @@ use App\Http\Controllers\Configuration\InformacionAdicionalConfigController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Facturador\ClientController;
 use App\Http\Controllers\Facturador\ClientAddressController;
+use App\Http\Controllers\Facturador\AdminIssuedInvoiceController;
 use App\Http\Controllers\Facturador\FacturadorController;
 use App\Http\Controllers\Facturador\LetraCambioController;
 use App\Http\Controllers\Facturador\GuiaRemisionController;
@@ -21,10 +22,12 @@ use App\Http\Controllers\Facturador\Dashboard\GuiaFlowControlController;
 use App\Http\Controllers\Facturador\GREController;
 use App\Http\Controllers\Facturador\InvoiceController;
 use App\Http\Controllers\Facturador\QuotationController;
+use App\Http\Controllers\Facturador\QuoteSettingsController;
 use App\Http\Controllers\Facturador\QuoteController;
 use App\Http\Controllers\Facturador\QuoteClientController;
 use App\Http\Controllers\Facturador\CreditDebitNoteController;
 use App\Http\Controllers\Facturador\ProductController;
+use App\Http\Controllers\Facturador\SpotDetraccionPresetController;
 use App\Http\Controllers\Facturador\SunatLoginController;
 use App\Http\Controllers\FinalDocumentController;
 use App\Http\Controllers\ObligationController;
@@ -117,8 +120,8 @@ Route::middleware('auth')->group(function (): void {
 
     // Cronograma de Obligaciones SUNAT
     Route::get('/obligaciones/cronograma', [CronogramaController::class, 'index'])->name('obligaciones.cronograma.index');
-    Route::post('/obligaciones/cronograma/{company}/confirmar', [CronogramaController::class, 'confirm'])->name('obligaciones.cronograma.confirm');
-    Route::post('/obligaciones/cronograma/{company}/revertir', [CronogramaController::class, 'revert'])->name('obligaciones.cronograma.revert');
+    Route::post('/obligaciones/cronograma/declaraciones', [CronogramaController::class, 'store'])->name('obligaciones.cronograma.store');
+    Route::delete('/obligaciones/cronograma/declaraciones/{declaration}', [CronogramaController::class, 'destroy'])->name('obligaciones.cronograma.destroy');
 
     // Instancias (Credenciales) - DESHABILITADA
     // Route::resource('credentials', CredentialController::class)->except(['show']);
@@ -150,6 +153,9 @@ Route::middleware('auth')->group(function (): void {
     Route::post('/facturador/active-company', [FacturadorController::class, 'setActiveCompany'])
         ->name('facturador.active-company');
 
+    Route::get('/facturador/comprobantes-emitidos-global', [AdminIssuedInvoiceController::class, 'index'])
+        ->name('facturador.admin-issued-invoices.index');
+
     // ── Rutas protegidas (requieren empresa activa + rol + habilitado) ─────
     Route::middleware(['active.company', 'facturador.role', 'facturador.enabled'])
         ->prefix('facturador')
@@ -180,6 +186,12 @@ Route::middleware('auth')->group(function (): void {
                 ->name('invoices.export-excel');
             Route::get('invoices/export-count', [InvoiceController::class, 'exportCount'])
                 ->name('invoices.export-count');
+            Route::post('invoices/spot-detraccion-presets', [SpotDetraccionPresetController::class, 'store'])
+                ->name('invoices.spot-detraccion-presets.store');
+            Route::get('invoices/import-template', [InvoiceController::class, 'downloadImportTemplate'])
+                ->name('invoices.import-template');
+            Route::post('invoices/import-excel', [InvoiceController::class, 'importExcel'])
+                ->name('invoices.import-excel');
 
             Route::resource('invoices', InvoiceController::class)
                 ->except(['edit', 'update']);
@@ -206,6 +218,8 @@ Route::middleware('auth')->group(function (): void {
                 ->name('invoices.payments.store');
             Route::delete('invoices/{invoice}/payments/{payment}', [InvoiceController::class, 'destroyPayment'])
                 ->name('invoices.payments.destroy');
+            Route::post('invoices/{invoice}/exchange-letters', [InvoiceController::class, 'exchangeToLetters'])
+                ->name('invoices.exchange-letters');
 
             // ── Completado contable + Exportación Excel ─────────────────────────────────────
             Route::get('invoices/{invoice}/accounting',  [InvoiceController::class, 'getAccountingData'])
@@ -262,6 +276,12 @@ Route::middleware('auth')->group(function (): void {
                 ->name('letras.imprimir');
             Route::post('letras/{letraCambio}/pago', [\App\Http\Controllers\Facturador\LetraCambioController::class, 'registrarPago'])
                 ->name('letras.pago');
+            Route::get('letras/{letraCambio}/compensation-candidates', [\App\Http\Controllers\Facturador\LetraCambioController::class, 'compensationCandidates'])
+                ->name('letras.compensation-candidates');
+            Route::get('letras/{letraCambio}/compensation-suppliers', [\App\Http\Controllers\Facturador\LetraCambioController::class, 'compensationSuppliers'])
+                ->name('letras.compensation-suppliers');
+            Route::post('letras/{letraCambio}/compensate', [\App\Http\Controllers\Facturador\LetraCambioController::class, 'compensate'])
+                ->name('letras.compensate');
             Route::get('compras/{purchase}/canjear', [\App\Http\Controllers\Facturador\LetraCambioController::class, 'canjeForm'])
                 ->name('compras.canjear.form');
             Route::post('compras/{purchase}/canjear', [\App\Http\Controllers\Facturador\LetraCambioController::class, 'canjear'])
@@ -284,6 +304,8 @@ Route::middleware('auth')->group(function (): void {
                 ->name('compras.guia.preview');
             Route::post('compras/{purchase}/guia/generate', [\App\Http\Controllers\Facturador\GuiaRemisionController::class, 'generate'])
                 ->name('compras.guia.generate');
+            Route::post('gre-presets', [\App\Http\Controllers\Facturador\GrePresetController::class, 'store'])
+                ->name('gre-presets.store');
 
             Route::resource('guias', GuiaRemisionController::class)
                 ->only(['index', 'show'])
@@ -312,7 +334,8 @@ Route::middleware('auth')->group(function (): void {
 
             // ── Cotizaciones (Nueva arquitectura persistente) ───────────────────────────────
             Route::resource('cotizaciones', QuoteController::class)
-                ->except(['edit', 'update']);
+                ->except(['edit', 'update'])
+                ->parameters(['cotizaciones' => 'quote']);
 
             // Edición y actualización de cotizaciones (solo si está en draft)
             Route::get('cotizaciones/{quote}/edit', [QuoteController::class, 'edit'])
@@ -331,6 +354,10 @@ Route::middleware('auth')->group(function (): void {
                 ->name('cotizaciones.pdf');
 
             // Cotizador legado (mantener compatibilidad temporal)
+            Route::get('quotations/settings', [QuoteSettingsController::class, 'edit'])
+                ->name('quote-settings.edit');
+            Route::post('quotations/settings', [QuoteSettingsController::class, 'update'])
+                ->name('quote-settings.update');
             Route::get('quotations/create', [QuotationController::class, 'create'])
                 ->name('quotations.create');
             Route::post('quotations/preview', [QuotationController::class, 'preview'])
@@ -349,6 +376,10 @@ Route::middleware('auth')->group(function (): void {
             //     ->name('credit_debit_notes.xml');
 
             // ── Guías de Remisión Electrónica (GRE) ───────────────────────
+            Route::post('gre/extract-pdf', [GREController::class, 'extractPdf'])
+                ->name('gre.extract-pdf')
+                ->middleware('throttle:10,1');
+
             Route::resource('gre', GREController::class)
                 ->except(['edit', 'update']);
 

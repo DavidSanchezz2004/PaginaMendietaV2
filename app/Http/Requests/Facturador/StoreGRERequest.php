@@ -96,10 +96,37 @@ class StoreGRERequest extends FormRequest
     public function messages(): array
     {
         return [
+            'codigo_interno.required' => 'No se generó el código interno de la guía. Revisa serie y número.',
             'codigo_modalidad_traslado.required' => 'Debe indicar la modalidad de traslado.',
+            'codigo_motivo_traslado.required' => 'Selecciona el motivo de traslado.',
+            'descripcion_motivo_traslado.required' => 'Ingresa la descripción del motivo de traslado.',
+            'fecha_inicio_traslado.required' => 'Ingresa la fecha de inicio del traslado.',
+            'peso_bruto_total.required' => 'Ingresa el peso bruto total de la carga.',
+            'codigo_unidad_medida_peso_bruto.required' => 'Selecciona la unidad de medida del peso.',
+            'gre_destinatario.numero_documento_destinatario.required' => 'Ingresa el documento del destinatario.',
+            'gre_destinatario.nombre_razon_social_destinatario.required' => 'Ingresa la razón social o nombre del destinatario.',
+            'gre_punto_partida.ubigeo_punto_partida.required' => 'Ingresa el ubigeo del punto de partida.',
+            'gre_punto_partida.direccion_punto_partida.required' => 'Ingresa la dirección del punto de partida.',
+            'gre_punto_llegada.ubigeo_punto_llegada.required' => 'Ingresa el ubigeo del punto de llegada.',
+            'gre_punto_llegada.direccion_punto_llegada.required' => 'Ingresa la dirección del punto de llegada.',
             'gre_transportista.required'          => 'Para Transporte Público ingresa los datos del transportista.',
             'gre_vehiculos.required'              => 'Para Transporte Privado ingresa al menos un vehículo.',
+            'gre_vehiculos.*.numero_placa.required' => 'Ingresa la placa del vehículo.',
             'items.min'                           => 'Debe agregar al menos un ítem a la guía.',
+            'items.*.descripcion.required' => 'Cada ítem debe tener descripción.',
+            'items.*.codigo_interno.required' => 'Cada ítem debe tener código interno.',
+            'items.*.cantidad.required' => 'Cada ítem debe tener cantidad.',
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $numero = trim((string) $this->input('numero_documento', ''));
+
+        if ($numero !== '' && ctype_digit($numero)) {
+            $this->merge([
+                'numero_documento' => str_pad($numero, 8, '0', STR_PAD_LEFT),
+            ]);
+        }
     }
 }

@@ -147,6 +147,9 @@ class Invoice extends Model
         'has_retention',
         'total_before_retention',
         'total_after_retention',
+        'letter_exchange_status',
+        'letter_exchanged_at',
+        'letter_exchange_observation',
     ];
 
     protected function casts(): array
@@ -197,6 +200,7 @@ class Invoice extends Model
             'has_retention'              => 'boolean',
             'total_before_retention'     => 'float',
             'total_after_retention'      => 'float',
+            'letter_exchanged_at'        => 'datetime',
         ];
     }
 
@@ -399,5 +403,39 @@ class Invoice extends Model
             InvoiceStatusEnum::CONSULTED,
         ], true)
         && in_array($this->codigo_tipo_documento, ['01', '03'], true);
+    }
+
+    public function canBeExchangedToLetters(): bool
+    {
+        return in_array($this->estado, [
+            InvoiceStatusEnum::SENT,
+            InvoiceStatusEnum::CONSULTED,
+        ], true)
+        && in_array($this->codigo_tipo_documento, ['01'], true)
+        && ! $this->hasBeenExchangedToLetters()
+        && $this->pendingAmountForLetters() > 0;
+    }
+
+    public function hasBeenExchangedToLetters(): bool
+    {
+        return $this->letter_exchange_status === 'exchanged'
+            || ($this->relationLoaded('letras') ? $this->letras->isNotEmpty() : $this->letras()->exists());
+    }
+
+    public function pendingAmountForLetters(): float
+    {
+        $amount = $this->total_after_retention
+            ?? $this->net_total
+            ?? $this->monto_total;
+
+        if ($this->indicador_detraccion && is_array($this->informacion_detraccion)) {
+            $amount -= (float) ($this->informacion_detraccion['monto_detraccion'] ?? 0);
+        }
+
+        $paid = $this->relationLoaded('payments')
+            ? (float) $this->payments->sum('monto')
+            : (float) $this->payments()->sum('monto');
+
+        return round(max(0, $amount - $paid), 2);
     }
 }

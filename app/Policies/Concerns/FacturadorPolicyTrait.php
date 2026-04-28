@@ -24,7 +24,7 @@ trait FacturadorPolicyTrait
      * Roles globales del sistema que tienen acceso total al facturador.
      * El admin global puede operar sobre cualquier empresa.
      */
-    private array $globalRoles = ['admin'];
+    private array $globalRoles = ['admin', 'supervisor'];
 
     /**
      * Roles por empresa (company_user.role) que pueden usar el facturador.

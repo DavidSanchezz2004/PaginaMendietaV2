@@ -42,6 +42,15 @@
     .doc-badge--gre       { background:rgba(6,182,212,.1);   color:#0891b2; border:1px solid rgba(6,182,212,.25); }
     .doc-badge--dua       { background:rgba(107,114,128,.1); color:#4b5563; border:1px solid rgba(107,114,128,.25); }
     .doc-badge--otro      { background:rgba(239,68,68,.08);  color:#dc2626; border:1px solid rgba(239,68,68,.2); }
+    .flow-pill { display:inline-flex; align-items:center; gap:.25rem; padding:.18rem .48rem; border-radius:999px; font-size:.68rem; font-weight:800; white-space:nowrap; border:1px solid transparent; }
+    .flow-pill--done { background:rgba(16,185,129,.1); color:#047857; border-color:rgba(16,185,129,.25); }
+    .flow-pill--todo { background:rgba(148,163,184,.12); color:#64748b; border-color:rgba(148,163,184,.25); }
+    .flow-pill--active { background:rgba(245,158,11,.12); color:#b45309; border-color:rgba(245,158,11,.28); }
+    .flow-stack { display:flex; flex-direction:column; gap:.35rem; min-width:220px; }
+    .flow-steps { display:flex; gap:.3rem; flex-wrap:wrap; }
+    .flow-actions { display:flex; gap:.35rem; flex-wrap:wrap; }
+    .flow-link { font-size:.72rem; font-weight:700; color:var(--clr-active-bg,#1a6b57); text-decoration:none; }
+    .flow-link:hover { text-decoration:underline; }
   </style>
 @endpush
 
@@ -147,6 +156,14 @@
                 <option value="08" {{ ($filters['tipo_documento'] ?? '') === '08' ? 'selected' : '' }}>08 - N. Débito</option>
                 <option value="00" {{ ($filters['tipo_documento'] ?? '') === '00' ? 'selected' : '' }}>00 - DUA</option>
               </select>
+              <select name="flow_status">
+                <option value="">— Flujo —</option>
+                <option value="draft" {{ ($filters['flow_status'] ?? '') === 'draft' ? 'selected' : '' }}>Sin cliente</option>
+                <option value="assigned" {{ ($filters['flow_status'] ?? '') === 'assigned' ? 'selected' : '' }}>Cliente asignado</option>
+                <option value="guided" {{ ($filters['flow_status'] ?? '') === 'guided' ? 'selected' : '' }}>Con guía</option>
+                <option value="partially_invoiced" {{ ($filters['flow_status'] ?? '') === 'partially_invoiced' ? 'selected' : '' }}>Facturado parcial</option>
+                <option value="invoiced" {{ ($filters['flow_status'] ?? '') === 'invoiced' ? 'selected' : '' }}>Facturado</option>
+              </select>
               <input type="date" name="fecha_desde" value="{{ $filters['fecha_desde'] ?? '' }}" title="Desde">
               <input type="date" name="fecha_hasta" value="{{ $filters['fecha_hasta'] ?? '' }}" title="Hasta">
               <button type="submit" class="btn-primary" style="font-size:.85rem; padding:.5rem .9rem;">
@@ -169,6 +186,7 @@
                     <th style="padding:.75rem 1rem; text-align:left;">Proveedor</th>
                     <th style="padding:.75rem 1rem; text-align:left;">Fecha Emis.</th>
                     <th style="padding:.75rem 1rem; text-align:right;">Total</th>
+                    <th style="padding:.75rem 1rem; text-align:left;">Flujo</th>
                     <th style="padding:.75rem 1rem; text-align:center;">Estado Contable</th>
                     <th style="padding:.75rem 1rem; text-align:right;">Acciones</th>
                   </tr>
@@ -190,6 +208,11 @@
                       $tipoInfo = $tipoMap[$tipoCod] ?? ['label' => $tipoCod ?: '—', 'css' => 'otro'];
                       $tipoIcons = ['factura'=>'bx-receipt','boleta'=>'bx-store','nc'=>'bx-minus-circle','nd'=>'bx-plus-circle','gre'=>'bx-truck','dua'=>'bx-package','otro'=>'bx-file'];
                       $status  = $purchase->accounting_status?->value ?? 'incompleto';
+                      $guia = $purchase->guias->first();
+                      $invoice = $guia?->invoice;
+                      $hasClient = !empty($purchase->client_id);
+                      $hasGuia = (bool) $guia;
+                      $hasInvoice = (bool) $invoice || in_array($purchase->status, ['invoiced', 'partially_invoiced'], true);
                     @endphp
                     <tr style="border-bottom:1px solid var(--clr-border-light,#f3f4f6);">
                       <td style="padding:.75rem 1rem; font-size:.85rem;">
@@ -208,6 +231,24 @@
                       <td style="padding:.75rem 1rem; font-size:.88rem;">{{ $purchase->fecha_emision?->format('d/m/Y') }}</td>
                       <td style="padding:.75rem 1rem; text-align:right; font-weight:700; font-size:.92rem;">
                         {{ $purchase->codigo_moneda ?? 'PEN' }} {{ number_format($purchase->monto_total, 2) }}
+                      </td>
+                      <td style="padding:.75rem 1rem;">
+                        <div class="flow-stack">
+                          <div class="flow-steps">
+                            <span class="flow-pill {{ $hasClient ? 'flow-pill--done' : 'flow-pill--active' }}"><i class='bx {{ $hasClient ? 'bx-check' : 'bx-user-plus' }}'></i> Cliente</span>
+                            <span class="flow-pill {{ $hasGuia ? 'flow-pill--done' : ($hasClient ? 'flow-pill--active' : 'flow-pill--todo') }}"><i class='bx {{ $hasGuia ? 'bx-check' : 'bx-map' }}'></i> Guía</span>
+                            <span class="flow-pill {{ $hasInvoice ? 'flow-pill--done' : ($hasGuia ? 'flow-pill--active' : 'flow-pill--todo') }}"><i class='bx {{ $hasInvoice ? 'bx-check' : 'bx-receipt' }}'></i> Factura</span>
+                          </div>
+                          <div class="flow-actions">
+                            <a href="{{ route('facturador.purchases.guia-flow', $purchase) }}" class="flow-link">Ver flujo</a>
+                            @if($hasGuia)
+                              <a href="{{ route('facturador.guias.show', $guia) }}" class="flow-link">Guía {{ $guia->numero }}</a>
+                            @endif
+                            @if($invoice)
+                              <a href="{{ route('facturador.invoices.show', $invoice) }}" class="flow-link">Factura {{ $invoice->serie_numero }}</a>
+                            @endif
+                          </div>
+                        </div>
                       </td>
                       <td style="padding:.75rem 1rem; text-align:center;">
                         <span id="status-cell-{{ $purchase->id }}">
@@ -244,7 +285,7 @@
                     </tr>
                   @empty
                     <tr>
-                      <td colspan="7" style="padding:2.5rem; text-align:center; color:var(--clr-text-muted,#6b7280);">
+                      <td colspan="8" style="padding:2.5rem; text-align:center; color:var(--clr-text-muted,#6b7280);">
                         <i class='bx bx-cart' style="font-size:2rem; display:block; margin-bottom:.5rem;"></i>
                         No hay compras registradas aún.
                         <br>

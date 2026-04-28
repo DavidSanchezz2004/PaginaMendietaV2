@@ -7,7 +7,7 @@ use App\Http\Requests\Facturador\StoreQuoteRequest;
 use App\Http\Requests\Facturador\UpdateQuoteRequest;
 use App\Models\Quote;
 use App\Models\Client;
-use App\Models\Company;
+use App\Models\CompanySetting;
 use App\Services\Facturador\QuoteService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -42,6 +42,7 @@ class QuoteController extends Controller
      */
     public function index(Request $request): View
     {
+        $this->ensureQuoteFeatureEnabled();
         $this->authorize('viewAny', Quote::class);
 
         $filters = $request->only(['estado', 'client_id', 'search']);
@@ -82,11 +83,12 @@ class QuoteController extends Controller
      */
     public function create(): View
     {
+        $this->ensureQuoteFeatureEnabled();
         $this->authorize('create', Quote::class);
 
         $companyId = session('company_id');
         $clients = Client::where('company_id', $companyId)
-            ->orderBy('nombre_cliente')
+            ->orderBy('nombre_razon_social')
             ->get();
 
         return view('facturador.cotizaciones.create', [
@@ -99,6 +101,7 @@ class QuoteController extends Controller
      */
     public function store(StoreQuoteRequest $request): RedirectResponse
     {
+        $this->ensureQuoteFeatureEnabled();
         $this->authorize('create', Quote::class);
 
         $companyId = session('company_id');
@@ -135,6 +138,7 @@ class QuoteController extends Controller
      */
     public function show(Quote $quote): View
     {
+        $this->ensureQuoteFeatureEnabled();
         $this->authorize('view', $quote);
 
         return view('facturador.cotizaciones.show', [
@@ -147,11 +151,12 @@ class QuoteController extends Controller
      */
     public function edit(Quote $quote): View
     {
+        $this->ensureQuoteFeatureEnabled();
         $this->authorize('update', $quote);
 
         $companyId = session('company_id');
         $clients = Client::where('company_id', $companyId)
-            ->orderBy('nombre_cliente')
+            ->orderBy('nombre_razon_social')
             ->get();
 
         return view('facturador.cotizaciones.edit', [
@@ -165,6 +170,7 @@ class QuoteController extends Controller
      */
     public function update(UpdateQuoteRequest $request, Quote $quote): RedirectResponse
     {
+        $this->ensureQuoteFeatureEnabled();
         $this->authorize('update', $quote);
 
         if ($quote->estado !== 'draft') {
@@ -203,6 +209,7 @@ class QuoteController extends Controller
      */
     public function destroy(Quote $quote): RedirectResponse
     {
+        $this->ensureQuoteFeatureEnabled();
         $this->authorize('delete', $quote);
 
         if ($quote->estado !== 'draft') {
@@ -222,6 +229,7 @@ class QuoteController extends Controller
      */
     public function send(Quote $quote): JsonResponse
     {
+        $this->ensureQuoteFeatureEnabled();
         $this->authorize('update', $quote);
 
         $this->quoteService->markAsSent($quote);
@@ -240,6 +248,7 @@ class QuoteController extends Controller
      */
     public function createVersion(Request $request, Quote $quote): RedirectResponse
     {
+        $this->ensureQuoteFeatureEnabled();
         $this->authorize('update', $quote);
 
         $data = $request->only([
@@ -266,6 +275,7 @@ class QuoteController extends Controller
      */
     public function convertToInvoice(Request $request, Quote $quote): RedirectResponse
     {
+        $this->ensureQuoteFeatureEnabled();
         $this->authorize('update', $quote);
 
         if ($quote->estado !== 'accepted') {
@@ -296,13 +306,59 @@ class QuoteController extends Controller
      */
     public function pdf(Quote $quote)
     {
+        $this->ensureQuoteFeatureEnabled();
         $this->authorize('view', $quote);
 
-        // Aquí irá la lógica de generación de PDF
-        // Por ahora, retornar placeholder
-        return response()->json([
-            'message' => 'PDF generation not yet implemented',
-            'quote_id' => $quote->id,
+        $quote->load('items', 'client', 'company');
+        $settings = CompanySetting::firstOrCreate(
+            ['company_id' => $quote->company_id],
+            [
+                'quote_enabled' => true,
+                'primary_color' => '#013b33',
+                'secondary_color' => '#eef7f5',
+                'company_name' => $quote->company?->name,
+                'ruc' => $quote->company?->ruc,
+            ]
+        );
+
+        $items = $quote->items->map(fn ($item) => [
+            'servicio' => $item->descripcion,
+            'cantidad' => (float) $item->cantidad,
+            'precio' => (float) $item->monto_valor_unitario,
+            'total' => (float) $item->monto_valor_total,
         ]);
+
+        return view('facturador.quotations.preview', [
+            'cotNumber' => $quote->codigo_interno ?: $quote->numero_cotizacion,
+            'fechaEmision' => $quote->fecha_emision,
+            'fechaVencimiento' => $quote->fecha_vencimiento ?: $quote->fecha_emision,
+            'clienteTipoDoc' => $quote->client?->codigo_tipo_documento ?: '6',
+            'clienteNumeroDoc' => $quote->client?->numero_documento ?: '-',
+            'clienteNombre' => strtoupper($quote->client?->nombre_cliente ?: 'SIN CLIENTE'),
+            'descripcion' => $quote->observacion ?? '',
+            'items' => $items,
+            'subtotal' => (float) $quote->monto_total_gravado,
+            'igv' => (float) $quote->monto_total_igv,
+            'total' => (float) $quote->monto_total,
+            'aplicaIgv' => (float) $quote->monto_total_igv > 0,
+            'company' => $quote->company,
+            'settings' => $settings,
+            'quote' => $quote,
+        ]);
+    }
+
+    private function ensureQuoteFeatureEnabled(): void
+    {
+        $role = auth()->user()?->role?->value ?? (string) auth()->user()?->role;
+
+        if ($role === 'admin') {
+            return;
+        }
+
+        $enabled = CompanySetting::where('company_id', session('company_id'))->value('quote_enabled');
+
+        if ($enabled === false || $enabled === 0 || $enabled === '0') {
+            abort(403, 'El cotizador no está habilitado para esta empresa.');
+        }
     }
 }

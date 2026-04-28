@@ -87,6 +87,11 @@ class LetraCambio extends Model
         return $this->hasMany(PagoLetra::class, 'letra_cambio_id');
     }
 
+    public function compensations(): HasMany
+    {
+        return $this->hasMany(LetterCompensation::class, 'bill_of_exchange_id');
+    }
+
     // ── Accessors ───────────────────────────────────────────────────────
 
     public function getSaldoAttribute(): float
@@ -96,26 +101,29 @@ class LetraCambio extends Model
 
     public function getEstaVencidaAttribute(): bool
     {
-        return $this->estado === 'pendiente'
+        return in_array($this->estado, ['pendiente', 'compensada_parcial'], true)
             && $this->fecha_vencimiento->isPast();
     }
 
     public function getEstadoLabelAttribute(): string
     {
         return match ($this->estado) {
-            'pendiente'  => 'Pendiente',
-            'cobrado'    => 'Cobrado',
-            'protestado' => 'Protestado',
-            default      => ucfirst($this->estado),
+            'pendiente'           => 'Pendiente',
+            'cobrado'             => 'Cobrado',
+            'protestado'          => 'Protestado',
+            'compensada_parcial'  => 'Parcialmente compensada',
+            'compensada'          => 'Endosada / Compensada',
+            default               => ucfirst((string) $this->estado),
         };
     }
 
     public function getEstadoBadgeClassAttribute(): string
     {
         return match ($this->estado) {
-            'cobrado'    => 'badge bg-success',
-            'protestado' => 'badge bg-danger',
-            default      => $this->esta_vencida ? 'badge bg-warning text-dark' : 'badge bg-secondary',
+            'cobrado', 'compensada' => 'badge bg-success',
+            'compensada_parcial'    => 'badge bg-info text-dark',
+            'protestado'            => 'badge bg-danger',
+            default                 => $this->esta_vencida ? 'badge bg-warning text-dark' : 'badge bg-secondary',
         };
     }
 

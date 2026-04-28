@@ -38,6 +38,7 @@ class GenerateGuiaRequest extends FormRequest
             'motivo'         => 'required|string|max:100',
             'items_prices'   => 'nullable|array',
             'items_prices.*' => 'nullable|numeric|min:0',
+            'gre_payload'    => 'nullable|json',
         ];
     }
 

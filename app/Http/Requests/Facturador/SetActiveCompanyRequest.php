@@ -41,8 +41,8 @@ class SetActiveCompanyRequest extends FormRequest
                 ? $user->role->value
                 : (string) $user->role;
 
-            // Admin global puede seleccionar cualquier empresa
-            if ($globalRole === 'admin') {
+            // Equipo interno global puede seleccionar cualquier empresa
+            if (in_array($globalRole, ['admin', 'supervisor'], true)) {
                 return;
             }
 

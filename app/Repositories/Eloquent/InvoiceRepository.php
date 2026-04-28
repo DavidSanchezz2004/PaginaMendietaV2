@@ -21,7 +21,7 @@ class InvoiceRepository implements InvoiceRepositoryInterface
     public function paginate(int $perPage = 15, array $filters = []): LengthAwarePaginator
     {
         $query = Invoice::forActiveCompany()
-            ->with(['client'])
+            ->with(['client', 'letras', 'payments'])
             ->orderBy('fecha_emision', 'desc')
             ->orderBy('id', 'desc');
 

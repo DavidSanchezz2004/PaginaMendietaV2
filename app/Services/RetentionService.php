@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Invoice;
+use App\Services\Facturador\RetentionAdditionalInfoService;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -12,6 +13,11 @@ use Illuminate\Support\Facades\Log;
  */
 class RetentionService
 {
+    public function __construct(
+        private readonly RetentionAdditionalInfoService $retentionAdditionalInfoService,
+    ) {
+    }
+
     /**
      * Aplica retención a una factura si aplica.
      * Calcula y persiste:
@@ -67,14 +73,19 @@ class RetentionService
             'monto_retencion' => $amount,
         ];
         $currency = $invoice->codigo_moneda ?: 'PEN';
+        $exchangeRate = $this->retentionAdditionalInfoService->saleRateForInvoice($invoice);
+        if (strtoupper((string) $currency) === 'USD' && empty($invoice->monto_tipo_cambio) && $exchangeRate !== null) {
+            $invoice->monto_tipo_cambio = $exchangeRate;
+        }
         $additionalInfo = $invoice->informacion_adicional ?? [];
-        $additionalInfo['informacion_adicional_3'] =
-            "Informacion Retencion:\n" .
-            "Codigo retencion: 62\n" .
-            "Base imponible retencion: {$currency} " . number_format($total, 2, '.', ',') . "\n" .
-            "Porcentaje retencion: " . number_format($percentage, 2) . "%\n" .
-            "Monto retencion: {$currency} " . number_format($amount, 2, '.', ',') . "\n" .
-            "Monto neto pendiente de pago: {$currency} " . number_format($netTotal, 2, '.', ',');
+        $additionalInfo['informacion_adicional_3'] = $this->retentionAdditionalInfoService->build(
+            $currency,
+            $total,
+            $percentage,
+            $amount,
+            $netTotal,
+            $exchangeRate
+        );
 
         $invoice->fill([
             'retention_enabled' => true,

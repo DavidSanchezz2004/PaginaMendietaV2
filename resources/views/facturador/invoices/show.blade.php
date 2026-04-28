@@ -36,6 +36,14 @@
     .module-table td { color: var(--clr-text-main, #111827); font-weight: 500; font-size: 0.9rem; }
     body.dark-mode .module-table td { color: var(--clr-text-main); }
     body.dark-mode .module-table th { color: var(--clr-text-muted); }
+    .letter-panel { border:1px solid var(--clr-border-light,#e5e7eb); border-radius:12px; padding:1rem; margin:0 0 1.25rem; background:rgba(15,23,42,.02); }
+    .letter-modal-grid { display:grid; grid-template-columns:1fr 130px 150px 38px; gap:.55rem; align-items:end; margin-bottom:.55rem; }
+    .letter-modal-grid label { font-size:.72rem; text-transform:uppercase; color:var(--clr-text-muted,#6b7280); font-weight:800; }
+    .letter-input { width:100%; border:1px solid var(--clr-border-light,#d1d5db); border-radius:7px; min-height:38px; padding:.5rem .65rem; background:transparent; color:var(--clr-text-main,#111827); }
+    .letter-remove { width:38px; height:38px; border:1px solid #fecaca; color:#dc2626; background:#fff; border-radius:7px; cursor:pointer; }
+    .letter-total-line { display:flex; justify-content:space-between; gap:1rem; font-weight:800; padding:.75rem 0; border-top:1px solid var(--clr-border-light,#e5e7eb); }
+    .letter-total-line.is-invalid { color:#dc2626; }
+    @media(max-width:720px){ .letter-modal-grid { grid-template-columns:1fr; } .letter-remove { width:100%; } }
   </style>
 @endpush
 
@@ -157,6 +165,16 @@
               @if($invoice->ruta_reporte)
                 <a href="{{ $invoice->ruta_reporte }}" target="_blank" rel="noopener" class="btn-primary">
                   <i class='bx bx-file-pdf'></i> Ver PDF
+                </a>
+              @endif
+
+              @if($invoice->canBeExchangedToLetters())
+                <button type="button" id="btn-exchange-letters" class="btn-primary">
+                  <i class='bx bx-transfer'></i> Canjear a letras
+                </button>
+              @elseif($invoice->hasBeenExchangedToLetters())
+                <a href="{{ route('facturador.letras.index', ['search' => $invoice->serie_numero]) }}" class="btn-secondary">
+                  <i class='bx bx-check-double'></i> Canjeada a letras
                 </a>
               @endif
 
@@ -447,6 +465,70 @@
               @endif
             </div>
 
+            {{-- ── Letras generadas / Canje ──────────────────────────────── --}}
+            <div class="info-card" style="margin-top:1.25rem;">
+              <h3><i class='bx bx-transfer'></i> Canje a letras</h3>
+
+              @if($invoice->letras->count())
+                <div class="module-table-wrap">
+                  <table class="module-table">
+                    <thead>
+                      <tr>
+                        <th>Número</th>
+                        <th>Vencimiento</th>
+                        <th>Estado</th>
+                        <th style="text-align:right;">Monto</th>
+                        <th style="text-align:right;">Saldo</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @foreach($invoice->letras as $letra)
+                        <tr>
+                          <td><a href="{{ route('facturador.letras.show', $letra) }}" style="font-weight:800; color:var(--clr-active-bg,#1a6b57);">{{ $letra->numero_letra }}</a></td>
+                          <td>{{ $letra->fecha_vencimiento?->format('d/m/Y') }}</td>
+                          <td>{{ $letra->estado_label }}</td>
+                          <td style="text-align:right; font-weight:800;">{{ $letra->codigo_moneda }} {{ number_format($letra->monto, 2) }}</td>
+                          <td style="text-align:right;">{{ $letra->codigo_moneda }} {{ number_format($letra->saldo, 2) }}</td>
+                        </tr>
+                      @endforeach
+                    </tbody>
+                  </table>
+                </div>
+              @else
+                @if($invoice->canBeExchangedToLetters())
+                  <form method="POST" action="{{ route('facturador.invoices.exchange-letters', $invoice) }}" class="letter-panel" id="exchange-letters-form">
+                    @csrf
+                    <div class="show-grid" style="margin-bottom:.85rem;">
+                      <div class="dl-row"><dt>Total pendiente</dt><dd>{{ $invoice->codigo_moneda }} <span id="letter-pending">{{ number_format($invoice->pendingAmountForLetters(), 2, '.', '') }}</span></dd></div>
+                      <div class="dl-row"><dt>Moneda</dt><dd>
+                        <select name="currency" class="letter-input" style="max-width:140px;">
+                          <option value="{{ $invoice->codigo_moneda }}">{{ $invoice->codigo_moneda }}</option>
+                        </select>
+                      </dd></div>
+                    </div>
+                    <div class="form-group" style="margin-bottom:.85rem;">
+                      <label>Observación general</label>
+                      <input type="text" name="observation" class="form-input" maxlength="500" placeholder="Opcional">
+                    </div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; gap:1rem; margin-bottom:.55rem;">
+                      <strong>Letras</strong>
+                      <button type="button" class="btn-secondary" id="add-letter-row" style="font-size:.82rem;"><i class='bx bx-plus'></i> Agregar letra</button>
+                    </div>
+                    <div id="letter-rows"></div>
+                    <div class="letter-total-line" id="letter-total-line">
+                      <span>Suma de letras</span>
+                      <span><strong id="letter-total">0.00</strong> / {{ number_format($invoice->pendingAmountForLetters(), 2) }}</span>
+                    </div>
+                    <button type="submit" class="btn-primary" id="letter-submit"><i class='bx bx-save'></i> Confirmar canje</button>
+                  </form>
+                @else
+                  <p style="margin:0; color:var(--clr-text-muted,#6b7280); font-size:.9rem;">
+                    La factura debe estar emitida y sin canje previo para generar letras.
+                  </p>
+                @endif
+              @endif
+            </div>
+
             {{-- ── Sección Cobros ─────────────────────────────────────────── --}}
             <div class="info-card" style="margin-top:1.25rem;">
               <h3><i class='bx bx-wallet'></i> Cobros Registrados</h3>
@@ -561,6 +643,55 @@
 @push('scripts')
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script>
+    const pendingForLetters = Number('{{ number_format($invoice->pendingAmountForLetters(), 2, '.', '') }}');
+    const letterRows = document.getElementById('letter-rows');
+    const letterTotal = document.getElementById('letter-total');
+    const letterTotalLine = document.getElementById('letter-total-line');
+    const letterSubmit = document.getElementById('letter-submit');
+    const money = (value) => Number(value || 0).toFixed(2);
+    const recalcLetterRows = () => {
+      const total = Array.from(document.querySelectorAll('[data-letter-amount]'))
+        .reduce((sum, input) => sum + Number(input.value || 0), 0);
+      const valid = Math.abs(total - pendingForLetters) <= 0.01;
+      if (letterTotal) letterTotal.textContent = money(total);
+      letterTotalLine?.classList.toggle('is-invalid', !valid);
+      if (letterSubmit) letterSubmit.disabled = !valid;
+    };
+    const addLetterRow = (amount = '') => {
+      if (!letterRows) return;
+      const index = letterRows.children.length;
+      const row = document.createElement('div');
+      row.className = 'letter-modal-grid';
+      row.innerHTML = `
+        <div>
+          <label>Fecha de vencimiento</label>
+          <input type="date" name="letters[${index}][due_date]" class="letter-input" required>
+        </div>
+        <div>
+          <label>Monto</label>
+          <input type="number" name="letters[${index}][amount]" class="letter-input" step="0.01" min="0.01" value="${amount}" data-letter-amount required>
+        </div>
+        <div>
+          <label>Observación</label>
+          <input type="text" name="letters[${index}][observation]" class="letter-input" maxlength="500" placeholder="Opcional">
+        </div>
+        <button type="button" class="letter-remove" title="Quitar"><i class='bx bx-trash'></i></button>`;
+      letterRows.appendChild(row);
+      row.querySelector('[data-letter-amount]')?.addEventListener('input', recalcLetterRows);
+      row.querySelector('.letter-remove')?.addEventListener('click', () => {
+        row.remove();
+        recalcLetterRows();
+      });
+      recalcLetterRows();
+    };
+    document.getElementById('add-letter-row')?.addEventListener('click', () => addLetterRow(''));
+    document.getElementById('btn-exchange-letters')?.addEventListener('click', () => {
+      document.getElementById('exchange-letters-form')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+    if (letterRows && letterRows.children.length === 0) {
+      addLetterRow(money(pendingForLetters));
+    }
+
     // — Confirmar EMISIÓN con preview completo
     document.getElementById('btn-emit')?.addEventListener('click', function () {
       @php

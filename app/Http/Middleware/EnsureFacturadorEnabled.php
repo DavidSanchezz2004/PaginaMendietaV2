@@ -23,13 +23,13 @@ class EnsureFacturadorEnabled
 {
     public function handle(Request $request, Closure $next): Response
     {
-        // Admin global bypasea la restricción de facturador_enabled
+        // El equipo interno global bypasea la restricción de facturador_enabled
         $user = $request->user();
         if ($user) {
             $globalRole = $user->role instanceof RoleEnum
                 ? $user->role->value
                 : (string) $user->role;
-            if ($globalRole === 'admin') {
+            if (in_array($globalRole, ['admin', 'supervisor'], true)) {
                 return $next($request);
             }
         }

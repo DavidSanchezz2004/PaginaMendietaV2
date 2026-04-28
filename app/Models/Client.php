@@ -90,6 +90,11 @@ class Client extends Model
         return $this->hasMany(ClientAddress::class);
     }
 
+    public function getNombreClienteAttribute(): ?string
+    {
+        return $this->nombre_razon_social;
+    }
+
     // ── Dirección (UX para asignación) ───────────────────────────────────
 
     public function default_address(): ?ClientAddress

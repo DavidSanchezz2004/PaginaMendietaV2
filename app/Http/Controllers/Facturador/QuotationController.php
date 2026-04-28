@@ -3,14 +3,31 @@
 namespace App\Http\Controllers\Facturador;
 
 use App\Http\Controllers\Controller;
+use App\Models\Company;
+use App\Models\CompanySetting;
+use App\Models\Client;
+use App\Services\Facturador\QuoteService;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class QuotationController extends Controller
 {
+    public function __construct(
+        private readonly QuoteService $quoteService,
+    ) {
+    }
+
     public function create(): View
     {
-        return view('facturador.quotations.create');
+        [$company, $settings] = $this->settingsForActiveCompany();
+        $this->ensureQuoteEnabled($settings);
+
+        return view('facturador.quotations.create', [
+            'company' => $company,
+            'settings' => $settings,
+        ]);
     }
 
     public function serviceProposal(string $regimen = 'rer'): View
@@ -186,10 +203,13 @@ class QuotationController extends Controller
         return view('facturador.quotations.service-proposal', $data + ['regimen' => $data['regimen']]);
     }
 
-    public function preview(Request $request): View
+    public function preview(Request $request): View|JsonResponse
     {
+        [$company, $settings] = $this->settingsForActiveCompany();
+        $this->ensureQuoteEnabled($settings);
+
         $validated = $request->validate([
-            'cot_number'         => 'required|string|max:50',
+            'cot_number'         => 'required|string|max:30',
             'fecha_emision'      => 'required|date',
             'fecha_vencimiento'  => 'required|date',
             'cliente_tipo_doc'   => 'required|in:1,6',
@@ -217,6 +237,90 @@ class QuotationController extends Controller
         $igv       = $aplicaIgv ? round($subtotal * 0.18, 2) : 0;
         $total     = $subtotal + $igv;
 
+        $quote = DB::transaction(function () use ($company, $validated, $items, $aplicaIgv): \App\Models\Quote {
+            $client = Client::firstOrCreate(
+                [
+                    'company_id' => $company->id,
+                    'numero_documento' => $validated['cliente_numero_doc'],
+                ],
+                [
+                    'codigo_tipo_documento' => $validated['cliente_tipo_doc'],
+                    'nombre_razon_social' => strtoupper($validated['cliente_nombre']),
+                    'codigo_pais' => 'PE',
+                    'activo' => true,
+                ]
+            );
+
+            $client->fill([
+                'codigo_tipo_documento' => $validated['cliente_tipo_doc'],
+                'nombre_razon_social' => strtoupper($validated['cliente_nombre']),
+                'activo' => true,
+            ])->save();
+
+            $quoteItems = $items->map(function (array $item) use ($aplicaIgv): array {
+                $valorTotal = round((float) $item['total'], 2);
+                $montoIgv = $aplicaIgv ? round($valorTotal * 0.18, 2) : 0;
+
+                return [
+                    'tipo' => 'S',
+                    'descripcion' => $item['servicio'],
+                    'codigo_unidad_medida' => 'UND',
+                    'cantidad' => $item['cantidad'],
+                    'monto_valor_unitario' => $item['precio'],
+                    'monto_precio_unitario' => $aplicaIgv ? round($item['precio'] * 1.18, 6) : $item['precio'],
+                    'monto_valor_total' => $valorTotal,
+                    'codigo_indicador_afecto' => $aplicaIgv ? '10' : '20',
+                    'monto_igv' => $montoIgv,
+                    'monto_total' => round($valorTotal + $montoIgv, 2),
+                ];
+            })->all();
+
+            $quote = $this->quoteService->create(
+                $company->id,
+                (int) auth()->id(),
+                $client->id,
+                [
+                    'fecha_emision' => $validated['fecha_emision'],
+                    'fecha_vencimiento' => $validated['fecha_vencimiento'],
+                    'observacion' => $validated['descripcion'] ?? null,
+                    'codigo_moneda' => 'PEN',
+                    'porcentaje_igv' => $aplicaIgv ? 18 : 0,
+                    'estado' => 'draft',
+                ],
+                $quoteItems
+            );
+
+            $quote->codigo_interno = $validated['cot_number'];
+            $quote->save();
+
+            return $quote->fresh('items', 'client');
+        });
+
+        if ($request->expectsJson()) {
+            $pdfUrl = route('facturador.cotizaciones.pdf', $quote);
+            $clientName = $quote->client?->nombre_cliente ?: strtoupper($validated['cliente_nombre']);
+            $validUntil = \Carbon\Carbon::parse($validated['fecha_vencimiento'])->format('d/m/Y');
+            $formattedTotal = 'PEN ' . number_format($total, 2);
+            $issuerName = $settings->company_name ?: $company->name;
+            $subject = "Cotización {$quote->codigo_interno} - {$issuerName}";
+            $emailBody = "Hola,\n\n📄 Te enviamos la cotización {$quote->codigo_interno} para tu revisión.\n\n🗓️ Vigencia: {$validUntil}\n\nAdjuntamos el PDF con el detalle completo.\n\nQuedamos atentos a tus comentarios. Gracias.";
+            $whatsappMessage = "Hola 👋 Te compartimos la cotización {$quote->codigo_interno}. 📄\n\n🗓️ Vigencia: {$validUntil}\n\nTe enviamos el PDF con el detalle para tu revisión. Quedamos atentos.";
+
+            return response()->json([
+                'ok' => true,
+                'quote_id' => $quote->id,
+                'quote_number' => $quote->codigo_interno,
+                'client_name' => $clientName,
+                'total' => $formattedTotal,
+                'valid_until' => $validUntil,
+                'pdf_url' => $pdfUrl,
+                'show_url' => route('facturador.cotizaciones.show', $quote),
+                'email_subject' => $subject,
+                'email_body' => $emailBody,
+                'whatsapp_message' => $whatsappMessage,
+            ]);
+        }
+
         return view('facturador.quotations.preview', [
             'cotNumber'         => $validated['cot_number'],
             'fechaEmision'      => $validated['fecha_emision'],
@@ -230,6 +334,36 @@ class QuotationController extends Controller
             'igv'               => $igv,
             'total'             => $total,
             'aplicaIgv'         => $aplicaIgv,
+            'company'           => $company,
+            'settings'          => $settings,
+            'quote'             => $quote,
         ]);
+    }
+
+    private function settingsForActiveCompany(): array
+    {
+        $company = Company::findOrFail((int) session('company_id'));
+
+        $settings = CompanySetting::firstOrCreate(
+            ['company_id' => $company->id],
+            [
+                'quote_enabled' => true,
+                'primary_color' => '#013b33',
+                'secondary_color' => '#eef7f5',
+                'company_name' => $company->name,
+                'ruc' => $company->ruc,
+            ]
+        );
+
+        return [$company, $settings];
+    }
+
+    private function ensureQuoteEnabled(CompanySetting $settings): void
+    {
+        $role = auth()->user()?->role?->value ?? (string) auth()->user()?->role;
+
+        if ($role !== 'admin' && $settings->quote_enabled === false) {
+            abort(403, 'El cotizador no está habilitado para esta empresa.');
+        }
     }
 }

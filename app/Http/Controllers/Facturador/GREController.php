@@ -7,7 +7,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Facturador\StoreGRERequest;
 use App\Models\Invoice;
 use App\Services\Facturador\InvoiceService;
+use App\Services\Facturador\OpenAiGrePdfExtractorService;
 use App\Services\Facturador\ProductService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -61,7 +63,10 @@ class GREController extends Controller
         $suggestions = $this->invoiceService->getDocumentSuggestions();
 
         // Sugerencia de serie y número para tipo 09
-        $suggestion09 = collect($suggestions)->firstWhere('tipo_documento', '09');
+        $suggestion09 = (object) [
+            'serie_documento' => $suggestions['09']['serie'] ?? 'T001',
+            'numero_documento' => $suggestions['09']['numero'] ?? 1,
+        ];
         $products     = $this->productService->allActive();
 
         return view('facturador.gre.create', compact('suggestion09', 'products'));
@@ -119,6 +124,31 @@ class GREController extends Controller
         return redirect()
             ->route('facturador.gre.show', $invoice)
             ->with('success', "Guía de Remisión {$invoice->serie_numero} creada como borrador.");
+    }
+
+    public function extractPdf(Request $request): JsonResponse
+    {
+        $this->authorize('create', Invoice::class);
+
+        $request->validate([
+            'pdf' => ['required', 'file', 'mimes:pdf', 'max:10240'],
+        ]);
+
+        try {
+            $data = app(OpenAiGrePdfExtractorService::class)->extract($request->file('pdf'));
+
+            return response()->json([
+                'ok' => true,
+                'data' => $data,
+            ]);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return response()->json([
+                'ok' => false,
+                'error' => 'No se pudo extraer la GRE del PDF. Revisa que el archivo tenga texto seleccionable.',
+            ], 422);
+        }
     }
 
     public function show(Invoice $gre): View

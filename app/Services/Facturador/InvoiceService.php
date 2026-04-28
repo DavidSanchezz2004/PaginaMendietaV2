@@ -5,6 +5,7 @@ namespace App\Services\Facturador;
 use App\Models\Invoice;
 use App\Repositories\Contracts\InvoiceRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Carbon;
 use RuntimeException;
 
 /**
@@ -20,6 +21,7 @@ class InvoiceService
     public function __construct(
         private readonly InvoiceRepositoryInterface $repository,
         private readonly FeasyService $feasyService,
+        private readonly RetentionAdditionalInfoService $retentionAdditionalInfoService,
     ) {
     }
 
@@ -88,10 +90,14 @@ class InvoiceService
             );
         }
 
+        $this->ensureMonthlyDocumentQuotaIsAvailable($invoice);
+
         // Cargar items si no están cargados
         if (! $invoice->relationLoaded('items')) {
             $invoice->load(['items', 'client', 'company']);
         }
+
+        $this->refreshRetentionAdditionalInfo($invoice);
 
         // FeasyService valida y envía (lanza RuntimeException si falla validación)
         // sendComprobante elige automáticamente el endpoint: enviar_factura (01) o enviar_boleta (03)
@@ -102,6 +108,67 @@ class InvoiceService
 
         // Persistir resultado (éxito o error)
         return $this->repository->persistEmitResponse($invoice, $response);
+    }
+
+    private function ensureMonthlyDocumentQuotaIsAvailable(Invoice $invoice): void
+    {
+        $limit = (int) config('facturador.monthly_document_limit', 500);
+
+        if ($limit <= 0) {
+            return;
+        }
+
+        $period = Carbon::parse($invoice->fecha_emision ?? now())->startOfMonth();
+        $used = Invoice::query()
+            ->whereBetween('fecha_emision', [$period->toDateString(), $period->copy()->endOfMonth()->toDateString()])
+            ->whereIn('estado', ['sent', 'consulted'])
+            ->count();
+
+        if ($used >= $limit) {
+            throw new RuntimeException(
+                "No se puede emitir {$invoice->serie_numero}: el plan mensual de {$limit} comprobantes ya fue consumido para " .
+                $period->locale('es')->translatedFormat('F Y') . '.'
+            );
+        }
+    }
+
+    private function refreshRetentionAdditionalInfo(Invoice $invoice): void
+    {
+        if (! $invoice->retention_enabled && ! $invoice->has_retention) {
+            return;
+        }
+
+        $base = (float) ($invoice->retention_base ?? $invoice->monto_total ?? 0);
+        $percentage = (float) ($invoice->retention_percentage ?? 3);
+        $amount = (float) ($invoice->retention_amount ?? 0);
+
+        if ($amount <= 0 && $base > 0 && $percentage > 0) {
+            $amount = round($base * $percentage / 100, 2);
+        }
+
+        if ($base <= 0 || $percentage <= 0 || $amount <= 0) {
+            return;
+        }
+
+        $netTotal = (float) ($invoice->net_total ?? round($base - $amount, 2));
+        $exchangeRate = $this->retentionAdditionalInfoService->saleRateForInvoice($invoice);
+        $additionalInfo = $invoice->informacion_adicional ?? [];
+        $additionalInfo['informacion_adicional_3'] = $this->retentionAdditionalInfoService->build(
+            (string) ($invoice->codigo_moneda ?? 'PEN'),
+            $base,
+            $percentage,
+            $amount,
+            $netTotal,
+            $exchangeRate
+        );
+
+        $updates = ['informacion_adicional' => $additionalInfo];
+        if (strtoupper((string) $invoice->codigo_moneda) === 'USD' && empty($invoice->monto_tipo_cambio) && $exchangeRate !== null) {
+            $updates['monto_tipo_cambio'] = $exchangeRate;
+        }
+
+        $invoice->forceFill($updates)->save();
+        $invoice->refresh()->loadMissing(['items', 'client', 'company']);
     }
 
     // ── Consulta a Feasy ───────────────────────────────────────────────

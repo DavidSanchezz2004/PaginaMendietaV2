@@ -104,6 +104,7 @@ class InvoiceService
                     'codigo_moneda' => $data['codigo_moneda'] ?? 'PEN',
                     'forma_pago' => $data['forma_pago'] ?? '1',
                     'lista_cuotas' => $data['forma_pago'] === '2' ? $listaCuotas : null,
+                    'lista_guias' => $this->buildListaGuiasFromGuia($guia),
                     'estado' => InvoiceStatusEnum::DRAFT->value,
                     'estado_feasy' => FeasyStatusEnum::PENDING->value,
                     'accounting_status' => AccountingStatusEnum::PENDIENTE->value,
@@ -214,6 +215,28 @@ class InvoiceService
             ]);
             throw $e;
         }
+    }
+
+    /**
+     * Adjunta la GRE interna como referencia de guía para el payload Feasy de factura.
+     */
+    private function buildListaGuiasFromGuia(GuiaRemision $guia): ?array
+    {
+        $payload = is_array($guia->gre_payload) ? $guia->gre_payload : [];
+        $documento = $payload['informacion_documento'] ?? [];
+
+        $serie = $documento['serie_documento'] ?? null;
+        $numero = $documento['numero_documento'] ?? null;
+
+        if (! $serie || ! $numero) {
+            return null;
+        }
+
+        return [[
+            'codigo_tipo_documento' => $documento['codigo_tipo_documento'] ?? '09',
+            'serie_documento' => $serie,
+            'numero_documento' => $numero,
+        ]];
     }
 
     /**

@@ -16,6 +16,7 @@
     $nameValue = old('name', $company->name ?? '');
     $statusValue = old('status', $company->status ?? 'active');
     $facturadorEnabled = (bool) old('facturador_enabled', $company->facturador_enabled ?? false);
+    $isGoodTaxpayer = (bool) old('is_good_taxpayer', $company->is_good_taxpayer ?? false);
     $direccionValue = old('direccion_fiscal', $company->direccion_fiscal ?? '');
     $ubigeoValue = old('ubigeo', $company->ubigeo ?? '');
     $departamentoValue = old('departamento', $company->departamento ?? '');
@@ -119,6 +120,15 @@
                 <option value="active" @selected($statusValue === 'active')>Activo</option>
                 <option value="inactive" @selected($statusValue === 'inactive')>Inactivo</option>
               </select>
+            </div>
+
+            <div class="form-group">
+              <label>Condición SUNAT</label>
+              <label class="company-toggle-label" style="margin-top:.4rem; display:flex; align-items:center; gap:.5rem;">
+                <input type="hidden" name="is_good_taxpayer" value="0">
+                <input type="checkbox" name="is_good_taxpayer" value="1" @checked($isGoodTaxpayer)>
+                <span>Buen contribuyente</span>
+              </label>
             </div>
 
             <div class="form-group full-width profile-actions module-actions">

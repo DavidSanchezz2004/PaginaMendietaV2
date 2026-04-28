@@ -268,6 +268,38 @@
             </div>
             @endif
 
+            @if($purchase->letterCompensationDetails->isNotEmpty())
+            <div class="detail-section" style="margin-bottom:1.25rem; overflow-x:auto;">
+              <p class="detail-section__title"><i class='bx bx-transfer'></i> Historial de pagos por compensación</p>
+              <table class="items-tbl">
+                <thead>
+                  <tr>
+                    <th>Fecha</th>
+                    <th>Tipo</th>
+                    <th>Letra utilizada</th>
+                    <th>Cliente / aceptante</th>
+                    <th class="num">Monto compensado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @foreach($purchase->letterCompensationDetails as $detail)
+                    @php
+                      $compensation = $detail->compensation;
+                      $letraCompensada = $compensation?->letraCambio;
+                    @endphp
+                    <tr>
+                      <td>{{ $compensation?->compensation_date?->format('d/m/Y') ?? '—' }}</td>
+                      <td>Compensación con letra</td>
+                      <td>{{ $letraCompensada?->numero_letra ?? '—' }}</td>
+                      <td>{{ $letraCompensada?->aceptante_nombre ?? '—' }}</td>
+                      <td class="num" style="font-weight:700;">{{ $purchase->codigo_moneda }} {{ number_format($detail->amount, 2) }}</td>
+                    </tr>
+                  @endforeach
+                </tbody>
+              </table>
+            </div>
+            @endif
+
             {{-- Campos contables --}}
             @if($status !== 'incompleto')
             <div class="detail-section">

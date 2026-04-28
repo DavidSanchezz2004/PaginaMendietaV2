@@ -271,6 +271,36 @@ class DashboardService
             ->where('forma_pago', '2')
             ->sum('monto_total');
 
+        $ventasUltimosSeisMeses = collect(range(5, 0))->map(function (int $monthsBack) use ($companyId): array {
+            $month = now()->subMonthsNoOverflow($monthsBack)->startOfMonth();
+            $start = $month->copy()->startOfMonth()->toDateString();
+            $end = $month->copy()->endOfMonth()->toDateString();
+
+            return [
+                'label' => $month->locale('es')->translatedFormat('M Y'),
+                'month' => $month->format('Y-m'),
+                'total' => round((float) Invoice::where('company_id', $companyId)
+                    ->whereBetween('fecha_emision', [$start, $end])
+                    ->where('estado', '!=', 'voided')
+                    ->sum('monto_total'), 2),
+                'count' => Invoice::where('company_id', $companyId)
+                    ->whereBetween('fecha_emision', [$start, $end])
+                    ->where('estado', '!=', 'voided')
+                    ->count(),
+            ];
+        })->values();
+
+        $estadoMesActual = Invoice::where('company_id', $companyId)
+            ->whereYear('fecha_emision', now()->year)
+            ->whereMonth('fecha_emision', now()->month)
+            ->selectRaw("
+                SUM(CASE WHEN estado IN ('sent', 'consulted') THEN 1 ELSE 0 END) as aceptados,
+                SUM(CASE WHEN estado IN ('draft', 'ready') THEN 1 ELSE 0 END) as pendientes,
+                SUM(CASE WHEN estado = 'error' THEN 1 ELSE 0 END) as errores,
+                SUM(CASE WHEN estado = 'voided' THEN 1 ELSE 0 END) as anulados
+            ")
+            ->first();
+
         // Años disponibles para filtro
         $aniosIngresos = Invoice::where('company_id', $companyId)->selectRaw('YEAR(fecha_emision) as y')->distinct()->pluck('y');
         $aniosGastos   = Purchase::where('company_id', $companyId)->selectRaw('YEAR(fecha_emision) as y')->distinct()->pluck('y');
@@ -295,6 +325,14 @@ class DashboardService
             'total_facturas'    => $totalFacturas,
             'total_compras'     => $totalCompras,
             'cxc'               => $cxc,
+            'ventas_ultimos_6_meses' => $ventasUltimosSeisMeses,
+            'ventas_ultimos_6_meses_max' => max(1, (float) $ventasUltimosSeisMeses->max('total')),
+            'estado_mes_actual' => [
+                'aceptados' => (int) ($estadoMesActual->aceptados ?? 0),
+                'pendientes' => (int) ($estadoMesActual->pendientes ?? 0),
+                'errores' => (int) ($estadoMesActual->errores ?? 0),
+                'anulados' => (int) ($estadoMesActual->anulados ?? 0),
+            ],
             'anios'             => $aniosDisponibles,
         ];
     }

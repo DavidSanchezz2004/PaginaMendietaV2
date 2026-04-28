@@ -37,4 +37,13 @@ return [
     */
     'igv_porcentaje' => (float) env('SUNAT_IGV', 18.00),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Límite mensual de comprobantes emitidos
+    |--------------------------------------------------------------------------
+    | Plan contratado del facturador. Se consume cuando un comprobante queda
+    | emitido/aceptado y se controla de forma global para el estudio.
+    */
+    'monthly_document_limit' => (int) env('FACTURADOR_MONTHLY_DOCUMENT_LIMIT', 500),
+
 ];
