@@ -369,6 +369,10 @@ class Invoice extends Model
      */
     public function canBeEmitted(): bool
     {
+        if ($this->isLikelyRegisteredInSunatFromError()) {
+            return false;
+        }
+
         return in_array($this->estado, [
             InvoiceStatusEnum::DRAFT,
             InvoiceStatusEnum::READY,
@@ -388,7 +392,7 @@ class Invoice extends Model
             InvoiceStatusEnum::CONSULTED,
         ];
 
-        if ($this->codigo_tipo_documento === '09') {
+        if ($this->codigo_tipo_documento === '09' || $this->isLikelyRegisteredInSunatFromError()) {
             $states[] = InvoiceStatusEnum::ERROR;
         }
 
@@ -409,6 +413,10 @@ class Invoice extends Model
 
     public function canBeDeleted(): bool
     {
+        if ($this->isLikelyRegisteredInSunatFromError()) {
+            return false;
+        }
+
         if (in_array($this->estado, [InvoiceStatusEnum::DRAFT, InvoiceStatusEnum::ERROR], true)) {
             return true;
         }
@@ -459,5 +467,21 @@ class Invoice extends Model
             : (float) $this->payments()->sum('monto');
 
         return round(max(0, $amount - $paid), 2);
+    }
+
+    public function isLikelyRegisteredInSunatFromError(): bool
+    {
+        if ($this->estado !== InvoiceStatusEnum::ERROR) {
+            return false;
+        }
+
+        $trace = strtolower(implode(' ', array_filter([
+            (string) $this->codigo_respuesta_sunat,
+            (string) $this->mensaje_respuesta_sunat,
+            (string) $this->last_error,
+        ])));
+
+        return str_contains($trace, 'registrado previamente')
+            || str_contains($trace, 'informado anteriormente');
     }
 }

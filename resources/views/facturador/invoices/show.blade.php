@@ -131,6 +131,16 @@
                 @endif
               @endcan
 
+              @can('releaseFailedEmission', $invoice)
+                <form method="POST" action="{{ route('facturador.invoices.release-failed-emission', $invoice) }}" id="form-release-failed-emission">
+                  @csrf
+                  <input type="hidden" name="motivo" id="release-failed-emission-motivo" value="">
+                  <button type="button" class="btn-secondary" id="btn-release-failed-emission" style="color:#b45309; border-color:#fbbf24;">
+                    <i class='bx bx-reset'></i> Liberar para reintento
+                  </button>
+                </form>
+              @endcan
+
               @can('delete', $invoice)
                 <form method="POST" action="{{ route('facturador.invoices.destroy', $invoice) }}"
                       data-confirm="¿Eliminar este comprobante? Esta acción no se puede deshacer.">
@@ -797,6 +807,33 @@
         if (result.isConfirmed) {
           document.getElementById('void-motivo').value = result.value;
           document.getElementById('form-void').submit();
+        }
+      });
+    });
+
+    // — Liberar falso duplicado Feasy/SUNAT con motivo auditado
+    document.getElementById('btn-release-failed-emission')?.addEventListener('click', function () {
+      Swal.fire({
+        title: 'Liberar comprobante para reintento',
+        html: 'Usa esta acción solo si verificaste que <strong>{{ $invoice->serie_numero }}</strong> no existe en SUNAT ni en Feasy.',
+        icon: 'warning',
+        input: 'textarea',
+        inputLabel: 'Motivo y evidencia',
+        inputPlaceholder: 'Ej: SUNAT indica NO EXISTE con total 1180.00 y Feasy no muestra registros del 28/04 al 30/04.',
+        inputAttributes: { maxlength: 500 },
+        showCancelButton: true,
+        confirmButtonText: '<i class="bx bx-reset"></i> Liberar',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#b45309',
+        cancelButtonColor: '#6b7280',
+        reverseButtons: true,
+        inputValidator: value => {
+          if (!value || value.trim().length < 10) return 'El motivo debe tener al menos 10 caracteres.';
+        },
+      }).then(result => {
+        if (result.isConfirmed) {
+          document.getElementById('release-failed-emission-motivo').value = result.value;
+          document.getElementById('form-release-failed-emission').submit();
         }
       });
     });

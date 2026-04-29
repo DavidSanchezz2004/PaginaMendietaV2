@@ -61,6 +61,16 @@ class InvoicePolicy
     }
 
     /**
+     * Liberar un falso duplicado Feasy/SUNAT para corregir o reintentar.
+     */
+    public function releaseFailedEmission(User $user, Invoice $invoice): bool
+    {
+        return $this->canAccessFacturador($user)
+            && $this->resourceBelongsToActiveCompany($invoice)
+            && $invoice->isLikelyRegisteredInSunatFromError();
+    }
+
+    /**
      * Descargar XML del comprobante (storage privado).
      */
     public function downloadXml(User $user, Invoice $invoice): bool

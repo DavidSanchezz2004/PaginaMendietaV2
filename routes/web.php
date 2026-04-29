@@ -219,6 +219,9 @@ Route::middleware('auth')->group(function (): void {
             Route::post('invoices/{invoice}/consult', [InvoiceController::class, 'consult'])
                 ->name('invoices.consult');
 
+            Route::post('invoices/{invoice}/release-failed-emission', [InvoiceController::class, 'releaseFailedEmission'])
+                ->name('invoices.release-failed-emission');
+
             Route::post('invoices/{invoice}/void',    [InvoiceController::class, 'void'])
                 ->name('invoices.void');
 

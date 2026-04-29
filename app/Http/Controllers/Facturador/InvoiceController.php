@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Facturador;
 
 use App\Enums\AccountingStatusEnum;
+use App\Enums\FeasyStatusEnum;
+use App\Enums\InvoiceStatusEnum;
 use App\Exports\InvoiceExport;
 use App\Exports\InvoiceImportTemplateExport;
 use App\Http\Controllers\Controller;
@@ -444,6 +446,58 @@ class InvoiceController extends Controller
 
         return redirect()->route('facturador.invoices.show', $invoice)
             ->with($flash, $msg);
+    }
+
+    /**
+     * Libera un comprobante que quedó bloqueado por un falso "informado anteriormente".
+     * Requiere evidencia externa: SUNAT/Feasy no muestran el comprobante como emitido.
+     */
+    public function releaseFailedEmission(Request $request, Invoice $invoice): RedirectResponse
+    {
+        $this->authorize('releaseFailedEmission', $invoice);
+
+        $validated = $request->validate([
+            'motivo' => ['required', 'string', 'min:10', 'max:500'],
+        ]);
+
+        $previousTrace = [
+            'estado' => $invoice->estado?->value,
+            'estado_feasy' => $invoice->estado_feasy?->value,
+            'codigo_respuesta_sunat' => $invoice->codigo_respuesta_sunat,
+            'mensaje_respuesta_sunat' => $invoice->mensaje_respuesta_sunat,
+            'last_error' => $invoice->last_error,
+        ];
+
+        $invoice->forceFill([
+            'estado' => InvoiceStatusEnum::DRAFT,
+            'estado_feasy' => FeasyStatusEnum::PENDING,
+            'codigo_respuesta_sunat' => null,
+            'mensaje_respuesta_sunat' => null,
+            'nombre_archivo_xml' => null,
+            'xml_path' => null,
+            'ruta_xml' => null,
+            'ruta_cdr' => null,
+            'ruta_reporte' => null,
+            'hash_cpe' => null,
+            'valor_qr' => null,
+            'mensaje_observacion' => 'Liberado para reintento: ' . $validated['motivo'],
+            'sent_at' => null,
+            'consulted_at' => null,
+            'last_error' => null,
+        ])->save();
+
+        activity('factura')
+            ->performedOn($invoice)
+            ->causedBy($request->user())
+            ->withProperties([
+                'motivo' => $validated['motivo'],
+                'previous_trace' => $previousTrace,
+            ])
+            ->log('Comprobante liberado para reintento tras falso duplicado Feasy/SUNAT');
+
+        return redirect()
+            ->route('facturador.invoices.show', $invoice)
+            ->with('warning', "Comprobante {$invoice->serie_numero} liberado para reintento. Verifica los datos antes de emitir nuevamente.");
     }
 
     /**
