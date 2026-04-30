@@ -67,7 +67,7 @@ class InvoicePolicy
     {
         return $this->canAccessFacturador($user)
             && $this->resourceBelongsToActiveCompany($invoice)
-            && $invoice->isLikelyRegisteredInSunatFromError();
+            && ($invoice->isLikelyRegisteredInSunatFromError() || $invoice->hasBlockingSendAttempt());
     }
 
     /**

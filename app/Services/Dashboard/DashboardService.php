@@ -40,11 +40,25 @@ class DashboardService
      */
     private function getGlobalDashboard(User $user): array
     {
+        $companyQuery = Company::query();
+        $currentMonthInvoices = Invoice::whereYear('fecha_emision', now()->year)
+            ->whereMonth('fecha_emision', now()->month);
+
         return [
             'metrics' => [
-                'total_companies' => Company::count(),
+                'total_companies' => (clone $companyQuery)->count(),
+                'active_companies' => (clone $companyQuery)->where('status', 'active')->count(),
+                'facturador_enabled' => (clone $companyQuery)->where('facturador_enabled', true)->count(),
+                'sunat_credentials' => (clone $companyQuery)
+                    ->whereNotNull('usuario_sol')
+                    ->whereNotNull('clave_sol')
+                    ->count(),
+                'active_users' => User::where('status', 'active')->count(),
                 'open_tickets' => Ticket::whereIn('status', ['open', 'in_progress'])->count(),
                 'total_reports' => Report::count(),
+                'month_invoices' => (clone $currentMonthInvoices)->count(),
+                'month_errors' => (clone $currentMonthInvoices)->where('estado', 'error')->count(),
+                'month_accepted' => (clone $currentMonthInvoices)->whereIn('estado', ['sent', 'consulted'])->count(),
                 'unread_reports' => 0,
             ],
             'recentTickets' => Ticket::with('company')->latest('updated_at')->take(5)->get(),

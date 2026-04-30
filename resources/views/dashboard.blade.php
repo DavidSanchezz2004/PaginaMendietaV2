@@ -45,6 +45,10 @@
     .news-banner-label { display:inline-block; padding:.2rem .7rem; background:rgba(255,255,255,.2); border-radius:999px; font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; margin-bottom:.75rem; }
     .news-banner h2 { font-size:1.3rem; font-weight:700; margin-bottom:.4rem; line-height:1.3; }
     .news-banner p  { font-size:.88rem; opacity:.9; margin-bottom:1.25rem; max-width:550px; }
+    .news-banner-actions { display:flex; flex-wrap:wrap; gap:.55rem; align-items:center; }
+    .news-banner-action { display:inline-flex; align-items:center; gap:.4rem; border:1px solid rgba(255,255,255,.35); background:rgba(255,255,255,.12); color:#fff; padding:.5rem .9rem; border-radius:8px; font-size:.82rem; font-weight:800; text-decoration:none; cursor:pointer; }
+    .news-banner-action.primary { background:#fff; color:#1e3a8a; border-color:#fff; }
+    .news-banner-dismiss { position:absolute; top:.85rem; right:.85rem; z-index:2; width:34px; height:34px; border-radius:999px; border:1px solid rgba(255,255,255,.35); background:rgba(255,255,255,.12); color:#fff; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; }
     /* Activity sections */
     .dash-section { background:var(--clr-bg-card,#fff); border-radius:14px; border:1px solid var(--clr-border-light,#f0f0f0); box-shadow:0 2px 10px rgba(0,0,0,.04); overflow:hidden; }
     .dash-section-header { padding:1rem 1.25rem; border-bottom:1px solid var(--clr-border-light,#f3f4f6); display:flex; justify-content:space-between; align-items:center; }
@@ -85,41 +89,137 @@
     .status-mini { border:1px solid var(--clr-border-light,#e5e7eb); border-radius:10px; padding:.8rem; background:rgba(248,250,252,.65); }
     .status-mini strong { display:block; font-size:1.35rem; color:var(--clr-text-main,#111827); line-height:1; }
     .status-mini span { display:block; margin-top:.3rem; font-size:.73rem; color:var(--clr-text-muted,#6b7280); font-weight:700; text-transform:uppercase; letter-spacing:.04em; }
-    .dashboard-shell { max-width:1280px; width:100%; margin:0 auto; display:flex; flex-direction:column; gap:1rem; }
-    .dashboard-hero { background:var(--clr-bg-card,#fff); border:1px solid var(--clr-border-light,#e5e7eb); border-radius:12px; padding:1.25rem 1.4rem; box-shadow:0 2px 10px rgba(15,23,42,.04); display:flex; justify-content:space-between; gap:1rem; align-items:flex-start; }
-    .dashboard-hero h1 { margin:0; color:var(--clr-text-main,#111827); font-size:1.35rem; line-height:1.2; display:flex; align-items:center; gap:.55rem; }
-    .dashboard-hero h1 i { width:34px; height:34px; border-radius:9px; display:inline-flex; align-items:center; justify-content:center; background:#e7f3ef; color:#16614f; font-size:1.2rem; }
-    .dashboard-hero p { margin:.35rem 0 0; color:var(--clr-text-muted,#64748b); font-size:.88rem; }
+    .dashboard-page.main-content { justify-content:stretch; padding:1.35rem 1.6rem; }
+    .dashboard-page .module-content-stack { width:100%; max-width:none; }
+    .dashboard-shell { max-width:none; width:100%; margin:0; display:flex; flex-direction:column; gap:1rem; }
+    .dashboard-hero { position:relative; overflow:hidden; background:linear-gradient(135deg,#064e43 0%,#0f766e 48%,#14b8a6 100%); border:1px solid rgba(15,118,110,.28); border-radius:14px; padding:1.45rem 1.55rem; box-shadow:0 18px 42px rgba(15,23,42,.13); display:grid; grid-template-columns:minmax(0,1fr) auto; gap:1.4rem; align-items:start; }
+    .dashboard-hero::after { content:''; position:absolute; right:-70px; top:-90px; width:270px; height:270px; border-radius:50%; background:rgba(255,255,255,.12); pointer-events:none; }
+    .dashboard-hero h1 { margin:0; color:#fff; font-size:1.75rem; line-height:1.12; display:flex; align-items:center; gap:.65rem; }
+    .dashboard-hero h1 i { width:42px; height:42px; border-radius:11px; display:inline-flex; align-items:center; justify-content:center; background:rgba(255,255,255,.16); color:#fff; font-size:1.35rem; }
+    .dashboard-hero p { margin:.55rem 0 0; color:rgba(255,255,255,.88); font-size:.94rem; max-width:900px; }
+    .dashboard-hero > * { position:relative; z-index:1; }
+    .dashboard-hero-metrics { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.65rem; margin-top:1rem; max-width:720px; }
+    .hero-metric { padding:.75rem .85rem; border:1px solid rgba(255,255,255,.18); border-radius:11px; background:rgba(255,255,255,.12); color:#fff; }
+    .hero-metric span { display:block; font-size:.7rem; font-weight:800; text-transform:uppercase; letter-spacing:.04em; opacity:.82; }
+    .hero-metric strong { display:block; margin-top:.25rem; font-size:1.1rem; line-height:1; }
     .dashboard-actions { display:flex; gap:.5rem; flex-wrap:wrap; justify-content:flex-end; }
-    .dashboard-actions a { display:inline-flex; align-items:center; gap:.35rem; border:1px solid #dbe3ef; border-radius:8px; padding:.5rem .75rem; text-decoration:none; color:#334155; background:#fff; font-size:.82rem; font-weight:800; white-space:nowrap; }
-    .dashboard-actions a.primary { background:#16614f; color:#fff; border-color:#16614f; }
+    .dashboard-actions a { display:inline-flex; align-items:center; gap:.35rem; border:1px solid rgba(255,255,255,.28); border-radius:9px; padding:.65rem .85rem; text-decoration:none; color:#fff; background:rgba(255,255,255,.12); font-size:.82rem; font-weight:900; white-space:nowrap; backdrop-filter:blur(6px); }
+    .dashboard-actions a.primary { background:#fff; color:#064e43; border-color:#fff; }
+    .dashboard-context-grid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:.75rem; }
+    .context-card { min-height:148px; border:1px solid #e1e8e6; border-radius:13px; background:#fff; padding:1rem; text-decoration:none; color:#0f172a; display:flex; flex-direction:column; gap:.55rem; box-shadow:0 8px 22px rgba(15,23,42,.045); position:relative; overflow:hidden; }
+    .context-card::before { content:''; position:absolute; inset:0 0 auto 0; height:3px; background:#0f766e; opacity:.9; }
+    .context-card:hover { border-color:#0f766e; box-shadow:0 14px 30px rgba(15,23,42,.09); transform:translateY(-1px); }
+    .context-card i { width:34px; height:34px; border-radius:9px; display:inline-flex; align-items:center; justify-content:center; background:#e7f3ef; color:#16614f; font-size:1.12rem; }
+    .context-card strong { font-size:.93rem; line-height:1.18; }
+    .context-card span { color:#64748b; font-size:.78rem; line-height:1.35; }
+    .context-card small { margin-top:auto; color:#0f766e; font-weight:900; font-size:.75rem; }
     .dashboard-filter-card { background:var(--clr-bg-card,#fff); border:1px solid var(--clr-border-light,#e5e7eb); border-radius:12px; padding:.85rem 1rem; display:flex; justify-content:space-between; gap:1rem; align-items:center; }
     .dashboard-filter-card .year-filter select { background:#fff; min-width:92px; }
     .kpi-grid.dashboard-kpis { grid-template-columns:repeat(5,minmax(0,1fr)); gap:.75rem; margin-bottom:0; }
-    .dashboard-kpis .kpi-card { border-radius:12px; padding:1rem; box-shadow:none; min-height:118px; }
+    .dashboard-kpis .kpi-card { border-radius:13px; padding:1.05rem; box-shadow:0 8px 22px rgba(15,23,42,.04); min-height:126px; }
     .dashboard-kpis .kpi-card:hover { transform:none; }
     .dashboard-kpis .kpi-card::before { width:3px; }
     .dashboard-kpis .kpi-value { font-size:1.32rem; letter-spacing:0; }
     .dashboard-kpis .kpi-sub { color:#64748b; }
-    .dashboard-main-grid { display:grid; grid-template-columns:minmax(0,1.45fr) minmax(320px,.85fr); gap:1rem; }
+    .dashboard-main-grid { display:grid; grid-template-columns:minmax(0,1.7fr) minmax(340px,.75fr); gap:1rem; }
     .dashboard-stack { display:flex; flex-direction:column; gap:1rem; min-width:0; }
     .dashboard-side { display:flex; flex-direction:column; gap:1rem; min-width:0; }
-    .chart-card { border-radius:12px; box-shadow:none; }
-    .dash-section { border-radius:12px; box-shadow:none; }
-    .dashboard-quick-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.6rem; }
-    .dashboard-quick-grid a { display:flex; align-items:center; gap:.55rem; min-height:44px; padding:.65rem .75rem; border:1px solid #e5eaf0; border-radius:8px; background:#fff; color:#334155; text-decoration:none; font-size:.82rem; font-weight:800; }
+    .chart-card { border-radius:13px; box-shadow:0 8px 22px rgba(15,23,42,.04); }
+    .dash-section { border-radius:13px; box-shadow:0 8px 22px rgba(15,23,42,.04); }
+    .dashboard-quick-grid { display:grid; grid-template-columns:1fr; gap:.6rem; }
+    .dashboard-quick-grid a { display:flex; align-items:flex-start; gap:.65rem; min-height:52px; padding:.75rem .8rem; border:1px solid #e5eaf0; border-radius:9px; background:#fff; color:#334155; text-decoration:none; font-size:.82rem; font-weight:800; }
     .dashboard-quick-grid a i { font-size:1.05rem; color:#16614f; }
+    .dashboard-quick-grid a span { display:block; color:#64748b; font-size:.73rem; font-weight:600; line-height:1.25; margin-top:.12rem; }
+    .admin-dashboard-shell { width:100%; display:flex; flex-direction:column; gap:.85rem; }
+    .bi-topbar {
+      display:grid;
+      grid-template-columns:minmax(0,1fr) auto;
+      gap:.85rem;
+      align-items:stretch;
+      border:1px solid #dbe4ef;
+      border-radius:10px;
+      background:#fff;
+      padding:.85rem;
+      box-shadow:0 10px 24px rgba(15,23,42,.045);
+    }
+    .bi-title h1 { margin:0; font-size:1.45rem; line-height:1.1; color:#0f172a; display:flex; align-items:center; gap:.55rem; }
+    .bi-title h1 i { width:36px; height:36px; border-radius:8px; display:inline-flex; align-items:center; justify-content:center; background:#e7f3ef; color:#0f766e; }
+    .bi-title p { margin:.4rem 0 0; color:#64748b; font-size:.86rem; max-width:920px; }
+    .bi-actions { display:flex; flex-wrap:wrap; gap:.45rem; justify-content:flex-end; align-content:center; }
+    .bi-actions a { display:inline-flex; align-items:center; justify-content:center; gap:.35rem; min-height:36px; padding:.52rem .72rem; border-radius:8px; border:1px solid #dbe4ef; background:#fff; color:#334155; text-decoration:none; font-size:.78rem; font-weight:900; white-space:nowrap; }
+    .bi-actions a.primary { background:#0f766e; border-color:#0f766e; color:#fff; }
+    .bi-report-grid {
+      display:grid;
+      grid-template-columns:repeat(12,minmax(0,1fr));
+      grid-auto-rows:minmax(92px,auto);
+      gap:.75rem;
+    }
+    .bi-tile {
+      border:1px solid #dbe4ef;
+      border-radius:10px;
+      background:#fff;
+      box-shadow:0 8px 20px rgba(15,23,42,.04);
+      padding:.9rem;
+      min-width:0;
+      overflow:hidden;
+    }
+    .bi-tile-header { display:flex; align-items:center; justify-content:space-between; gap:.75rem; margin-bottom:.75rem; }
+    .bi-tile-title { color:#334155; font-size:.76rem; font-weight:900; text-transform:uppercase; letter-spacing:.04em; display:flex; align-items:center; gap:.35rem; }
+    .bi-tile-link { color:#0f766e; text-decoration:none; font-size:.75rem; font-weight:900; }
+    .bi-kpi { grid-column:span 2; min-height:104px; display:flex; flex-direction:column; justify-content:space-between; border-top:3px solid #0f766e; }
+    .bi-kpi.blue { border-top-color:#3b82f6; }
+    .bi-kpi.warn { border-top-color:#f59e0b; }
+    .bi-kpi.danger { border-top-color:#ef4444; }
+    .bi-kpi span { display:block; color:#64748b; font-size:.68rem; font-weight:900; text-transform:uppercase; letter-spacing:.04em; }
+    .bi-kpi strong { display:block; margin-top:.25rem; color:#0f172a; font-size:1.85rem; line-height:1; }
+    .bi-kpi small { display:block; margin-top:.35rem; color:#64748b; font-size:.72rem; line-height:1.25; }
+    .bi-wide { grid-column:span 5; }
+    .bi-mid { grid-column:span 4; }
+    .bi-side { grid-column:span 3; }
+    .bi-full { grid-column:span 12; }
+    .bi-bar-list { display:grid; gap:.65rem; }
+    .bi-bar-row { display:grid; grid-template-columns:120px minmax(0,1fr) 42px; gap:.65rem; align-items:center; }
+    .bi-bar-row span { color:#475569; font-size:.78rem; font-weight:800; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .bi-bar-track { height:12px; border-radius:999px; background:#edf2f7; overflow:hidden; }
+    .bi-bar-fill { height:100%; border-radius:999px; background:#0f766e; }
+    .bi-bar-fill.blue { background:#3b82f6; }
+    .bi-bar-fill.warn { background:#f59e0b; }
+    .bi-bar-fill.danger { background:#ef4444; }
+    .bi-bar-row strong { color:#0f172a; font-size:.82rem; text-align:right; }
+    .bi-status-grid { display:grid; grid-template-columns:1fr 1fr; gap:.55rem; }
+    .bi-status { border:1px solid #e5eaf0; border-radius:9px; padding:.75rem; background:#f8fafc; }
+    .bi-status span { color:#64748b; font-size:.68rem; font-weight:900; text-transform:uppercase; letter-spacing:.04em; }
+    .bi-status strong { display:block; margin-top:.25rem; color:#0f172a; font-size:1.35rem; line-height:1; }
+    .bi-action-list { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:.6rem; }
+    .bi-action-list a { min-height:76px; border:1px solid #dbe4ef; border-radius:9px; text-decoration:none; color:#0f172a; background:#fff; padding:.75rem; display:flex; flex-direction:column; gap:.35rem; }
+    .bi-action-list a:hover { border-color:#0f766e; background:#f8fffd; }
+    .bi-action-list i { color:#0f766e; font-size:1.15rem; }
+    .bi-action-list strong { font-size:.82rem; line-height:1.1; }
+    .bi-action-list span { color:#64748b; font-size:.72rem; line-height:1.25; }
+    .bi-list { display:flex; flex-direction:column; gap:.45rem; }
+    .bi-list .activity-item { padding:.55rem; border:1px solid #eef2f7; border-radius:9px; }
     .sales-dashboard-grid { grid-template-columns:1fr; gap:1rem; margin-bottom:0; }
     @media(max-width:1180px){
       .kpi-grid.dashboard-kpis { grid-template-columns:repeat(3,minmax(0,1fr)); }
+      .dashboard-context-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
       .dashboard-main-grid { grid-template-columns:1fr; }
       .dashboard-side { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .bi-kpi { grid-column:span 4; }
+      .bi-wide, .bi-mid, .bi-side { grid-column:span 6; }
+      .bi-action-list { grid-template-columns:repeat(2,minmax(0,1fr)); }
     }
     @media(max-width:760px){
       .dashboard-hero, .dashboard-filter-card { flex-direction:column; align-items:stretch; }
+      .dashboard-hero { display:flex; }
+      .dashboard-hero-metrics { grid-template-columns:1fr; }
       .dashboard-actions { justify-content:flex-start; }
+      .bi-topbar { grid-template-columns:1fr; }
+      .bi-actions { justify-content:flex-start; }
+      .bi-kpi, .bi-wide, .bi-mid, .bi-side, .bi-full { grid-column:span 12; }
+      .bi-action-list { grid-template-columns:1fr; }
       .kpi-grid.dashboard-kpis,
       .dashboard-side,
+      .dashboard-context-grid,
       .dashboard-quick-grid { grid-template-columns:1fr; }
     }
   </style>
@@ -146,19 +246,27 @@
       'userEmail'   => auth()->user()?->email,
     ])
 
-    <main class="main-content">
+    <main class="main-content dashboard-page">
       <div class="module-content-stack">
 
         {{-- Ultima Novedad --}}
         @if($latestNews)
-        <div class="news-banner">
+        <div class="news-banner" data-news-banner data-news-id="{{ $latestNews->id }}">
+          <button type="button" class="news-banner-dismiss" data-news-read title="Marcar como leído">
+            <i class='bx bx-x'></i>
+          </button>
           <div class="news-banner-content">
             <span class="news-banner-label"><i class='bx bx-news' style="margin-right:.2rem;"></i> Ultima Novedad</span>
             <h2>{{ $latestNews->title }}</h2>
             <p>{{ Str::limit($latestNews->excerpt ?? strip_tags($latestNews->content), 110) }}</p>
-            <a href="{{ route('news.show', $latestNews) }}" style="display:inline-flex; align-items:center; gap:.4rem; background:#fff; color:#1e3a8a; padding:.5rem 1.25rem; border-radius:8px; font-size:.85rem; font-weight:600; text-decoration:none;">
-              Leer Anuncio <i class='bx bx-right-arrow-alt'></i>
-            </a>
+            <div class="news-banner-actions">
+              <a href="{{ route('news.show', $latestNews) }}" class="news-banner-action primary" data-news-open>
+                Leer anuncio <i class='bx bx-right-arrow-alt'></i>
+              </a>
+              <button type="button" class="news-banner-action" data-news-read>
+                <i class='bx bx-check'></i> Marcar como leído
+              </button>
+            </div>
           </div>
         </div>
         @endif
@@ -175,14 +283,74 @@
         <div class="dashboard-shell">
           <div class="dashboard-hero">
             <div>
-              <h1><i class='bx bx-bar-chart-alt-2'></i> Dashboard financiero</h1>
-              <p>Indicadores de facturacion, compras, estado SUNAT y actividad de la empresa activa.</p>
+              <h1><i class='bx bx-home-smile'></i> Tu panel de trabajo</h1>
+              <p>Desde aquí puedes emitir ventas, subir compras, revisar qué aceptó SUNAT, descargar documentos y escribirnos cuando necesites ayuda. La meta es que no tengas que buscar en el menú para hacer lo habitual.</p>
+              <div class="dashboard-hero-metrics">
+                <div class="hero-metric">
+                  <span>Ingresos {{ $selectedYear }}</span>
+                  <strong>S/ {{ number_format($an['total_ingresos'], 0) }}</strong>
+                </div>
+                <div class="hero-metric">
+                  <span>Mes actual</span>
+                  <strong>S/ {{ number_format($financial['ingresos'] ?? 0, 0) }}</strong>
+                </div>
+                <div class="hero-metric">
+                  <span>Estado SUNAT</span>
+                  <strong>{{ $an['estado_mes_actual']['errores'] }} errores</strong>
+                </div>
+              </div>
             </div>
             <div class="dashboard-actions">
-              <a href="{{ route('facturador.invoices.index') }}" class="primary"><i class='bx bx-receipt'></i> Comprobantes</a>
-              <a href="{{ route('facturador.compras.index') }}"><i class='bx bx-cart'></i> Compras</a>
-              <a href="{{ route('facturador.letras.index') }}"><i class='bx bx-file'></i> Letras</a>
+              <a href="{{ route('facturador.invoices.create') }}" class="primary"><i class='bx bx-plus'></i> Nueva factura</a>
+              <a href="{{ route('facturador.compras.subir') }}"><i class='bx bx-upload'></i> Subir compra</a>
+              @can('create', App\Models\Ticket::class)
+                <a href="{{ route('tickets.create') }}"><i class='bx bx-message-square-add'></i> Consulta</a>
+              @endcan
             </div>
+          </div>
+
+          <div class="dashboard-context-grid">
+            <a href="{{ route('facturador.invoices.create') }}" class="context-card">
+              <i class='bx bx-receipt'></i>
+              <strong>Emitir comprobante</strong>
+              <span>Crea facturas o boletas y revisa el estado SUNAT desde el mismo flujo.</span>
+              <small>Emitir ahora</small>
+            </a>
+            <a href="{{ route('facturador.compras.subir') }}" class="context-card">
+              <i class='bx bx-cloud-upload'></i>
+              <strong>Enviar compras</strong>
+              <span>Sube XML/PDF de proveedores para ordenar gastos, IGV y control contable.</span>
+              <small>Subir archivo</small>
+            </a>
+            <a href="{{ route('facturador.invoices.index') }}" class="context-card">
+              <i class='bx bx-shield-quarter'></i>
+              <strong>Revisar SUNAT</strong>
+              <span>Encuentra comprobantes con error, pendientes, aceptados o anulados.</span>
+              <small>Ver estados</small>
+            </a>
+            @can('viewAny', App\Models\FinalDocument::class)
+              <a href="{{ route('final-documents.index') }}" class="context-card">
+                <i class='bx bx-folder-open'></i>
+                <strong>Documentos finales</strong>
+                <span>Accede a reportes, constancias y archivos compartidos por el estudio.</span>
+                <small>Abrir documentos</small>
+              </a>
+            @else
+              <a href="{{ route('reports.index') }}" class="context-card">
+                <i class='bx bx-folder-open'></i>
+                <strong>Reportes</strong>
+                <span>Consulta reportes publicados y archivos preparados para tu empresa.</span>
+                <small>Ver reportes</small>
+              </a>
+            @endcan
+            @can('create', App\Models\Ticket::class)
+              <a href="{{ route('tickets.create') }}" class="context-card">
+                <i class='bx bx-message-square-detail'></i>
+                <strong>Hablar con contabilidad</strong>
+                <span>Envía una consulta con el contexto de tu empresa activa.</span>
+                <small>Nueva consulta</small>
+              </a>
+            @endcan
           </div>
 
           <div class="dashboard-filter-card">
@@ -308,16 +476,16 @@
           <div class="chart-card">
             <div class="chart-card-header">
               <div>
-                <div class="chart-card-title"><i class='bx bx-bolt-circle' style="color:#16614f;"></i> Accesos rapidos</div>
-                <div class="chart-card-sub">Operaciones frecuentes</div>
+                <div class="chart-card-title"><i class='bx bx-bolt-circle' style="color:#16614f;"></i> Atajos con contexto</div>
+                <div class="chart-card-sub">Acciones directas para evitar vueltas por el menú</div>
               </div>
             </div>
             <div class="dashboard-quick-grid">
-              <a href="{{ route('facturador.invoices.create') }}"><i class='bx bx-plus'></i> Nueva factura</a>
-              <a href="{{ route('facturador.compras.subir') }}"><i class='bx bx-upload'></i> Subir compra</a>
-              <a href="{{ route('facturador.letras.index') }}"><i class='bx bx-file'></i> Letras</a>
+              <a href="{{ route('facturador.invoices.create') }}"><i class='bx bx-plus'></i><div>Nueva factura<span>Registrar venta y dejarla lista para SUNAT.</span></div></a>
+              <a href="{{ route('facturador.compras.subir') }}"><i class='bx bx-upload'></i><div>Subir compra<span>Registrar XML/PDF de proveedor.</span></div></a>
+              <a href="{{ route('facturador.letras.index') }}"><i class='bx bx-file'></i><div>Letras<span>Revisar canjes, vencimientos y pagos.</span></div></a>
               @can('create', App\Models\Ticket::class)
-                <a href="{{ route('tickets.create') }}"><i class='bx bx-message-square-add'></i> Consulta</a>
+                <a href="{{ route('tickets.create') }}"><i class='bx bx-message-square-add'></i><div>Consulta<span>Crear ticket para soporte contable.</span></div></a>
               @endcan
             </div>
           </div>
@@ -440,24 +608,18 @@
             </div>
           </div>
 
-          <div class="chart-card" style="min-width:200px; max-width:240px; display:flex; flex-direction:column; gap:.6rem; justify-content:center;">
-            <p style="font-size:.8rem; font-weight:700; color:var(--clr-text-muted,#6b7280); text-transform:uppercase; letter-spacing:.05em; margin:0 0 .3rem;"><i class='bx bx-bolt-circle' style="color:#f59e0b;"></i> Accesos Rapidos</p>
-            @can('create', App\Models\Ticket::class)
-            <a href="{{ route('tickets.create') }}" class="btn-primary" style="text-align:center; padding:.6rem; font-size:.83rem;">
-              <i class='bx bx-pencil'></i> Nueva Consulta
-            </a>
-            @endcan
-            <a href="{{ route('facturador.compras.index') }}" class="btn-secondary" style="text-align:center; padding:.6rem; font-size:.83rem;">
-              <i class='bx bx-cart'></i> Ver Compras
-            </a>
-            <a href="{{ route('facturador.invoices.index') }}" class="btn-secondary" style="text-align:center; padding:.6rem; font-size:.83rem;">
-              <i class='bx bx-receipt'></i> Ver Facturas
-            </a>
-            @can('viewAny', App\Models\FinalDocument::class)
-            <a href="{{ route('final-documents.index') }}" class="btn-secondary" style="text-align:center; padding:.6rem; font-size:.83rem;">
-              <i class='bx bx-folder'></i> Docs. Finales
-            </a>
-            @endcan
+          <div class="chart-card" style="flex:1; min-width:280px;">
+            <div class="chart-card-header">
+              <div>
+                <div class="chart-card-title"><i class='bx bx-map-alt' style="color:#f59e0b;"></i> ¿Qué hacemos por ti?</div>
+                <div class="chart-card-sub">Resumen simple del flujo de trabajo mensual</div>
+              </div>
+            </div>
+            <div style="display:grid; gap:.7rem;">
+              <div class="status-mini"><strong style="font-size:1rem;color:#0f766e;">1. Ordenamos ventas y compras</strong><span>Emites comprobantes y subes compras desde este portal.</span></div>
+              <div class="status-mini"><strong style="font-size:1rem;color:#0f766e;">2. Revisamos estados</strong><span>Los errores SUNAT, pendientes y anulaciones quedan visibles para actuar rápido.</span></div>
+              <div class="status-mini"><strong style="font-size:1rem;color:#0f766e;">3. Dejamos evidencia</strong><span>Reportes, documentos finales y consultas quedan centralizados.</span></div>
+            </div>
           </div>
         </div>
         </div>{{-- dashboard-shell --}}
@@ -476,78 +638,188 @@
 
         {{-- Admin / Auxiliar panel basico --}}
         @elseif($isGlobalPanel || isset($userRole) && $userRole === 'auxiliar')
-        <div class="page-header simple-header" style="margin-bottom:1.25rem; padding-bottom:0; border:none;">
-          <h1 class="page-title">Vista General</h1>
-          <p class="page-description" style="color:var(--clr-text-muted,#6b7280);">Resumen de actividad y metricas clave.</p>
-        </div>
-        <div class="metric-cards">
-          @if($isGlobalPanel)
-          <div class="metric-card">
-            <div class="metric-icon blue"><i class='bx bx-buildings'></i></div>
-            <div class="metric-info"><h3>Total Empresas</h3><p>{{ $metrics['total_companies'] }}</p></div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-icon purple"><i class='bx bx-file'></i></div>
-            <div class="metric-info"><h3>Reportes Emitidos</h3><p>{{ $metrics['total_reports'] }}</p></div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-icon red"><i class='bx bx-message-square-error'></i></div>
-            <div class="metric-info"><h3>Consultas Abiertas</h3><p>{{ $metrics['open_tickets'] }}</p></div>
-          </div>
-          @else
-          <div class="metric-card">
-            <div class="metric-icon blue"><i class='bx bx-buildings'></i></div>
-            <div class="metric-info"><h3>Empresas Asignadas</h3><p>{{ $metrics['total_companies'] }}</p></div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-icon purple"><i class='bx bx-file'></i></div>
-            <div class="metric-info"><h3>Total Reportes</h3><p>{{ $metrics['total_reports'] }}</p></div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-icon red"><i class='bx bx-message-square-error'></i></div>
-            <div class="metric-info"><h3>Consultas Activas</h3><p>{{ $metrics['open_tickets'] }}</p></div>
-          </div>
-          @endif
-        </div>
-        <div style="display:grid; grid-template-columns:2fr 1fr; gap:1.25rem; flex-wrap:wrap;">
-          <div class="dash-section">
-            <div class="dash-section-header">
-              <h2><i class='bx bx-folder-open'></i> Reportes Recientes</h2>
-              <a href="{{ route('reports.index') }}" style="font-size:.8rem; color:#3b82f6; text-decoration:none;">Ver todos</a>
+        <div class="admin-dashboard-shell">
+          <section class="bi-topbar">
+            <div class="bi-title">
+              <h1><i class='bx bx-bar-chart-square'></i> Panel ejecutivo</h1>
+              <p>
+                Vista rápida de operación: empresas, facturador, SUNAT, soporte y publicaciones. Entra directo a lo pendiente.
+              </p>
             </div>
-            <div class="dash-section-body">
-              <div class="activity-list">
-                @forelse($recentReports as $report)
-                <a href="javascript:void(0)" class="activity-item">
-                  <div class="activity-icon" style="background:rgba(107,114,128,.1); color:#6b7280;"><i class='bx bx-file'></i></div>
-                  <div class="activity-content">
-                    <div class="activity-title">{{ $report->title }}</div>
-                    <div class="activity-meta">{{ $report->company->name ?? '' }} &middot; {{ $report->created_at->format('d/m/Y') }}</div>
+            <div class="bi-actions">
+              @if($isGlobalPanel)
+                <a href="{{ route('companies.create') }}" class="primary"><i class='bx bx-plus'></i> Empresa</a>
+                <a href="{{ route('users.create') }}"><i class='bx bx-user-plus'></i> Usuario</a>
+              @endif
+              <a href="{{ route('reports.create') }}"><i class='bx bx-file-plus'></i> Reporte</a>
+              <a href="{{ route('tickets.index') }}"><i class='bx bx-support'></i> Soporte</a>
+            </div>
+          </section>
+
+          <div class="bi-report-grid">
+            @if($isGlobalPanel)
+              <article class="bi-tile bi-kpi">
+                <span>Empresas activas</span>
+                <strong>{{ $metrics['active_companies'] ?? $metrics['total_companies'] }}</strong>
+                <small>{{ $metrics['total_companies'] }} empresas registradas</small>
+              </article>
+              <article class="bi-tile bi-kpi blue">
+                <span>Facturador ON</span>
+                <strong>{{ $metrics['facturador_enabled'] ?? 0 }}</strong>
+                <small>Empresas listas para emitir</small>
+              </article>
+              <article class="bi-tile bi-kpi">
+                <span>Claves SOL</span>
+                <strong>{{ $metrics['sunat_credentials'] ?? 0 }}</strong>
+                <small>Empresas con credenciales guardadas</small>
+              </article>
+              <article class="bi-tile bi-kpi blue">
+                <span>Usuarios activos</span>
+                <strong>{{ $metrics['active_users'] ?? 0 }}</strong>
+                <small>Personas con acceso vigente</small>
+              </article>
+            @else
+              <article class="bi-tile bi-kpi">
+                <span>Empresas asignadas</span>
+                <strong>{{ $metrics['total_companies'] }}</strong>
+                <small>Cartera activa del auxiliar</small>
+              </article>
+            @endif
+            <article class="bi-tile bi-kpi warn">
+              <span>Consultas abiertas</span>
+              <strong>{{ $metrics['open_tickets'] }}</strong>
+              <small>Tickets abiertos o en revisión</small>
+            </article>
+            <article class="bi-tile bi-kpi">
+              <span>Reportes emitidos</span>
+              <strong>{{ $metrics['total_reports'] }}</strong>
+              <small>Documentos publicados o registrados</small>
+            </article>
+
+            @if($isGlobalPanel)
+              @php
+                $totalMonth = max(1, (int) ($metrics['month_invoices'] ?? 0));
+                $acceptedPct = round((($metrics['month_accepted'] ?? 0) / $totalMonth) * 100);
+                $errorPct = round((($metrics['month_errors'] ?? 0) / $totalMonth) * 100);
+                $facturadorPct = round((($metrics['facturador_enabled'] ?? 0) / max(1, $metrics['total_companies'])) * 100);
+                $solPct = round((($metrics['sunat_credentials'] ?? 0) / max(1, $metrics['total_companies'])) * 100);
+              @endphp
+              <section class="bi-tile bi-wide">
+                <div class="bi-tile-header">
+                  <div class="bi-tile-title"><i class='bx bx-pulse'></i> Estado operativo del mes</div>
+                </div>
+                <div class="bi-bar-list">
+                  <div class="bi-bar-row">
+                    <span>Comprobantes</span>
+                    <div class="bi-bar-track"><div class="bi-bar-fill" style="width:100%;"></div></div>
+                    <strong>{{ $metrics['month_invoices'] ?? 0 }}</strong>
                   </div>
-                </a>
-                @empty
-                <p style="font-size:.83rem; color:#9ca3af; text-align:center; padding:1rem 0;">Sin reportes recientes.</p>
-                @endforelse
-              </div>
-            </div>
-          </div>
-          <div class="dash-section">
-            <div class="dash-section-header"><h2><i class='bx bx-message-square-detail'></i> Soporte Reciente</h2></div>
-            <div class="dash-section-body">
-              <div class="activity-list">
-                @forelse($recentTickets as $ticket)
-                <a href="{{ route('tickets.show', $ticket) }}" class="activity-item">
-                  <div class="activity-icon" style="background:rgba(239,68,68,.1); color:#dc2626;"><i class='bx bx-envelope'></i></div>
-                  <div class="activity-content">
-                    <div class="activity-title">{{ $ticket->subject }}</div>
-                    <div class="activity-meta">{{ $ticket->company->name ?? '' }} &middot; {{ $ticket->updated_at->diffForHumans() }}</div>
+                  <div class="bi-bar-row">
+                    <span>Aceptados</span>
+                    <div class="bi-bar-track"><div class="bi-bar-fill blue" style="width:{{ $acceptedPct }}%;"></div></div>
+                    <strong>{{ $metrics['month_accepted'] ?? 0 }}</strong>
                   </div>
-                </a>
-                @empty
-                <p style="font-size:.83rem; color:#9ca3af; text-align:center; padding:1rem 0;">Sin actividad reciente.</p>
-                @endforelse
+                  <div class="bi-bar-row">
+                    <span>Errores</span>
+                    <div class="bi-bar-track"><div class="bi-bar-fill danger" style="width:{{ $errorPct }}%;"></div></div>
+                    <strong>{{ $metrics['month_errors'] ?? 0 }}</strong>
+                  </div>
+                </div>
+              </section>
+
+              <section class="bi-tile bi-mid">
+                <div class="bi-tile-header">
+                  <div class="bi-tile-title"><i class='bx bx-shield-quarter'></i> Preparación SUNAT</div>
+                </div>
+                <div class="bi-bar-list">
+                  <div class="bi-bar-row">
+                    <span>Facturador</span>
+                    <div class="bi-bar-track"><div class="bi-bar-fill" style="width:{{ $facturadorPct }}%;"></div></div>
+                    <strong>{{ $facturadorPct }}%</strong>
+                  </div>
+                  <div class="bi-bar-row">
+                    <span>Claves SOL</span>
+                    <div class="bi-bar-track"><div class="bi-bar-fill warn" style="width:{{ $solPct }}%;"></div></div>
+                    <strong>{{ $solPct }}%</strong>
+                  </div>
+                </div>
+              </section>
+            @endif
+
+            <section class="bi-tile bi-side">
+              <div class="bi-tile-header">
+                <div class="bi-tile-title"><i class='bx bx-list-check'></i> Resumen</div>
               </div>
-            </div>
+              <div class="bi-status-grid">
+                <div class="bi-status"><span>Empresas</span><strong>{{ $metrics['total_companies'] }}</strong></div>
+                <div class="bi-status"><span>Soporte</span><strong>{{ $metrics['open_tickets'] }}</strong></div>
+                <div class="bi-status"><span>Mes</span><strong>{{ $metrics['month_invoices'] ?? 0 }}</strong></div>
+                <div class="bi-status"><span>Errores</span><strong>{{ $metrics['month_errors'] ?? 0 }}</strong></div>
+              </div>
+            </section>
+
+            <section class="bi-tile bi-full">
+              <div class="bi-tile-header">
+                <div class="bi-tile-title"><i class='bx bx-bolt-circle'></i> Acciones rápidas</div>
+              </div>
+              <div class="bi-action-list">
+                <a href="{{ route('companies.index') }}"><i class='bx bx-buildings'></i><strong>Empresas</strong><span>Estado, facturador y claves SOL.</span></a>
+                <a href="{{ route('users.index') }}"><i class='bx bx-user-check'></i><strong>Usuarios</strong><span>Accesos y asignaciones.</span></a>
+                <a href="{{ route('reports.index') }}"><i class='bx bx-folder-open'></i><strong>Reportes</strong><span>Publicaciones y archivos.</span></a>
+                <a href="{{ route('tickets.index') }}"><i class='bx bx-message-square-detail'></i><strong>Soporte</strong><span>Tickets y seguimiento.</span></a>
+              </div>
+            </section>
+
+            <section class="bi-tile bi-wide">
+              <div class="bi-tile-header">
+                <div class="bi-tile-title"><i class='bx bx-folder-open'></i> Reportes recientes</div>
+                <a href="{{ route('reports.index') }}" class="bi-tile-link">Ver todos</a>
+              </div>
+              <div class="bi-list activity-list">
+                  @forelse($recentReports as $report)
+                  <a href="{{ route('reports.index') }}" class="activity-item">
+                    <div class="activity-icon" style="background:rgba(15,118,110,.1); color:#0f766e;"><i class='bx bx-file'></i></div>
+                    <div class="activity-content">
+                      <div class="activity-title">{{ $report->title }}</div>
+                      <div class="activity-meta">{{ $report->company->name ?? 'Sin empresa' }} &middot; {{ $report->created_at->format('d/m/Y') }}</div>
+                    </div>
+                  </a>
+                  @empty
+                  <p style="font-size:.83rem; color:#9ca3af; text-align:center; padding:1rem 0;">Sin reportes recientes.</p>
+                  @endforelse
+              </div>
+            </section>
+
+            <section class="bi-tile bi-mid">
+              <div class="bi-tile-header">
+                <div class="bi-tile-title"><i class='bx bx-message-square-detail'></i> Soporte reciente</div>
+                <a href="{{ route('tickets.index') }}" class="bi-tile-link">Ver tickets</a>
+              </div>
+              <div class="bi-list activity-list">
+                    @forelse($recentTickets as $ticket)
+                    <a href="{{ route('tickets.show', $ticket) }}" class="activity-item">
+                      <div class="activity-icon" style="background:rgba(239,68,68,.1); color:#dc2626;"><i class='bx bx-envelope'></i></div>
+                      <div class="activity-content">
+                        <div class="activity-title">{{ $ticket->subject }}</div>
+                        <div class="activity-meta">{{ $ticket->company->name ?? 'Sin empresa' }} &middot; {{ $ticket->updated_at->diffForHumans() }}</div>
+                      </div>
+                    </a>
+                    @empty
+                    <p style="font-size:.83rem; color:#9ca3af; text-align:center; padding:1rem 0;">Sin actividad reciente.</p>
+                    @endforelse
+              </div>
+            </section>
+
+            <section class="bi-tile bi-side">
+              <div class="bi-tile-header">
+                <div class="bi-tile-title"><i class='bx bx-map-alt'></i> Flujo</div>
+              </div>
+              <div class="bi-bar-list">
+                <div class="bi-bar-row"><span>Alta</span><div class="bi-bar-track"><div class="bi-bar-fill" style="width:100%;"></div></div><strong>1</strong></div>
+                <div class="bi-bar-row"><span>Operación</span><div class="bi-bar-track"><div class="bi-bar-fill blue" style="width:100%;"></div></div><strong>2</strong></div>
+                <div class="bi-bar-row"><span>Cierre</span><div class="bi-bar-track"><div class="bi-bar-fill warn" style="width:100%;"></div></div><strong>3</strong></div>
+              </div>
+            </section>
           </div>
         </div>
 
@@ -571,6 +843,30 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script>
 (function () {
+  document.querySelectorAll('[data-news-banner]').forEach(banner => {
+    const newsId = banner.dataset.newsId;
+    const key = newsId ? `portal_mendieta_news_read_${newsId}` : null;
+    if (!key) return;
+
+    if (localStorage.getItem(key) === '1') {
+      banner.remove();
+      return;
+    }
+
+    const markRead = () => {
+      localStorage.setItem(key, '1');
+      banner.remove();
+    };
+
+    banner.querySelectorAll('[data-news-read]').forEach(btn => {
+      btn.addEventListener('click', markRead);
+    });
+
+    banner.querySelector('[data-news-open]')?.addEventListener('click', () => {
+      localStorage.setItem(key, '1');
+    });
+  });
+
   const d = window.__DASH__;
   if (!d) return;
 

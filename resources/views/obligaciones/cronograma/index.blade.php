@@ -42,6 +42,25 @@
       white-space: nowrap;
       text-decoration: none;
     }
+    .excel-toolbar-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: .55rem;
+      flex-wrap: wrap;
+    }
+    .excel-source.is-primary {
+      background: #0f766e;
+      border-color: #0f766e;
+      color: #fff;
+      box-shadow: 0 8px 18px rgba(15, 118, 110, .18);
+    }
+    .excel-source.sunat-portal-btn {
+      min-height: 2.85rem;
+      padding: .72rem 1.35rem;
+      font-size: .9rem;
+      border-radius: 14px;
+    }
     .excel-table-wrap {
       width: 100%;
       overflow: auto;
@@ -103,14 +122,9 @@
       color: #0f172a;
       font-size: .78rem;
       line-height: 1.2;
-      overflow-wrap: anywhere;
-    }
-    .company-chip span {
-      display: block;
-      margin-top: .14rem;
-      color: #64748b;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-      font-size: .72rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     .empty-cell {
       color: #94a3b8;
@@ -172,6 +186,150 @@
     .dot-red { background: #ef4444; }
     .dot-yellow { background: #f59e0b; }
     .dot-gray { background: #94a3b8; }
+    .operation-table {
+      min-width: 1280px;
+      table-layout: auto;
+      font-size: .78rem;
+    }
+    .operation-table th {
+      background: #f8fafc;
+      color: #0f172a;
+      height: 52px;
+      vertical-align: middle;
+      border-color: #94a3b8;
+    }
+    .operation-table th:first-child {
+      position: sticky;
+      left: 0;
+      z-index: 2;
+      background: #e8f0fe;
+      min-width: 110px;
+    }
+    .operation-table td {
+      text-align: center;
+      vertical-align: middle;
+      padding: .36rem .45rem;
+      border-color: #cbd5e1;
+      font-weight: 800;
+    }
+    .operation-company {
+      position: sticky;
+      left: 0;
+      z-index: 1;
+      background: #fff;
+      text-align: left !important;
+      min-width: 110px;
+      font-weight: 700 !important;
+      cursor: help;
+    }
+    .operation-company strong {
+      display: block;
+      color: #0f172a;
+      font-size: .78rem;
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+    .operation-yes {
+      background: #f7ff00;
+      color: #0f172a;
+    }
+    .operation-no {
+      background: #fff;
+      color: #0f172a;
+    }
+    .operation-note {
+      margin: .55rem 0 0;
+      color: #64748b;
+      font-size: .78rem;
+    }
+    .cron-modal.operation-edit-modal {
+      width: calc(100vw - 2rem);
+      max-width: none;
+      max-height: 88vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .operation-edit-modal .cron-modal-body {
+      display: block;
+      flex: 1;
+      min-height: 0;
+      max-height: calc(88vh - 132px);
+      overflow: auto;
+    }
+    .operation-edit-help {
+      margin: 0 0 .85rem;
+      color: #64748b;
+      font-size: .86rem;
+    }
+    .operation-edit-wrap {
+      overflow: auto;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      background: #fff;
+      height: calc(100% - 2.1rem);
+    }
+    .operation-edit-table {
+      width: 100%;
+      min-width: 1240px;
+      border-collapse: collapse;
+      font-size: .78rem;
+    }
+    .operation-edit-table th,
+    .operation-edit-table td {
+      border-bottom: 1px solid #e2e8f0;
+      padding: .5rem;
+      vertical-align: middle;
+    }
+    .operation-edit-table th {
+      background: #f8fafc;
+      color: #475569;
+      font-size: .7rem;
+      text-transform: uppercase;
+      text-align: left;
+      white-space: nowrap;
+    }
+    .operation-edit-company strong {
+      display: block;
+      max-width: 260px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: #0f172a;
+    }
+    .operation-edit-company span {
+      display: block;
+      margin-top: .14rem;
+      color: #64748b;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: .7rem;
+    }
+    .operation-edit-table th:first-child,
+    .operation-edit-table td:first-child {
+      position: sticky;
+      left: 0;
+      z-index: 1;
+      background: #fff;
+      min-width: 110px;
+    }
+    .operation-edit-table th:first-child {
+      z-index: 2;
+      background: #f8fafc;
+    }
+    .operation-edit-select {
+      width: 74px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: .38rem .45rem;
+      background: #fff;
+      color: #0f172a;
+      font-weight: 800;
+    }
+    .operation-current {
+      margin-top: .22rem;
+      font-size: .68rem;
+      color: #64748b;
+      white-space: nowrap;
+    }
     .modal-backdrop-cron {
       position: fixed;
       inset: 0;
@@ -396,9 +554,14 @@
                 <h1>Cronograma de Obligaciones Mensuales SUNAT {{ $scheduleYear }}</h1>
                 <p>Vista tipo Excel con empresas agrupadas por ultimo digito de RUC y vencimientos mensuales.</p>
               </div>
-              <a class="excel-source" href="https://www.sunat.gob.pe/orientacion/cronogramas/2026/cObligacionMensual2026.html" target="_blank" rel="noopener noreferrer">
-                <i class='bx bx-link-external'></i> Fuente SUNAT
-              </a>
+              <div class="excel-toolbar-actions">
+                <a class="excel-source is-primary sunat-portal-btn" href="{{ route('portal-sunat.index') }}">
+                  <i class='bx bx-shield-quarter'></i> Abrir Portal SUNAT
+                </a>
+                <a class="excel-source" href="https://www.sunat.gob.pe/orientacion/cronogramas/2026/cObligacionMensual2026.html" target="_blank" rel="noopener noreferrer">
+                  <i class='bx bx-link-external'></i> Fuente SUNAT
+                </a>
+              </div>
             </div>
 
             <div class="excel-shell">
@@ -418,13 +581,18 @@
                           <td>
                             <div class="company-cell">
                               @forelse($groupedCompanies[$groupKey] as $company)
+                                @php
+                                  $fullName = trim((string) $company->name);
+                                  $firstName = preg_split('/\s+/', $fullName)[0] ?? 'Empresa';
+                                  $shortName = $firstName.(str_contains($fullName, ' ') ? '...' : '');
+                                @endphp
                                 <button type="button"
                                         class="company-chip"
+                                        title="{{ $fullName }}"
                                         data-open-declaration
                                         data-company-id="{{ $company->id }}"
                                         data-group="{{ $groupKey }}">
-                                  <strong>{{ $company->name }}</strong>
-                                  <span>{{ $company->ruc }}</span>
+                                  <strong>{{ $shortName }}</strong>
                                 </button>
                               @empty
                                 <div class="empty-cell">Sin empresas</div>
@@ -478,6 +646,57 @@
                   <span class="legend-pill"><span class="legend-dot dot-yellow"></span>Proximo a vencer</span>
                   <span class="legend-pill"><span class="legend-dot dot-gray"></span>Periodo futuro</span>
                 </div>
+              </section>
+
+              <section>
+                <div class="excel-toolbar" style="margin: .25rem 0 .65rem;">
+                  <div>
+                    <h1 style="font-size:1.05rem;">Matriz de obligaciones operativas</h1>
+                    <p>Control por empresa para revisar qué obligaciones aplican antes de cerrar el periodo.</p>
+                  </div>
+                  <div class="excel-toolbar-actions">
+                    <a class="excel-source" href="{{ route('obligaciones.cronograma.operation-matrix.export') }}">
+                      <i class='bx bx-download'></i> Exportar Excel
+                    </a>
+                    <button type="button" class="excel-source is-primary" data-open-operation-modal style="cursor:pointer;">
+                      <i class='bx bx-edit'></i> Registrar matriz
+                    </button>
+                  </div>
+                </div>
+                <div class="excel-table-wrap">
+                  <table class="excel-table operation-table">
+                    <thead>
+                      <tr>
+                        <th>Empresa</th>
+                        @foreach($operationColumns as $column)
+                          <th>{{ $column['label'] }}</th>
+                        @endforeach
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @forelse($operationMatrix as $row)
+                        <tr>
+                          <td class="operation-company" title="{{ $row['company']->name }}">
+                            <strong>{{ $row['short_name'] }}</strong>
+                          </td>
+                          @foreach($operationColumns as $key => $column)
+                            @php $applies = (bool) ($row['values'][$key] ?? false); @endphp
+                            <td class="{{ $applies ? 'operation-yes' : 'operation-no' }}">
+                              {{ $applies ? 'SI' : 'NO' }}
+                            </td>
+                          @endforeach
+                        </tr>
+                      @empty
+                        <tr>
+                          <td colspan="{{ count($operationColumns) + 1 }}" class="empty-cell">Sin empresas visibles</td>
+                        </tr>
+                      @endforelse
+                    </tbody>
+                  </table>
+                </div>
+                <p class="operation-note">
+                  Empresa se muestra abreviada para no saturar la matriz. Pasa el mouse sobre el nombre para ver la razón social completa. El RUC no se muestra en esta vista.
+                </p>
               </section>
             </div>
           </div>
@@ -554,6 +773,69 @@
       </div>
     </form>
   </div>
+
+  <div class="modal-backdrop-cron" data-operation-modal>
+    <form method="POST" action="{{ route('obligaciones.cronograma.operation-matrix.store') }}" class="cron-modal operation-edit-modal">
+      @csrf
+      <div class="cron-modal-header">
+        <h2>Registrar matriz operativa</h2>
+        <button type="button" class="cron-modal-close" data-operation-close aria-label="Cerrar">
+          <i class='bx bx-x'></i>
+        </button>
+      </div>
+
+      <div class="cron-modal-body">
+        <p class="operation-edit-help">
+          Selecciona solo los campos que quieras cambiar. Los que queden en blanco no se modifican.
+        </p>
+
+        <div class="operation-edit-wrap">
+          <table class="operation-edit-table">
+            <thead>
+              <tr>
+                <th>Empresa</th>
+                @foreach($operationColumns as $column)
+                  <th>{{ $column['label'] }}</th>
+                @endforeach
+              </tr>
+            </thead>
+            <tbody>
+              @forelse($operationMatrix as $row)
+                <tr>
+                  <td class="operation-edit-company" title="{{ $row['company']->name }} - {{ $row['company']->ruc }}">
+                    <strong>{{ $row['company']->name }}</strong>
+                    <span>{{ $row['company']->ruc }}</span>
+                  </td>
+                  @foreach($operationColumns as $key => $column)
+                    @php $applies = (bool) ($row['values'][$key] ?? false); @endphp
+                    <td>
+                      <select name="operations[{{ $row['company']->id }}][{{ $key }}]" class="operation-edit-select">
+                        <option value="">--</option>
+                        <option value="1">SI</option>
+                        <option value="0">NO</option>
+                      </select>
+                      <div class="operation-current">Actual: {{ $applies ? 'SI' : 'NO' }}</div>
+                    </td>
+                  @endforeach
+                </tr>
+              @empty
+                <tr>
+                  <td colspan="{{ count($operationColumns) + 1 }}" class="empty-cell">Sin empresas visibles</td>
+                </tr>
+              @endforelse
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="cron-modal-footer">
+        <button type="button" class="cron-btn cron-btn-secondary" data-operation-close>Cancelar</button>
+        <button type="submit" class="cron-btn cron-btn-primary">
+          <i class='bx bx-save'></i> Guardar cambios
+        </button>
+      </div>
+    </form>
+  </div>
 @endsection
 
 @push('scripts')
@@ -566,6 +848,7 @@
   const currentPeriodMonth = {{ min(12, max(1, now()->month)) }};
 
   const modal = document.querySelector('[data-cron-modal]');
+  const operationModal = document.querySelector('[data-operation-modal]');
   const form = document.querySelector('[data-cron-form]');
   const companySelect = document.querySelector('[data-company-select]');
   const periodSelect = document.querySelector('[data-period-select]');
@@ -698,6 +981,20 @@
   modal.addEventListener('click', (event) => {
     if (event.target === modal) {
       modal.classList.remove('is-open');
+    }
+  });
+
+  document.querySelector('[data-open-operation-modal]')?.addEventListener('click', () => {
+    operationModal?.classList.add('is-open');
+  });
+
+  document.querySelectorAll('[data-operation-close]').forEach((button) => {
+    button.addEventListener('click', () => operationModal?.classList.remove('is-open'));
+  });
+
+  operationModal?.addEventListener('click', (event) => {
+    if (event.target === operationModal) {
+      operationModal.classList.remove('is-open');
     }
   });
 

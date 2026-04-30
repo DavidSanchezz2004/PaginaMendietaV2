@@ -3,6 +3,7 @@
 namespace App\Services\Facturador;
 
 use App\Models\Invoice;
+use App\Models\InvoiceSendLog;
 use App\Repositories\Contracts\InvoiceRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
@@ -102,6 +103,7 @@ class InvoiceService
         // FeasyService valida y envía (lanza RuntimeException si falla validación)
         // sendComprobante elige automáticamente el endpoint: enviar_factura (01) o enviar_boleta (03)
         $response = $this->feasyService->sendComprobante($invoice);
+        $this->recordSendLog($invoice, 'emit', $response);
 
         // Guardar XML si Feasy lo devuelve en la respuesta de emisión
         $this->handleXmlFromResponse($invoice, $response);
@@ -196,6 +198,7 @@ class InvoiceService
             serie:   $invoice->serie_documento,
             numero:  $invoice->numero_documento,
         );
+        $this->recordSendLog($invoice, 'consult', $response);
 
         // Si la respuesta incluye XML en base64 o como string, guardarlo
         $this->handleXmlFromResponse($invoice, $response);
@@ -223,6 +226,7 @@ class InvoiceService
         }
 
         $response = $this->feasyService->void($invoice, $invoice->company, $motivo);
+        $this->recordSendLog($invoice, 'void', $response);
 
         if ($response['success']) {
             $invoice->update([
@@ -267,5 +271,34 @@ class InvoiceService
             // Actualizar xml_path directamente (sin pasar por repositorio completo)
             $invoice->update(['xml_path' => $xmlPath]);
         }
+    }
+
+    private function recordSendLog(Invoice $invoice, string $action, array $response): void
+    {
+        $attemptNumber = InvoiceSendLog::where('invoice_id', $invoice->id)
+            ->where('action', $action)
+            ->max('attempt_number');
+
+        $data = $response['data'] ?? [];
+
+        InvoiceSendLog::create([
+            'company_id' => $invoice->company_id,
+            'invoice_id' => $invoice->id,
+            'user_id' => auth()->id(),
+            'action' => $action,
+            'attempt_number' => ((int) $attemptNumber) + 1,
+            'endpoint' => $response['_endpoint'] ?? null,
+            'codigo_tipo_documento' => $invoice->codigo_tipo_documento,
+            'serie_documento' => $invoice->serie_documento,
+            'numero_documento' => $invoice->numero_documento,
+            'codigo_interno' => $invoice->codigo_interno,
+            'monto_total' => $invoice->monto_total,
+            'success' => (bool) ($response['success'] ?? false),
+            'http_status' => (int) ($response['http_status'] ?? 0),
+            'codigo_respuesta' => $data['codigo_respuesta'] ?? null,
+            'mensaje_respuesta' => $data['mensaje_respuesta'] ?? ($response['message'] ?? null),
+            'request_payload' => $response['_request_payload'] ?? null,
+            'response_payload' => $response,
+        ]);
     }
 }

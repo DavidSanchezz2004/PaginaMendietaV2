@@ -67,13 +67,14 @@ class InvoiceExcelImportService
                     throw new RuntimeException("Factura {$codigoInterno}: serie y numero son obligatorios.");
                 }
 
-                $exists = Invoice::where('company_id', $companyId)
+                $exists = Invoice::withTrashed()
+                    ->where('company_id', $companyId)
                     ->where('codigo_tipo_documento', $tipoDocumento)
                     ->where('serie_documento', $serie)
                     ->where('numero_documento', $numero)
                     ->exists();
                 if ($exists) {
-                    throw new RuntimeException("Factura {$codigoInterno}: ya existe {$serie}-{$numero}.");
+                    throw new RuntimeException("Factura {$codigoInterno}: {$serie}-{$numero} ya fue reservado o usado.");
                 }
 
                 $client = $this->resolveClient($row, $companyId);

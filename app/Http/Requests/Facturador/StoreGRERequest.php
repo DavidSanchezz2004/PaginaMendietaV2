@@ -26,13 +26,14 @@ class StoreGRERequest extends FormRequest
             'numero_documento' => [
                 'required', 'string', 'max:10',
                 function ($attribute, $value, $fail) {
-                    $exists = \App\Models\Invoice::forActiveCompany()
+                    $exists = \App\Models\Invoice::withTrashed()
+                        ->where('company_id', session('company_id'))
                         ->where('codigo_tipo_documento', '09')
                         ->where('serie_documento', $this->input('serie_documento'))
                         ->where('numero_documento', $value)
                         ->exists();
                     if ($exists) {
-                        $fail('El número de GRE ya existe para esta empresa y serie.');
+                        $fail('El número de GRE ya fue reservado o usado para esta empresa y serie.');
                     }
                 },
             ],

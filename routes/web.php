@@ -122,7 +122,9 @@ Route::middleware('auth')->group(function (): void {
 
     // Cronograma de Obligaciones SUNAT
     Route::get('/obligaciones/cronograma', [CronogramaController::class, 'index'])->name('obligaciones.cronograma.index');
+    Route::get('/obligaciones/cronograma/matriz-operativa/exportar', [CronogramaController::class, 'exportOperationMatrix'])->name('obligaciones.cronograma.operation-matrix.export');
     Route::post('/obligaciones/cronograma/declaraciones', [CronogramaController::class, 'store'])->name('obligaciones.cronograma.store');
+    Route::post('/obligaciones/cronograma/matriz-operativa', [CronogramaController::class, 'storeOperationMatrix'])->name('obligaciones.cronograma.operation-matrix.store');
     Route::delete('/obligaciones/cronograma/declaraciones/{declaration}', [CronogramaController::class, 'destroy'])->name('obligaciones.cronograma.destroy');
 
     // Instancias (Credenciales) - DESHABILITADA
@@ -207,6 +209,10 @@ Route::middleware('auth')->group(function (): void {
                 ->name('invoices.import-template');
             Route::post('invoices/import-excel', [InvoiceController::class, 'importExcel'])
                 ->name('invoices.import-excel');
+            Route::get('invoices/{invoice}/duplicate', [InvoiceController::class, 'duplicate'])
+                ->name('invoices.duplicate');
+            Route::get('invoices/{invoice}/pdf-personalizado', [InvoiceController::class, 'customPdf'])
+                ->name('invoices.custom-pdf');
 
             Route::resource('invoices', InvoiceController::class)
                 ->except(['edit', 'update']);

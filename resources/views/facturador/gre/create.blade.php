@@ -54,6 +54,22 @@
     .ai-extractor__body { display:grid; grid-template-columns:minmax(220px,1fr) auto; gap:.75rem; align-items:end; }
     @media(max-width:768px){ .ai-extractor__body{ grid-template-columns:1fr; } }
     .ai-status { font-size:.8rem; color:var(--clr-text-muted,#6b7280); margin-top:.5rem; min-height:1.2rem; }
+    .gre-quick-config {
+      border-color: rgba(15,118,110,.24);
+      background: linear-gradient(135deg, rgba(15,118,110,.08), rgba(20,184,166,.05));
+    }
+    .gre-quick-config__grid {
+      display:grid;
+      grid-template-columns:minmax(220px,1fr) auto auto;
+      gap:.75rem;
+      align-items:end;
+    }
+    .gre-quick-config__note {
+      margin:.65rem 0 0;
+      color:var(--clr-text-muted,#64748b);
+      font-size:.8rem;
+    }
+    @media(max-width:900px){ .gre-quick-config__grid{ grid-template-columns:1fr; } }
   </style>
 @endpush
 
@@ -119,6 +135,32 @@
                   <i class='bx bx-search-alt'></i> Extraer con IA
                 </button>
               </div>
+            </div>
+
+            <div class="form-section gre-quick-config">
+              <h4><i class='bx bx-bolt-circle'></i> Carga rápida GRE</h4>
+              <div class="gre-quick-config__grid">
+                <div>
+                  <label class="field-label">Configuración guardada</label>
+                  <select id="gre_preset_select" class="form-control">
+                    <option value="">— Sin plantilla —</option>
+                    @foreach($grePresets as $preset)
+                      <option value="{{ $preset->id }}" @selected($preset->is_default)>
+                        {{ $preset->name }} @if($preset->is_default) — predeterminada @endif
+                      </option>
+                    @endforeach
+                  </select>
+                </div>
+                <button type="button" id="gre_apply_preset" class="btn-secondary" style="height:40px; white-space:nowrap;">
+                  <i class='bx bx-magic-wand'></i> Aplicar
+                </button>
+                <button type="button" id="gre_save_preset" class="btn-primary" style="height:40px; white-space:nowrap;">
+                  <i class='bx bx-save'></i> Guardar plantilla
+                </button>
+              </div>
+              <p class="gre-quick-config__note">
+                Guarda partida, llegada, modalidad, placa, conductor y unidad de peso. Si marcas una como predeterminada, se carga sola al entrar a crear una GRE.
+              </p>
             </div>
 
             {{-- ── Datos del documento ─────────────────────────────── --}}
@@ -675,6 +717,161 @@ function updateGreInternalCode() {
 document.querySelector('[name="serie_documento"]')?.addEventListener('input', updateGreInternalCode);
 document.querySelector('[name="numero_documento"]')?.addEventListener('input', updateGreInternalCode);
 document.addEventListener('DOMContentLoaded', updateGreInternalCode);
+
+@php
+  $grePresetPayload = $grePresets->map(function ($preset) {
+    return [
+      'id' => $preset->id,
+      'name' => $preset->name,
+      'partida_ubigeo' => $preset->partida_ubigeo,
+      'partida_direccion' => $preset->partida_direccion,
+      'llegada_ubigeo' => $preset->llegada_ubigeo,
+      'modalidad' => $preset->modalidad,
+      'unidad_peso' => $preset->unidad_peso,
+      'placa' => $preset->placa,
+      'conductor_dni' => $preset->conductor_dni,
+      'conductor_nombre' => $preset->conductor_nombre,
+      'conductor_apellido' => $preset->conductor_apellido,
+      'conductor_licencia' => $preset->conductor_licencia,
+      'is_default' => (bool) $preset->is_default,
+    ];
+  })->values();
+@endphp
+let grePresets = @json($grePresetPayload);
+const hasGreOldInput = @json(old('codigo_interno') !== null || old('gre_punto_partida') !== null || old('gre_vehiculos') !== null);
+const grePresetStoreUrl = @json(route('facturador.gre-presets.store'));
+
+function setGreField(selector, value) {
+  const field = document.querySelector(selector);
+  if (!field) return;
+  field.value = value ?? '';
+  field.dispatchEvent(new Event('input', { bubbles: true }));
+  field.dispatchEvent(new Event('change', { bubbles: true }));
+}
+
+function applyGrePreset(preset) {
+  if (!preset) return;
+
+  setGreField('[name="gre_punto_partida[ubigeo_punto_partida]"]', preset.partida_ubigeo || '');
+  setGreField('[name="gre_punto_partida[direccion_punto_partida]"]', preset.partida_direccion || '');
+  setGreField('[name="gre_punto_llegada[ubigeo_punto_llegada]"]', preset.llegada_ubigeo || '');
+  setGreField('[name="codigo_unidad_medida_peso_bruto"]', preset.unidad_peso || 'KGM');
+
+  const modalidad = preset.modalidad || '02';
+  document.querySelector(`.modal-tab[data-modalidad="${modalidad}"]`)?.click();
+
+  if (modalidad === '02') {
+    ensureVehiculoRows(1);
+    setGreField('[name="gre_vehiculos[0][numero_placa]"]', preset.placa || '');
+
+    if (preset.conductor_dni || preset.conductor_nombre || preset.conductor_apellido || preset.conductor_licencia) {
+      clearConductores();
+      addConductor();
+      setGreField('[name="gre_conductores[0][codigo_tipo_documento]"]', '1');
+      setGreField('[name="gre_conductores[0][numero_documento]"]', preset.conductor_dni || '');
+      setGreField('[name="gre_conductores[0][nombre]"]', preset.conductor_nombre || '');
+      setGreField('[name="gre_conductores[0][apellido]"]', preset.conductor_apellido || '');
+      setGreField('[name="gre_conductores[0][numero_licencia]"]', preset.conductor_licencia || '');
+      const principal = document.querySelector('[name="gre_conductores[0][indicador_principal]"]');
+      if (principal) principal.checked = true;
+    }
+  }
+}
+
+function upsertGrePresetOption(preset) {
+  const index = grePresets.findIndex(item => String(item.id) === String(preset.id));
+  if (preset.is_default) grePresets = grePresets.map(item => ({ ...item, is_default: false }));
+  if (index >= 0) grePresets[index] = preset;
+  else grePresets.push(preset);
+
+  const select = document.getElementById('gre_preset_select');
+  if (!select) return;
+
+  let option = [...select.options].find(opt => String(opt.value) === String(preset.id));
+  if (!option) {
+    option = new Option('', preset.id);
+    select.add(option);
+  }
+  option.textContent = `${preset.name}${preset.is_default ? ' — predeterminada' : ''}`;
+  select.value = preset.id;
+}
+
+document.getElementById('gre_apply_preset')?.addEventListener('click', function() {
+  const id = document.getElementById('gre_preset_select')?.value;
+  const preset = grePresets.find(item => String(item.id) === String(id));
+  if (!preset) {
+    Swal.fire({ icon: 'info', title: 'Carga rápida', text: 'Selecciona una plantilla guardada.' });
+    return;
+  }
+  applyGrePreset(preset);
+});
+
+document.getElementById('gre_save_preset')?.addEventListener('click', async function() {
+  const result = await Swal.fire({
+    title: 'Guardar plantilla GRE',
+    html: `
+      <input id="gre-preset-name" class="swal2-input" placeholder="Nombre. Ej: Ruta almacén Lima">
+      <label style="display:flex;gap:.45rem;align-items:center;justify-content:center;font-size:.9rem;margin-top:.6rem;">
+        <input id="gre-preset-default" type="checkbox"> Usar como predeterminada
+      </label>
+    `,
+    focusConfirm: false,
+    showCancelButton: true,
+    confirmButtonText: 'Guardar',
+    cancelButtonText: 'Cancelar',
+    preConfirm: () => {
+      const name = document.getElementById('gre-preset-name').value.trim();
+      if (!name) {
+        Swal.showValidationMessage('Ingresa un nombre para la plantilla.');
+        return false;
+      }
+      return {
+        name,
+        is_default: document.getElementById('gre-preset-default').checked,
+      };
+    },
+  });
+
+  if (!result.isConfirmed) return;
+
+  const payload = {
+    ...result.value,
+    partida_ubigeo: document.querySelector('[name="gre_punto_partida[ubigeo_punto_partida]"]')?.value || '',
+    partida_direccion: document.querySelector('[name="gre_punto_partida[direccion_punto_partida]"]')?.value || '',
+    llegada_ubigeo: document.querySelector('[name="gre_punto_llegada[ubigeo_punto_llegada]"]')?.value || '',
+    modalidad: document.getElementById('input-modalidad')?.value || '02',
+    unidad_peso: document.querySelector('[name="codigo_unidad_medida_peso_bruto"]')?.value || 'KGM',
+    placa: document.querySelector('[name="gre_vehiculos[0][numero_placa]"]')?.value || '',
+    conductor_dni: document.querySelector('[name="gre_conductores[0][numero_documento]"]')?.value || '',
+    conductor_nombre: document.querySelector('[name="gre_conductores[0][nombre]"]')?.value || '',
+    conductor_apellido: document.querySelector('[name="gre_conductores[0][apellido]"]')?.value || '',
+    conductor_licencia: document.querySelector('[name="gre_conductores[0][numero_licencia]"]')?.value || '',
+  };
+
+  try {
+    const response = await fetch(grePresetStoreUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-CSRF-TOKEN': @json(csrf_token()),
+      },
+      body: JSON.stringify(payload),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || 'No se pudo guardar la plantilla.');
+    upsertGrePresetOption(data.preset);
+    Swal.fire({ icon: 'success', title: 'Plantilla guardada', text: data.message || 'Carga rápida GRE guardada.' });
+  } catch (error) {
+    Swal.fire({ icon: 'error', title: 'No se guardó', text: error.message || 'Intenta nuevamente.' });
+  }
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+  if (hasGreOldInput) return;
+  const defaultPreset = grePresets.find(item => item.is_default);
+  if (defaultPreset) applyGrePreset(defaultPreset);
+});
 
 // ── Modalidad toggle ────────────────────────────────────────────────────────
 document.querySelectorAll('.modal-tab').forEach(function(btn) {

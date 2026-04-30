@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 
@@ -23,7 +24,7 @@ use Spatie\Activitylog\Traits\LogsActivity;
  */
 class Invoice extends Model
 {
-    use HasFactory, BelongsToActiveCompany, LogsActivity;
+    use HasFactory, BelongsToActiveCompany, LogsActivity, SoftDeletes;
 
     public function getActivitylogOptions(): LogOptions
     {
@@ -238,6 +239,11 @@ class Invoice extends Model
         return $this->hasMany(LetraCambio::class)->orderBy('numero_letra');
     }
 
+    public function sendLogs(): HasMany
+    {
+        return $this->hasMany(InvoiceSendLog::class)->latest();
+    }
+
     public function quotes(): HasMany
     {
         return $this->hasMany(Quote::class, 'invoice_id');
@@ -369,7 +375,7 @@ class Invoice extends Model
      */
     public function canBeEmitted(): bool
     {
-        if ($this->isLikelyRegisteredInSunatFromError()) {
+        if ($this->isLikelyRegisteredInSunatFromError() || $this->hasBlockingSendAttempt()) {
             return false;
         }
 
@@ -482,6 +488,24 @@ class Invoice extends Model
         ])));
 
         return str_contains($trace, 'registrado previamente')
-            || str_contains($trace, 'informado anteriormente');
+            || str_contains($trace, 'informado anteriormente')
+            || str_contains($trace, '1032')
+            || str_contains($trace, '1033');
+    }
+
+    public function hasBlockingSendAttempt(): bool
+    {
+        if (! $this->exists) {
+            return false;
+        }
+
+        return $this->sendLogs()
+            ->where('action', 'emit')
+            ->where(function ($query): void {
+                $query->whereIn('codigo_respuesta', ['0', 'A01', '1032', '1033'])
+                    ->orWhere('mensaje_respuesta', 'like', '%registrado previamente%')
+                    ->orWhere('mensaje_respuesta', 'like', '%informado anteriormente%');
+            })
+            ->exists();
     }
 }

@@ -104,6 +104,229 @@
     .letter-total-line.is-invalid { color:#dc2626; }
     .letter-modal__footer { display:flex; justify-content:flex-end; gap:.6rem; padding:1rem 1.2rem; border-top:1px solid var(--clr-border-light,#e5e7eb); background:rgba(15,23,42,.03); }
     @media(max-width:720px){ .letter-summary { grid-template-columns:1fr; } .letter-grid { grid-template-columns:1fr; } .letter-remove { width:100%; } }
+
+    /* ── Layout de trabajo: usa casi todo el ancho disponible ── */
+    .main-wrapper > .main-content {
+      justify-content: stretch;
+      padding: 1.25rem 1.5rem;
+    }
+    .module-content-stack {
+      width: 100%;
+      max-width: none;
+      gap: .85rem;
+    }
+    .module-card-wide {
+      max-width: none;
+    }
+    .module-content-stack .module-card-wide {
+      padding: 1.35rem 1.45rem 1.2rem;
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(15,23,42,.06);
+    }
+    .module-content-stack .module-card-wide:hover,
+    .module-content-stack .placeholder-content:hover {
+      transform: none;
+      box-shadow: 0 1px 3px rgba(15,23,42,.06);
+    }
+    .invoice-head {
+      align-items: center;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--clr-border-light,#e5e7eb);
+      margin-bottom: 1rem;
+    }
+    .invoice-head h1 {
+      font-size: 1.45rem;
+      letter-spacing: 0;
+    }
+    .invoice-actions {
+      max-width: none;
+      flex: 1;
+      justify-content: flex-end;
+    }
+    .invoice-actions .btn-primary,
+    .invoice-actions .btn-secondary,
+    .invoice-actions button {
+      min-height: 38px;
+      border-radius: 8px;
+    }
+    .month-summary-head {
+      margin: .35rem 0 .75rem;
+    }
+    .stat-cards {
+      grid-template-columns: 1.25fr 1fr 1fr 1fr;
+      gap: .75rem;
+      margin-bottom: 1rem;
+    }
+    .stat-card {
+      min-height: 128px;
+      padding: .9rem 1rem;
+      border-radius: 10px;
+      box-shadow: none;
+    }
+    .stat-card:hover {
+      transform: none;
+    }
+    .stat-card__icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      margin-bottom: .2rem;
+    }
+    .stat-card__val {
+      font-size: 1.25rem;
+    }
+    .filter-bar {
+      display: grid;
+      grid-template-columns: 28px minmax(220px, 1.4fr) minmax(130px,.55fr) minmax(160px,.75fr) auto auto;
+      gap: .6rem;
+      padding: .85rem;
+      margin-bottom: .85rem;
+      border-radius: 10px;
+      box-shadow: none;
+    }
+    .filter-bar input,
+    .filter-bar select {
+      width: 100%;
+      min-height: 38px;
+      border-radius: 7px;
+      font-size: .88rem;
+    }
+    .filter-bar .btn-primary,
+    .filter-bar .btn-secondary {
+      min-height: 38px;
+      white-space: nowrap;
+    }
+    .module-table-wrap,
+    #tabla-detallada {
+      border: 1px solid var(--clr-border-light,#e5e7eb);
+      border-radius: 10px;
+      background: var(--clr-bg-card,#fff);
+    }
+    .module-table,
+    .det-table {
+      min-width: 1040px;
+    }
+    .module-table th,
+    .module-table td {
+      padding: .65rem .7rem;
+      vertical-align: middle;
+    }
+    .module-table thead th,
+    .det-table thead th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: var(--clr-bg-card,#fff);
+      border-bottom: 1px solid var(--clr-border-light,#e5e7eb);
+      letter-spacing: .03em;
+    }
+    .module-table tbody tr:hover td {
+      background: rgba(15,23,42,.025);
+    }
+    .cell-action {
+      min-width: 190px;
+      text-align: right;
+    }
+    .action-wrapper {
+      justify-content: flex-end;
+      flex-wrap: nowrap;
+    }
+    .btn-action-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 7px;
+      transform: none;
+    }
+    .btn-action-icon:hover {
+      transform: none;
+    }
+    .btn-completar {
+      min-height: 32px;
+      border-radius: 7px;
+    }
+    .invoice-pagination {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-top: .9rem;
+    }
+    .invoice-pagination nav {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .invoice-pagination p {
+      margin: 0;
+      color: var(--clr-text-muted,#6b7280);
+      font-size: .82rem;
+    }
+    .invoice-pagination .pagination {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: .35rem;
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      flex-wrap: wrap;
+    }
+    .invoice-pagination .page-item {
+      list-style: none;
+      margin: 0;
+    }
+    .invoice-pagination .page-link {
+      min-width: 34px;
+      height: 34px;
+      padding: 0 .65rem;
+      border: 1px solid var(--clr-border-light,#e5e7eb);
+      border-radius: 7px;
+      background: var(--clr-bg-card,#fff);
+      color: var(--clr-text-main,#111827);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      font-size: .86rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .invoice-pagination .page-link:hover {
+      border-color: rgba(26,107,87,.35);
+      color: var(--clr-active-bg,#1a6b57);
+      background: rgba(26,107,87,.06);
+    }
+    .invoice-pagination .page-item.active .page-link {
+      background: var(--clr-active-bg,#1a6b57);
+      border-color: var(--clr-active-bg,#1a6b57);
+      color: #fff;
+    }
+    .invoice-pagination .page-item.disabled .page-link {
+      opacity: .45;
+      pointer-events: none;
+      background: rgba(148,163,184,.08);
+    }
+    .invoice-pagination svg {
+      width: 16px;
+      height: 16px;
+    }
+    @media(max-width:1180px){
+      .filter-bar { grid-template-columns: 28px 1fr 130px 170px; }
+      .filter-bar .btn-primary,
+      .filter-bar .btn-secondary { grid-column: auto; }
+      .stat-cards { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    }
+    @media(max-width:760px){
+      .main-wrapper > .main-content { padding: .75rem; }
+      .module-content-stack .module-card-wide { padding: 1rem; }
+      .invoice-actions { justify-content: flex-start; }
+      .filter-bar { grid-template-columns: 1fr; }
+      .filter-bar > i { display: none; }
+      .stat-cards { grid-template-columns: 1fr; }
+    }
   </style>
 @endpush
 
@@ -337,6 +560,9 @@
                           <a href="{{ route('facturador.invoices.show', $invoice) }}" class="btn-action-icon" title="Ver detalle">
                             <i class='bx bx-show'></i>
                           </a>
+                          <a href="{{ route('facturador.invoices.duplicate', $invoice) }}" class="btn-action-icon" title="Duplicar como nuevo">
+                            <i class='bx bx-copy'></i>
+                          </a>
                           @if($invoice->canBeExchangedToLetters())
                             <button type="button"
                                     class="btn-action-icon btn-letter-exchange"
@@ -479,6 +705,9 @@
                           <a href="{{ route('facturador.invoices.show', $invoice) }}" class="btn-action-icon" title="Ver detalle">
                             <i class='bx bx-show'></i>
                           </a>
+                          <a href="{{ route('facturador.invoices.duplicate', $invoice) }}" class="btn-action-icon" title="Duplicar como nuevo">
+                            <i class='bx bx-copy'></i>
+                          </a>
                           @if($invoice->canBeExchangedToLetters())
                             <button type="button"
                                     class="btn-action-icon btn-letter-exchange"
@@ -534,7 +763,7 @@
             </div>
 
             @if($invoices->hasPages())
-              <div style="margin-top:1rem;">{{ $invoices->links() }}</div>
+              <div class="invoice-pagination">{{ $invoices->withQueryString()->links() }}</div>
             @endif
           </div>
 

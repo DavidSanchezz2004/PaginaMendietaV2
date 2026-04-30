@@ -21,7 +21,7 @@
       .invoice-create-grid > div:first-child {
         overflow: visible !important;
       }
-    .invoice-create-grid { display:grid; grid-template-columns: 1fr 320px; gap:1.5rem; align-items:start; }
+    .invoice-create-grid { display:grid; grid-template-columns: minmax(0, 1fr) 340px; gap:1.5rem; align-items:start; }
     .invoice-create-grid > div:first-child { min-width:0; overflow:auto; }
     /* Permitir scroll horizontal en la tabla de ítems */
     .items-table-wrapper { overflow-x:auto; }
@@ -82,6 +82,411 @@
     .inline-modal-head { display:flex; align-items:center; justify-content:space-between; gap:1rem; border-bottom:1px solid #e5e7eb; padding-bottom:.8rem; margin-bottom:1rem; }
     .inline-modal-head h2 { margin:0; font-size:1.05rem; color:#111827; }
     .inline-modal-close { border:none; background:transparent; font-size:1.8rem; line-height:1; cursor:pointer; color:#6b7280; }
+
+    /* Nueva pantalla de comprobante */
+    .invoice-create-page.main-content {
+      justify-content: stretch;
+      padding: 1.35rem 1.6rem;
+      background: #f3f6f6;
+    }
+    .invoice-create-page .module-content-stack {
+      width: 100%;
+      max-width: none;
+      gap: .9rem;
+    }
+    .invoice-create-shell {
+      width: 100%;
+      max-width: none;
+      padding: 0;
+      background: transparent;
+      border: 0;
+      box-shadow: none;
+    }
+    .invoice-create-shell:hover {
+      transform: none;
+      box-shadow: none;
+    }
+    .invoice-create-shell .module-toolbar {
+      margin-bottom: 1rem;
+      align-items: center;
+    }
+    .invoice-create-shell .module-toolbar h1 {
+      margin: 0;
+      color: #071b2f;
+      font-size: 1.35rem;
+      letter-spacing: 0;
+    }
+    .invoice-document-panel {
+      min-width: 0;
+      overflow: visible !important;
+      background: #ffffff;
+      border: 1px solid #dce7e4;
+      border-top: 4px solid #0f766e;
+      border-radius: 12px;
+      padding: 1.35rem 1.45rem 1.55rem;
+      box-shadow: 0 16px 34px rgba(15, 23, 42, .07);
+    }
+    .invoice-side-panel {
+      position: sticky;
+      top: 88px;
+      display: flex;
+      flex-direction: column;
+      max-height: calc(100vh - 108px);
+      overflow-y: auto;
+      scrollbar-width: thin;
+      background: #ffffff;
+      border: 1px solid #dce7e4;
+      border-radius: 12px;
+      padding: 1.15rem;
+      box-shadow: 0 16px 34px rgba(15, 23, 42, .07);
+    }
+    .invoice-side-panel::-webkit-scrollbar {
+      width: 7px;
+    }
+    .invoice-side-panel::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 999px;
+    }
+    .invoice-side-title {
+      margin: 0 0 .8rem;
+      padding-bottom: .75rem;
+      border-bottom: 1px solid #dbe5e2;
+      color: #0f172a;
+      font-size: .95rem;
+      font-weight: 800;
+    }
+    .invoice-action-switches {
+      display: flex;
+      flex-direction: column;
+      gap: .45rem;
+      margin-bottom: 1rem;
+    }
+    .invoice-action-switch {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: .75rem;
+      width: 100%;
+      min-height: 38px;
+      padding: .2rem 0;
+      border: 0;
+      background: transparent;
+      color: #64748b;
+      font-size: .84rem;
+      font-weight: 800;
+      text-align: left;
+      cursor: pointer;
+    }
+    .invoice-action-switch[disabled] {
+      opacity: .42;
+      cursor: not-allowed;
+    }
+    .invoice-switch-track {
+      position: relative;
+      flex: 0 0 42px;
+      width: 42px;
+      height: 24px;
+      border-radius: 999px;
+      background: #dbe3ec;
+      transition: background .16s ease;
+    }
+    .invoice-switch-track::after {
+      content: "";
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #ffffff;
+      box-shadow: 0 1px 4px rgba(15, 23, 42, .22);
+      transition: transform .16s ease;
+    }
+    .invoice-action-switch.is-active {
+      color: #064e43;
+    }
+    .invoice-action-switch.is-active .invoice-switch-track {
+      background: #0f766e;
+    }
+    .invoice-action-switch.is-active .invoice-switch-track::after {
+      transform: translateX(18px);
+    }
+    .invoice-create-shell .form-section-title {
+      margin: 1.35rem 0 .85rem;
+      padding-bottom: .45rem;
+      border-bottom: 1px dashed #cfdbd8;
+      color: #53647a;
+      font-size: .78rem;
+      font-weight: 800;
+      letter-spacing: .02em;
+      text-transform: uppercase;
+    }
+    .invoice-document-panel > .form-section-title:first-child {
+      margin-top: 0;
+      color: #071b2f;
+      font-size: 1rem;
+      letter-spacing: 0;
+      text-transform: none;
+    }
+    .invoice-document-panel .companies-form-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+      gap: 1rem 1.05rem !important;
+    }
+    .invoice-document-panel .companies-form-grid .form-group:nth-child(1),
+    .invoice-document-panel .companies-form-grid .form-group:nth-child(2),
+    .invoice-document-panel .companies-form-grid .form-group:nth-child(3),
+    .invoice-document-panel .companies-form-grid .form-group:nth-child(4) {
+      background: #eaf3f1;
+      border: 1px solid #cadbd7;
+      border-radius: 10px;
+      padding: .75rem .85rem;
+    }
+    .invoice-create-shell .form-group label {
+      display: block;
+      margin-bottom: .35rem;
+      color: #586b83;
+      font-size: .72rem;
+      font-weight: 800;
+      letter-spacing: .02em;
+      text-transform: uppercase;
+    }
+    .invoice-create-shell .form-input,
+    .invoice-create-shell .items-table input,
+    .invoice-create-shell .items-table select,
+    .invoice-create-shell .guias-table input,
+    .invoice-create-shell .guias-table select {
+      min-height: 40px;
+      border: 0;
+      border-bottom: 1px solid #d7e2df;
+      border-radius: 0;
+      background: transparent;
+      color: #071b2f;
+      box-shadow: none;
+    }
+    .invoice-create-shell .form-input:focus,
+    .invoice-create-shell .items-table input:focus,
+    .invoice-create-shell .items-table select:focus {
+      border-color: #0f766e;
+      box-shadow: 0 1px 0 #0f766e;
+      outline: none;
+    }
+    .invoice-create-shell textarea.form-input {
+      min-height: 76px;
+      border: 1px solid #d7e2df;
+      border-radius: 10px;
+      padding: .7rem .8rem;
+      resize: vertical;
+    }
+    .invoice-side-panel .form-input {
+      border: 1px solid #d7e2df;
+      border-radius: 9px;
+      padding: .65rem .75rem;
+      background: #ffffff;
+    }
+    .invoice-side-panel #open-client-modal {
+      color: #059669 !important;
+      font-weight: 800;
+    }
+    .invoice-create-shell .items-table-wrapper {
+      overflow-x: auto !important;
+      border: 1px solid #e3e9e8;
+      border-radius: 12px;
+      background: #ffffff;
+      padding: 0;
+    }
+    .invoice-create-shell .items-table {
+      min-width: 980px;
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+    .invoice-create-shell .items-table th {
+      background: #f4f6f6;
+      border-bottom: 0;
+      color: #596b82;
+      font-size: .7rem;
+      letter-spacing: .02em;
+      text-transform: uppercase;
+    }
+    .invoice-create-shell .items-table td {
+      border-bottom: 1px solid #eef2f1;
+      padding: .55rem .6rem;
+    }
+    .invoice-create-shell .totals-box {
+      background: #e8f3f1;
+      border: 0;
+      border-radius: 10px;
+      padding: 1.15rem;
+    }
+    .invoice-create-shell .totals-row {
+      color: #53647a;
+    }
+    .invoice-create-shell .totals-row.grand {
+      color: #063f38;
+      font-size: 1.35rem;
+      border-color: rgba(6, 63, 56, .18);
+    }
+    .invoice-create-shell .detrac-box-off,
+    .invoice-create-shell .guias-box-off,
+    .invoice-create-shell .entrega-box-off,
+    .invoice-create-shell .retention-box-off {
+      border-left-width: 1px;
+      border-radius: 10px;
+      background: #fbfcfc;
+    }
+    .invoice-create-shell #detrac-box-off {
+      display: none !important;
+    }
+    .invoice-create-shell .guias-box-off,
+    .invoice-create-shell .entrega-box-off {
+      padding: .85rem 1rem;
+      border: 1px solid #dce4ea;
+      box-shadow: 0 1px 0 rgba(15, 23, 42, .02);
+    }
+    .invoice-create-shell .retention-box-off {
+      margin-top: .75rem;
+      padding: .65rem .75rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      color: #94a3b8;
+      background: #f8fafc;
+    }
+    .invoice-create-shell .retention-toggle-row {
+      display: flex;
+      align-items: center;
+      gap: .55rem;
+      min-width: 0;
+    }
+    .invoice-create-shell .retention-toggle-row label {
+      margin: 0;
+      font-size: .82rem;
+      font-weight: 800;
+      letter-spacing: 0;
+      text-transform: none;
+    }
+    .invoice-create-shell .retention-box-off .retention-toggle-row span {
+      line-height: 1.3;
+    }
+    .invoice-create-shell .retention-box {
+      margin-top: .8rem;
+      padding: .9rem;
+      border: 1px solid #fecaca;
+      border-left: 4px solid #ef4444;
+      border-radius: 12px;
+      background: #fff7f7;
+    }
+    .invoice-create-shell .retention-box .retention-toggle-row {
+      padding-bottom: .7rem;
+      margin-bottom: .8rem !important;
+      border-bottom: 1px solid #fecaca;
+    }
+    .invoice-create-shell .retention-box .retention-toggle-row label {
+      color: #991b1b !important;
+      font-size: .9rem;
+    }
+    .invoice-create-shell .retention-fields {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: .7rem;
+    }
+    .invoice-create-shell .retention-fields .form-group {
+      margin: 0;
+    }
+    .invoice-create-shell .retention-monto-row,
+    .invoice-create-shell .retention-neto-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: .65rem;
+      padding: .65rem .75rem;
+      border: 1px solid #fecaca;
+      border-radius: 9px;
+      background: #ffffff;
+      color: #7f1d1d;
+    }
+    .invoice-create-shell .retention-monto-row .lbl,
+    .invoice-create-shell .retention-neto-row .lbl {
+      color: #7f1d1d;
+      font-size: .78rem;
+      font-weight: 800;
+      line-height: 1.2;
+    }
+    .invoice-create-shell .retention-monto-row .val,
+    .invoice-create-shell .retention-neto-row .val {
+      white-space: nowrap;
+      color: #991b1b;
+      font-size: .95rem;
+      font-weight: 900;
+    }
+    .invoice-create-shell .retention-neto-row {
+      border-color: #fca5a5;
+      background: #fee2e2;
+    }
+    .invoice-create-shell .retention-neto-row .val {
+      font-size: 1.08rem;
+    }
+    .invoice-create-shell .retention-alert {
+      display: flex;
+      align-items: flex-start;
+      gap: .45rem;
+      color: #7f1d1d;
+      font-size: .78rem;
+      line-height: 1.25;
+    }
+    .invoice-create-shell .guias-toggle-row,
+    .invoice-create-shell .entrega-toggle-row {
+      gap: .75rem;
+    }
+    .invoice-create-shell .guias-toggle-row label,
+    .invoice-create-shell .entrega-toggle-row label {
+      max-width: 145px;
+      line-height: 1.15;
+      color: #166534;
+      font-size: .9rem;
+      font-weight: 800;
+    }
+    .invoice-create-shell .entrega-toggle-row label {
+      color: #1d4ed8;
+    }
+    .invoice-submit-stack {
+      position: sticky;
+      bottom: -1.15rem;
+      display: flex;
+      flex-direction: column;
+      gap: .65rem;
+      margin: 1rem -1.15rem -1.15rem;
+      padding: .9rem 1.15rem 1.15rem;
+      background: linear-gradient(180deg, rgba(255,255,255,.88), #ffffff 28%);
+      border-top: 1px solid #edf2f1;
+      z-index: 2;
+    }
+    .invoice-submit-stack .btn-primary {
+      justify-content: center;
+      min-height: 50px;
+      border-radius: 10px;
+      background: #064e43;
+      box-shadow: 0 12px 20px rgba(6, 78, 67, .18);
+    }
+    .invoice-submit-stack .btn-secondary {
+      justify-content: center;
+      min-height: 48px;
+      border-radius: 10px;
+      color: #637187;
+      font-weight: 800;
+      text-align: center;
+    }
+    @media (max-width: 1180px) {
+      .invoice-create-grid { grid-template-columns: 1fr; }
+      .invoice-side-panel { position: static; max-height: none; overflow: visible; }
+      .invoice-submit-stack { position: static; margin: 1rem 0 0; padding: 0; border-top: 0; background: transparent; }
+      .invoice-document-panel .companies-form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+    }
+    @media (max-width: 720px) {
+      .invoice-create-page.main-content { padding: 1rem; }
+      .invoice-document-panel,
+      .invoice-side-panel { padding: 1rem; }
+      .invoice-document-panel .companies-form-grid { grid-template-columns: 1fr !important; }
+      .invoice-create-shell .module-toolbar { flex-direction: column; align-items: stretch; }
+    }
   </style>
 @endpush
 
@@ -109,7 +514,7 @@
         'userEmail'   => auth()->user()?->email,
       ])
 
-      <main class="main-content">
+      <main class="main-content invoice-create-page">
         <div class="module-content-stack">
 
           @if ($errors->any())
@@ -120,7 +525,7 @@
             </div>
           @endif
 
-          <div class="placeholder-content module-card-wide">
+          <div class="placeholder-content module-card-wide invoice-create-shell">
             <div class="module-toolbar">
               <h1>Nuevo Comprobante</h1>
               <a href="{{ route('facturador.invoices.index') }}" class="btn-secondary">
@@ -134,7 +539,7 @@
               <div class="invoice-create-grid">
 
                 {{-- === IZQUIERDA: cabecera + items === --}}
-                <div>
+                <div class="invoice-document-panel">
                   <p class="form-section-title">Datos del Comprobante</p>
                   <div class="companies-form-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:.8rem;">
 
@@ -491,7 +896,18 @@
                 </div>
 
                 {{-- === DERECHA: cliente + totales (no-GRE) | GRE data (GRE) === --}}
-                <div>
+                <div class="invoice-side-panel">
+                  <p class="invoice-side-title">Acciones del Comprobante</p>
+                  <div class="invoice-action-switches">
+                    <button type="button" id="action-toggle-guias" class="invoice-action-switch" onclick="toggleGuias(!this.classList.contains('is-active'))" aria-pressed="false">
+                      <span>¿Tiene Guía de Remisión?</span>
+                      <span class="invoice-switch-track" aria-hidden="true"></span>
+                    </button>
+                    <button type="button" id="action-toggle-detrac" class="invoice-action-switch" onclick="toggleDetrac(!this.classList.contains('is-active'))" aria-pressed="false">
+                      <span>¿Aplica Detracción?</span>
+                      <span class="invoice-switch-track" aria-hidden="true"></span>
+                    </button>
+                  </div>
 
                   {{-- Panel NON-GRE: cliente + resumen financiero --}}
                   <div id="panel-no-gre">
@@ -903,7 +1319,7 @@
                   </div>
 
                   {{-- Botones siempre visibles --}}
-                  <div style="display:flex; flex-direction:column; gap:.5rem; margin-top:1.25rem;">
+                  <div class="invoice-submit-stack">
                     <button type="submit" class="btn-primary">
                       <i class='bx bx-save'></i> Guardar Comprobante
                     </button>
@@ -1520,6 +1936,14 @@ toggleFechaVencimiento();
 const detracPresets = @json($spotDetraccionPresetOptions);
 const detracPresetStoreUrl = @json(route('facturador.invoices.spot-detraccion-presets.store'));
 
+function setInvoiceActionSwitch(id, active, disabled = false) {
+  const btn = document.getElementById(id);
+  if (!btn) return;
+  btn.classList.toggle('is-active', !!active);
+  btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+  btn.disabled = !!disabled;
+}
+
 // El bloque solo es visible cuando: tipo=01 (Factura) y total > 700 PEN.
 function updateDetracWrapper(total) {
   const tipo    = document.getElementById('tipo-doc-select')?.value;
@@ -1530,6 +1954,7 @@ function updateDetracWrapper(total) {
   wrapper.style.display = visible ? '' : 'none';
   // Si se oculta, desactivar detracción automáticamente
   if (!visible) toggleDetrac(false);
+  setInvoiceActionSwitch('action-toggle-detrac', document.getElementById('h-detrac-indicator')?.value === '1', !visible);
 }
 
 function toggleDetrac(activate) {
@@ -1540,6 +1965,7 @@ function toggleDetrac(activate) {
   boxOff.style.display = activate ? 'none' : '';
   boxOn.style.display  = activate ? '' : 'none';
   if (indicator) indicator.value = activate ? '1' : '0';
+  setInvoiceActionSwitch('action-toggle-detrac', activate, document.getElementById('detrac-wrapper')?.style.display === 'none');
   if (activate) {
     _retManualOn = false;
     toggleRetention(false);
@@ -1910,21 +2336,40 @@ cuotasUpdateSuma();
 
 // ── Guías de Remisión adjuntas ─────────────────────────────────────────
 // Solo se muestran para Factura (01) y Boleta (03)
+function setGuiasInputsEnabled(enabled) {
+  document.querySelectorAll('#guias-wrapper input, #guias-wrapper select').forEach(el => {
+    el.disabled = !enabled;
+  });
+}
+
 function updateGuiasWrapper() {
   const tipo = document.getElementById('tipo-doc-select')?.value;
   const w    = document.getElementById('guias-wrapper');
+  const entrega = document.getElementById('entrega-wrapper');
   if (!w) return;
   const visible = tipo === '01' || tipo === '03';
-  w.style.display = visible ? '' : 'none';
+  const active = visible && document.getElementById('guias-box-on')?.style.display !== 'none';
+  w.style.display = active ? '' : 'none';
+  if (entrega) entrega.style.display = active ? '' : 'none';
   if (!visible) toggleGuias(false);
+  if (!active) toggleEntrega(false);
+  setGuiasInputsEnabled(active);
+  setInvoiceActionSwitch('action-toggle-guias', active, !visible);
 }
 
 function toggleGuias(activate) {
   const off = document.getElementById('guias-box-off');
   const on  = document.getElementById('guias-box-on');
+  const wrapper = document.getElementById('guias-wrapper');
+  const entrega = document.getElementById('entrega-wrapper');
   if (!off || !on) return;
+  if (wrapper) wrapper.style.display = activate ? '' : 'none';
+  if (entrega) entrega.style.display = activate ? '' : 'none';
   off.style.display = activate ? 'none' : '';
   on.style.display  = activate ? '' : 'none';
+  if (!activate) toggleEntrega(false);
+  setGuiasInputsEnabled(activate);
+  setInvoiceActionSwitch('action-toggle-guias', activate, false);
   if (activate && document.querySelectorAll('#guias-body tr').length === 0) {
     guiasAddRow();
   }
@@ -1959,14 +2404,19 @@ document.querySelectorAll('#guias-body .remove-guia').forEach(btn => {
 });
 
 // Inicializar guías: mostrar sección si ya hay filas (old input)
-if (guiasIndex > 0) toggleGuias(true);
+if (@json(collect(old('lista_guias', []))->contains(fn ($guia) => trim((string) ($guia['serie_documento'] ?? '')) !== '' || trim((string) ($guia['numero_documento'] ?? '')) !== ''))) {
+  toggleGuias(true);
+} else {
+  toggleGuias(false);
+}
 
 // ── Entrega de Bienes ──────────────────────────────────────────────────
 function updateEntregaWrapper() {
   const tipo = document.getElementById('tipo-doc-select')?.value;
   const w    = document.getElementById('entrega-wrapper');
   if (!w) return;
-  const visible = tipo === '01' || tipo === '03';
+  const guiaActive = document.getElementById('action-toggle-guias')?.classList.contains('is-active');
+  const visible = (tipo === '01' || tipo === '03') && guiaActive;
   w.style.display = visible ? '' : 'none';
   if (!visible) toggleEntrega(false);
 }

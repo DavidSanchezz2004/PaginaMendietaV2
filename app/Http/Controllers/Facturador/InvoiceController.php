@@ -3,14 +3,13 @@
 namespace App\Http\Controllers\Facturador;
 
 use App\Enums\AccountingStatusEnum;
-use App\Enums\FeasyStatusEnum;
-use App\Enums\InvoiceStatusEnum;
 use App\Exports\InvoiceExport;
 use App\Exports\InvoiceImportTemplateExport;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Facturador\StoreInvoiceRequest;
 use App\Models\Invoice;
 use App\Models\InvoicePayment;
+use App\Models\CompanySetting;
 use App\Models\CompanySpotDetraccionPreset;
 use App\Models\SpotDetraccion;
 use App\Services\Facturador\ClientService;
@@ -29,6 +28,7 @@ use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Maatwebsite\Excel\Facades\Excel;
 use RuntimeException;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -158,6 +158,65 @@ class InvoiceController extends Controller
             'spotDetraccionPresets',
             'spotDetraccionPresetOptions',
         ));
+    }
+
+    public function duplicate(Request $request, Invoice $invoice): RedirectResponse
+    {
+        $this->authorize('view', $invoice);
+        $this->authorize('create', Invoice::class);
+
+        $invoice->load(['items', 'client']);
+        $suggestions = $this->invoiceService->getDocumentSuggestions();
+        $tipo = $invoice->codigo_tipo_documento ?: '01';
+        $suggestion = $suggestions[$tipo] ?? $suggestions['01'] ?? ['serie' => 'F001', 'numero' => 1];
+        $serie = $suggestion['serie'];
+        $numero = (int) $suggestion['numero'];
+        $numeroPadded = str_pad((string) $numero, 8, '0', STR_PAD_LEFT);
+
+        $input = [
+            'codigo_tipo_documento' => $tipo,
+            'serie_documento' => $serie,
+            'numero_documento' => $numero,
+            'codigo_interno' => "{$tipo}{$serie}{$numeroPadded}",
+            'fecha_emision' => now()->toDateString(),
+            'hora_emision' => now()->format('H:i'),
+            'fecha_vencimiento' => now()->toDateString(),
+            'client_id' => $invoice->client_id,
+            'correo' => $invoice->correo ?: $invoice->client?->correo,
+            'forma_pago' => $invoice->forma_pago ?: '1',
+            'codigo_moneda' => $invoice->codigo_moneda ?: 'PEN',
+            'porcentaje_igv' => $invoice->porcentaje_igv ?: config('facturador.igv_porcentaje', 18),
+            'numero_orden_compra' => $invoice->numero_orden_compra,
+            'observacion' => $invoice->observacion,
+            'monto_total_gravado' => $invoice->monto_total_gravado,
+            'monto_total_exonerado' => $invoice->monto_total_exonerado,
+            'monto_total_inafecto' => $invoice->monto_total_inafecto,
+            'monto_total_igv' => $invoice->monto_total_igv,
+            'monto_total' => $invoice->monto_total,
+            'indicador_detraccion' => $invoice->indicador_detraccion ? '1' : '0',
+            'informacion_detraccion' => $invoice->indicador_detraccion ? ($invoice->informacion_detraccion ?? []) : [],
+            'indicador_retencion' => ($invoice->retention_enabled || $invoice->has_retention) ? '1' : '0',
+            'informacion_retencion' => $invoice->retention_info ?? [],
+            'items' => $invoice->items->map(fn ($item): array => [
+                'correlativo' => $item->correlativo,
+                'codigo_interno' => $item->codigo_interno,
+                'tipo' => $item->tipo,
+                'codigo_unidad_medida' => $item->codigo_unidad_medida,
+                'descripcion' => $item->descripcion,
+                'cantidad' => $item->cantidad,
+                'monto_precio_unitario' => $item->monto_precio_unitario,
+                'monto_valor_unitario' => $item->monto_valor_unitario,
+                'monto_valor_total' => $item->monto_valor_total,
+                'monto_igv' => $item->monto_igv,
+                'monto_total' => $item->monto_total,
+                'codigo_indicador_afecto' => $item->codigo_indicador_afecto,
+            ])->values()->all(),
+        ];
+
+        return redirect()
+            ->route('facturador.invoices.create')
+            ->withInput($input)
+            ->with('success', "Comprobante {$invoice->serie_numero} cargado como base. Revisa fecha, precios y guarda con el nuevo correlativo.");
     }
 
     public function store(StoreInvoiceRequest $request): RedirectResponse
@@ -340,9 +399,48 @@ class InvoiceController extends Controller
         $this->authorize('view', $invoice);
 
         $invoice = $this->invoiceService->findWithItems($invoice->id);
-        $invoice->load('payments', 'letras');
+        $invoice->load('payments', 'letras', 'sendLogs.user');
 
         return view('facturador.invoices.show', compact('invoice'));
+    }
+
+    public function customPdf(Request $request, Invoice $invoice)
+    {
+        $this->authorize('view', $invoice);
+
+        $invoice->load(['company.settings', 'client', 'items']);
+        $settings = CompanySetting::firstOrCreate(
+            ['company_id' => $invoice->company_id],
+            [
+                'quote_enabled' => true,
+                'primary_color' => '#254a7c',
+                'secondary_color' => '#f1f3f5',
+            ]
+        );
+
+        $payload = [
+            'invoice' => $invoice,
+            'company' => $invoice->company,
+            'client' => $invoice->client,
+            'settings' => $settings,
+            'qrValue' => $this->qrValueForInvoice($invoice),
+            'hashValue' => $this->hashForInvoice($invoice),
+            'amountWords' => $this->amountToSpanishWords((float) $invoice->monto_total, $invoice->codigo_moneda),
+            'renderForPdf' => ! $request->boolean('preview'),
+        ];
+
+        if ($request->boolean('preview')) {
+            return view('facturador.invoices.custom-pdf', $payload);
+        }
+
+        $pdf = Pdf::loadView('facturador.invoices.custom-pdf', $payload)
+            ->setPaper('a4')
+            ->setOption('isRemoteEnabled', true)
+            ->setOption('isHtml5ParserEnabled', true)
+            ->setOption('isFontSubsettingEnabled', true)
+            ->setOption('defaultFont', 'Montserrat');
+
+        return $pdf->download("{$invoice->serie_documento}-".str_pad((string) $invoice->numero_documento, 8, '0', STR_PAD_LEFT).'.pdf');
     }
 
     public function payload(Invoice $invoice): JsonResponse
@@ -449,8 +547,8 @@ class InvoiceController extends Controller
     }
 
     /**
-     * Libera un comprobante que quedó bloqueado por un falso "informado anteriormente".
-     * Requiere evidencia externa: SUNAT/Feasy no muestran el comprobante como emitido.
+     * Retira del flujo un correlativo con falso "informado anteriormente".
+     * El borrado lógico conserva el número para que nunca vuelva a ser sugerido.
      */
     public function releaseFailedEmission(Request $request, Invoice $invoice): RedirectResponse
     {
@@ -469,22 +567,10 @@ class InvoiceController extends Controller
         ];
 
         $invoice->forceFill([
-            'estado' => InvoiceStatusEnum::DRAFT,
-            'estado_feasy' => FeasyStatusEnum::PENDING,
-            'codigo_respuesta_sunat' => null,
-            'mensaje_respuesta_sunat' => null,
-            'nombre_archivo_xml' => null,
-            'xml_path' => null,
-            'ruta_xml' => null,
-            'ruta_cdr' => null,
-            'ruta_reporte' => null,
-            'hash_cpe' => null,
-            'valor_qr' => null,
-            'mensaje_observacion' => 'Liberado para reintento: ' . $validated['motivo'],
-            'sent_at' => null,
-            'consulted_at' => null,
-            'last_error' => null,
+            'mensaje_observacion' => 'Correlativo retirado del flujo: ' . $validated['motivo'],
         ])->save();
+
+        $invoice->delete();
 
         activity('factura')
             ->performedOn($invoice)
@@ -493,11 +579,11 @@ class InvoiceController extends Controller
                 'motivo' => $validated['motivo'],
                 'previous_trace' => $previousTrace,
             ])
-            ->log('Comprobante liberado para reintento tras falso duplicado Feasy/SUNAT');
+            ->log('Comprobante retirado del flujo tras falso duplicado Feasy/SUNAT');
 
         return redirect()
-            ->route('facturador.invoices.show', $invoice)
-            ->with('warning', "Comprobante {$invoice->serie_numero} liberado para reintento. Verifica los datos antes de emitir nuevamente.");
+            ->route('facturador.invoices.index')
+            ->with('warning', "Comprobante {$invoice->serie_numero} retirado del flujo. El correlativo queda ocupado; emite con el siguiente número.");
     }
 
     /**
@@ -519,6 +605,104 @@ class InvoiceController extends Controller
         );
     }
 
+    private function qrValueForInvoice(Invoice $invoice): string
+    {
+        if (! empty($invoice->valor_qr)) {
+            return (string) $invoice->valor_qr;
+        }
+
+        return implode('|', [
+            $invoice->company?->ruc ?? '',
+            $invoice->codigo_tipo_documento ?? '',
+            $invoice->serie_documento ?? '',
+            str_pad((string) $invoice->numero_documento, 8, '0', STR_PAD_LEFT),
+            number_format((float) $invoice->monto_total_igv, 2, '.', ''),
+            number_format((float) $invoice->monto_total, 2, '.', ''),
+            optional($invoice->fecha_emision)->format('Y-m-d') ?? '',
+            $invoice->client?->codigo_tipo_documento ?? '',
+            $invoice->client?->numero_documento ?? '',
+            $invoice->hash_cpe ?? '',
+        ]);
+    }
+
+    private function hashForInvoice(Invoice $invoice): string
+    {
+        if (! empty($invoice->hash_cpe)) {
+            return (string) $invoice->hash_cpe;
+        }
+
+        $qr = (string) ($invoice->valor_qr ?: $this->qrValueForInvoice($invoice));
+        $parts = explode('|', $qr);
+        $hash = trim((string) end($parts));
+
+        return $hash !== '' ? $hash : '-';
+    }
+
+    private function amountToSpanishWords(float $amount, string $currency = 'PEN'): string
+    {
+        $integer = (int) floor($amount);
+        $cents = (int) round(($amount - $integer) * 100);
+        $currencyLabel = match ($currency) {
+            'USD' => 'DOLARES',
+            'EUR' => 'EUROS',
+            default => 'SOLES',
+        };
+
+        return mb_strtoupper($this->numberToWords($integer)).' CON '.str_pad((string) $cents, 2, '0', STR_PAD_LEFT)."/100 {$currencyLabel}";
+    }
+
+    private function numberToWords(int $number): string
+    {
+        if ($number === 0) {
+            return 'cero';
+        }
+
+        $units = ['', 'uno', 'dos', 'tres', 'cuatro', 'cinco', 'seis', 'siete', 'ocho', 'nueve'];
+        $special = [
+            10 => 'diez', 11 => 'once', 12 => 'doce', 13 => 'trece', 14 => 'catorce', 15 => 'quince',
+            16 => 'dieciseis', 17 => 'diecisiete', 18 => 'dieciocho', 19 => 'diecinueve',
+            20 => 'veinte', 21 => 'veintiuno', 22 => 'veintidos', 23 => 'veintitres', 24 => 'veinticuatro',
+            25 => 'veinticinco', 26 => 'veintiseis', 27 => 'veintisiete', 28 => 'veintiocho', 29 => 'veintinueve',
+        ];
+        $tens = ['', '', 'veinte', 'treinta', 'cuarenta', 'cincuenta', 'sesenta', 'setenta', 'ochenta', 'noventa'];
+        $hundreds = ['', 'ciento', 'doscientos', 'trescientos', 'cuatrocientos', 'quinientos', 'seiscientos', 'setecientos', 'ochocientos', 'novecientos'];
+
+        if ($number < 10) {
+            return $units[$number];
+        }
+        if ($number < 30) {
+            return $special[$number];
+        }
+        if ($number < 100) {
+            $ten = intdiv($number, 10);
+            $unit = $number % 10;
+
+            return $tens[$ten].($unit ? ' y '.$units[$unit] : '');
+        }
+        if ($number === 100) {
+            return 'cien';
+        }
+        if ($number < 1000) {
+            $hundred = intdiv($number, 100);
+            $rest = $number % 100;
+
+            return trim($hundreds[$hundred].' '.($rest ? $this->numberToWords($rest) : ''));
+        }
+        if ($number < 1000000) {
+            $thousands = intdiv($number, 1000);
+            $rest = $number % 1000;
+            $prefix = $thousands === 1 ? 'mil' : $this->numberToWords($thousands).' mil';
+
+            return trim($prefix.' '.($rest ? $this->numberToWords($rest) : ''));
+        }
+
+        $millions = intdiv($number, 1000000);
+        $rest = $number % 1000000;
+        $prefix = $millions === 1 ? 'un millon' : $this->numberToWords($millions).' millones';
+
+        return trim($prefix.' '.($rest ? $this->numberToWords($rest) : ''));
+    }
+
     /**
      * Elimina un comprobante en estado borrador o error.
      * DELETE /facturador/invoices/{invoice}
@@ -533,15 +717,12 @@ class InvoiceController extends Controller
             'estado' => 'generated', // Volver a estado de generada
         ]);
 
-        // Luego eliminar los items
-        $invoice->items()->delete();
-        
-        // Finalmente eliminar la factura
+        // Borrado lógico: conserva correlativo e items para auditoría.
         $invoice->delete();
 
         return redirect()
             ->route('facturador.invoices.index')
-            ->with('success', 'Comprobante eliminado correctamente.');
+            ->with('success', 'Comprobante retirado del flujo correctamente. El correlativo queda reservado.');
     }
 
     /**

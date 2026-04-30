@@ -41,13 +41,14 @@ class StoreInvoiceRequest extends FormRequest
             'numero_documento'      => [
                 'required', 'string', 'max:10',
                 function ($attribute, $value, $fail) {
-                    $exists = \App\Models\Invoice::forActiveCompany()
+                    $exists = \App\Models\Invoice::withTrashed()
+                        ->where('company_id', session('company_id'))
                         ->where('codigo_tipo_documento', $this->input('codigo_tipo_documento'))
                         ->where('serie_documento', $this->input('serie_documento'))
                         ->where('numero_documento', $value)
                         ->exists();
                     if ($exists) {
-                        $fail('El número de comprobante ya existe para esta empresa, tipo y serie.');
+                        $fail('El número de comprobante ya fue reservado o usado para esta empresa, tipo y serie. Usa el siguiente correlativo.');
                     }
                 },
             ],
@@ -191,12 +192,25 @@ class StoreInvoiceRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $numero = trim((string) $this->input('numero_documento', ''));
+        $listaGuias = collect($this->input('lista_guias', []))
+            ->filter(function (mixed $guia): bool {
+                if (! is_array($guia)) {
+                    return false;
+                }
+
+                return trim((string) ($guia['serie_documento'] ?? '')) !== ''
+                    || trim((string) ($guia['numero_documento'] ?? '')) !== '';
+            })
+            ->values()
+            ->all();
+
+        $normalized = ['lista_guias' => $listaGuias];
 
         if ($numero !== '' && ctype_digit($numero)) {
-            $this->merge([
-                'numero_documento' => str_pad($numero, 8, '0', STR_PAD_LEFT),
-            ]);
+            $normalized['numero_documento'] = str_pad($numero, 8, '0', STR_PAD_LEFT);
         }
+
+        $this->merge($normalized);
     }
 
     /**

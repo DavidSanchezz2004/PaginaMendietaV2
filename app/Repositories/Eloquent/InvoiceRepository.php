@@ -119,7 +119,8 @@ class InvoiceRepository implements InvoiceRepositoryInterface
 
         foreach ($defaults as $tipo => $defaultSerie) {
             // Última serie usada para este tipo en esta empresa
-            $lastSerie = Invoice::where('company_id', $companyId)
+            $lastSerie = Invoice::withTrashed()
+                ->where('company_id', $companyId)
                 ->where('codigo_tipo_documento', $tipo)
                 ->orderBy('id', 'desc')
                 ->value('serie_documento');
@@ -127,7 +128,8 @@ class InvoiceRepository implements InvoiceRepositoryInterface
             $serie = $lastSerie ?? $defaultSerie;
 
             // Siguiente número = max actual + 1 para esa serie
-            $lastNum = Invoice::where('company_id', $companyId)
+            $lastNum = Invoice::withTrashed()
+                ->where('company_id', $companyId)
                 ->where('codigo_tipo_documento', $tipo)
                 ->where('serie_documento', $serie)
                 ->max(DB::raw('CAST(numero_documento AS UNSIGNED)'));
@@ -168,7 +170,7 @@ class InvoiceRepository implements InvoiceRepositoryInterface
             $estadoFeasy   = $isSuccess ? FeasyStatusEnum::REJECTED->value : FeasyStatusEnum::ERROR->value;
         }
 
-        $invoice->update([
+        $updateData = [
             'estado'                  => $estadoInvoice,
             'estado_feasy'            => $estadoFeasy,
             'codigo_respuesta_sunat'  => $codigoSunat,
@@ -176,7 +178,25 @@ class InvoiceRepository implements InvoiceRepositoryInterface
             'nombre_archivo_xml'      => $data['nombre_archivo_xml'] ?? null,
             'sent_at'                 => ($isAcceptedByS || $isGreTicket) ? now() : null,
             'last_error'              => (! $isSuccess && ! $isGreTicket) ? json_encode($feasyResponse) : null,
-        ]);
+        ];
+
+        if (! empty($data['codigo_hash'])) {
+            $updateData['hash_cpe'] = $data['codigo_hash'];
+        }
+        if (! empty($data['valor_qr'])) {
+            $updateData['valor_qr'] = $data['valor_qr'];
+        }
+        if (! empty($data['ruta_xml'])) {
+            $updateData['ruta_xml'] = $data['ruta_xml'];
+        }
+        if (! empty($data['ruta_cdr'])) {
+            $updateData['ruta_cdr'] = $data['ruta_cdr'];
+        }
+        if (! empty($data['ruta_reporte'])) {
+            $updateData['ruta_reporte'] = $data['ruta_reporte'];
+        }
+
+        $invoice->update($updateData);
 
         return $invoice->fresh();
     }

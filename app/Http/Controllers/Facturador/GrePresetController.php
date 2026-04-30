@@ -27,7 +27,7 @@ class GrePresetController extends Controller
         ]);
 
         $companyId = (int) session('company_id');
-        $isDefault = (bool) ($data['is_default'] ?? false);
+        $isDefault = $request->boolean('is_default') || $request->boolean('isDefault');
 
         if ($isDefault) {
             CompanyGrePreset::where('company_id', $companyId)->update(['is_default' => false]);

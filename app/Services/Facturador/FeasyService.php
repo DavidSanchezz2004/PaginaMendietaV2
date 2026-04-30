@@ -126,6 +126,8 @@ class FeasyService
                     ],
                     'errors'      => [],
                     'http_status' => 200,
+                    '_endpoint' => $endpoint,
+                    '_request_payload' => $payload,
                 ];
             }
 
@@ -857,6 +859,8 @@ class FeasyService
                 'data'        => $body['data'] ?? null,
                 'errors'      => (array) ($body['errors'] ?? []),
                 'http_status' => $httpStatus,
+                '_endpoint' => $endpoint,
+                '_request_payload' => $payload,
             ];
 
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
@@ -871,6 +875,8 @@ class FeasyService
                 'data'        => null,
                 'errors'      => ['Conexión fallida con el servidor Feasy.'],
                 'http_status' => 0,
+                '_endpoint' => $endpoint,
+                '_request_payload' => $payload,
             ];
         }
     }

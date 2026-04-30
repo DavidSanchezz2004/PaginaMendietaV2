@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\Sunat\StoreSunatApiCredentialRequest;
 use App\Http\Requests\Sunat\ValidarComprobanteSunatRequest;
 use App\Models\Company;
+use App\Models\Invoice;
 use App\Models\SunatApiCredential;
 use App\Models\SunatComprobanteValidacion;
 use App\Services\SunatComprobanteService;
@@ -26,8 +27,9 @@ class SunatComprobanteController extends Controller
         $lastValidation = SunatComprobanteValidacion::where('empresa_id', $company->id)
             ->latest()
             ->first();
+        $prefill = $this->prefillFromInvoice($request, $company);
 
-        return view('sunat.comprobantes.validar', compact('company', 'credential', 'lastValidation'));
+        return view('sunat.comprobantes.validar', compact('company', 'credential', 'lastValidation', 'prefill'));
     }
 
     public function validar(ValidarComprobanteSunatRequest $request): RedirectResponse
@@ -134,5 +136,36 @@ class SunatComprobanteController extends Controller
         $this->authorize('view', $company);
 
         return $company;
+    }
+
+    private function prefillFromInvoice(Request $request, Company $company): array
+    {
+        $invoiceId = (int) $request->query('invoice_id');
+
+        if ($invoiceId <= 0) {
+            return [];
+        }
+
+        $invoice = Invoice::withTrashed()
+            ->with(['company', 'client'])
+            ->where('company_id', $company->id)
+            ->find($invoiceId);
+
+        if (! $invoice) {
+            return [];
+        }
+
+        return [
+            'invoice_id' => $invoice->id,
+            'serie_numero' => $invoice->serie_numero,
+            'client_name' => $invoice->client?->nombre_razon_social,
+            'client_document' => $invoice->client?->numero_documento,
+            'numRuc' => preg_replace('/\D/', '', (string) $invoice->company?->ruc),
+            'codComp' => $invoice->codigo_tipo_documento,
+            'numeroSerie' => $invoice->serie_documento,
+            'numero' => (int) $invoice->numero_documento,
+            'fechaEmision' => $invoice->fecha_emision?->format('d/m/Y'),
+            'monto' => number_format((float) $invoice->monto_total, 2, '.', ''),
+        ];
     }
 }

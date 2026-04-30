@@ -249,7 +249,8 @@ class InvoiceService
 
         // CAST numérico evita ordenación lexicográfica incorrecta de VARCHAR
         // (sin esto '00000010' > '00000009' en string pero '10' > '9' en número)
-        $lastNum = Invoice::where('company_id', $companyId)
+        $lastNum = Invoice::withTrashed()
+            ->where('company_id', $companyId)
             ->where('codigo_tipo_documento', '01')
             ->where('serie_documento', 'F001')
             ->max(\Illuminate\Support\Facades\DB::raw('CAST(numero_documento AS UNSIGNED)'));

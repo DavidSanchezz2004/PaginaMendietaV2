@@ -31,6 +31,65 @@
     
     .action-strip    { display:flex; flex-wrap:wrap; gap:.75rem; margin-bottom:1.5rem; }
     .action-strip form { display: inline-block; margin: 0; }
+    .invoice-actions-panel {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: .75rem;
+      padding: .9rem;
+      border: 1px solid #e3e9e8;
+      border-radius: 12px;
+      background: #fbfcfc;
+      margin-bottom: 1.5rem;
+    }
+    .invoice-action-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .65rem;
+      align-items: center;
+      padding-bottom: .7rem;
+      border-bottom: 1px solid #edf2f1;
+    }
+    .invoice-action-group:last-child {
+      padding-bottom: 0;
+      border-bottom: 0;
+    }
+    .invoice-action-group__label {
+      min-width: 94px;
+      color: var(--clr-text-muted, #64748b);
+      font-size: .72rem;
+      font-weight: 800;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+    }
+    .invoice-action-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .6rem;
+      align-items: center;
+      flex: 1;
+    }
+    .pdf-custom-action {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .6rem .8rem;
+      align-items: center;
+    }
+    .pdf-custom-help {
+      max-width: 520px;
+      color: #64748b;
+      font-size: .78rem;
+      line-height: 1.35;
+    }
+    .pdf-custom-help a {
+      color: #0f766e;
+      font-weight: 800;
+      text-decoration: none;
+    }
+    .pdf-custom-help a:hover { text-decoration: underline; }
+    @media (max-width: 760px) {
+      .invoice-action-group__label { width: 100%; min-width: 0; }
+      .pdf-custom-help { max-width: 100%; }
+    }
     
     .module-table th { color: var(--clr-text-muted, #6b7280); font-weight: 700; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; }
     .module-table td { color: var(--clr-text-main, #111827); font-weight: 500; font-size: 0.9rem; }
@@ -43,6 +102,41 @@
     .letter-remove { width:38px; height:38px; border:1px solid #fecaca; color:#dc2626; background:#fff; border-radius:7px; cursor:pointer; }
     .letter-total-line { display:flex; justify-content:space-between; gap:1rem; font-weight:800; padding:.75rem 0; border-top:1px solid var(--clr-border-light,#e5e7eb); }
     .letter-total-line.is-invalid { color:#dc2626; }
+    .invoice-show-page.main-content {
+      justify-content: stretch;
+      padding: 1.35rem 1.6rem;
+      background: #f3f6f6;
+    }
+    .invoice-show-page .module-content-stack {
+      width: 100%;
+      max-width: none;
+    }
+    .invoice-show-shell {
+      width: 100%;
+      max-width: none;
+      padding: 1.35rem 1.45rem;
+      border: 1px solid #dce7e4;
+      border-top: 4px solid #0f766e;
+      border-radius: 12px;
+      box-shadow: 0 16px 34px rgba(15, 23, 42, .07);
+    }
+    .invoice-show-shell:hover {
+      transform: none;
+      box-shadow: 0 16px 34px rgba(15, 23, 42, .07);
+    }
+    .invoice-show-shell .module-toolbar {
+      margin-bottom: 1rem;
+    }
+    .invoice-show-shell .action-strip { margin-bottom: 0; }
+    .invoice-show-shell .info-card {
+      border-radius: 12px;
+      box-shadow: none;
+    }
+    .invoice-show-shell .module-table {
+      border: 1px solid #e3e9e8;
+      border-radius: 12px;
+      overflow: hidden;
+    }
     @media(max-width:720px){ .letter-modal-grid { grid-template-columns:1fr; } .letter-remove { width:100%; } }
   </style>
 @endpush
@@ -71,7 +165,7 @@
         'userEmail'   => auth()->user()?->email,
       ])
 
-      <main class="main-content">
+      <main class="main-content invoice-show-page">
         <div class="module-content-stack">
 
           @foreach(['status' => null, 'success' => null, 'error' => 'module-alert--error'] as $flashKey => $flashClass)
@@ -83,7 +177,7 @@
             @endif
           @endforeach
 
-          <div class="placeholder-content module-card-wide">
+          <div class="placeholder-content module-card-wide invoice-show-shell">
 
             <div class="module-toolbar">
               <div style="display:flex; align-items:center; gap:.75rem;">
@@ -96,102 +190,138 @@
             </div>
 
             {{-- Acciones --}}
-            <div class="action-strip">
-              @can('emit', $invoice)
-                @if($invoice->canBeEmitted())
-                  <form method="POST" action="{{ route('facturador.invoices.emit', $invoice) }}" id="form-emit">
-                    @csrf
-                    <button type="button" class="btn-primary" id="btn-emit">
-                      <i class='bx bx-send'></i> Emitir a SUNAT
+            <div class="invoice-actions-panel">
+              <div class="invoice-action-group">
+                <span class="invoice-action-group__label">Operación</span>
+                <div class="invoice-action-buttons">
+                  @can('emit', $invoice)
+                    @if($invoice->canBeEmitted())
+                      <form method="POST" action="{{ route('facturador.invoices.emit', $invoice) }}" id="form-emit">
+                        @csrf
+                        <button type="button" class="btn-primary" id="btn-emit">
+                          <i class='bx bx-send'></i> Emitir a SUNAT
+                        </button>
+                      </form>
+                    @endif
+                  @endcan
+
+                  @can('void', $invoice)
+                    @if($invoice->canBeVoided())
+                      <form method="POST" action="{{ route('facturador.invoices.void', $invoice) }}" id="form-void">
+                        @csrf
+                        <input type="hidden" name="motivo" id="void-motivo" value="">
+                        <button type="button" class="btn-secondary" id="btn-void" style="color:#dc2626; border-color:#fca5a5;">
+                          <i class='bx bx-x-circle'></i> Anular
+                        </button>
+                      </form>
+                    @endif
+                  @endcan
+
+                  @if($invoice->canBeExchangedToLetters())
+                    <button type="button" id="btn-exchange-letters" class="btn-primary">
+                      <i class='bx bx-transfer'></i> Canjear a letras
                     </button>
-                  </form>
-                @endif
-              @endcan
+                  @elseif($invoice->hasBeenExchangedToLetters())
+                    <a href="{{ route('facturador.letras.index', ['search' => $invoice->serie_numero]) }}" class="btn-secondary">
+                      <i class='bx bx-check-double'></i> Canjeada a letras
+                    </a>
+                  @endif
+                </div>
+              </div>
 
-              @can('void', $invoice)
-                @if($invoice->canBeVoided())
-                  <form method="POST" action="{{ route('facturador.invoices.void', $invoice) }}" id="form-void">
-                    @csrf
-                    <input type="hidden" name="motivo" id="void-motivo" value="">
-                    <button type="button" class="btn-secondary" id="btn-void" style="color:#dc2626; border-color:#fca5a5;">
-                      <i class='bx bx-x-circle'></i> Anular
-                    </button>
-                  </form>
-                @endif
-              @endcan
+              <div class="invoice-action-group">
+                <span class="invoice-action-group__label">SUNAT</span>
+                <div class="invoice-action-buttons">
+                  @can('consult', $invoice)
+                    @if($invoice->canBeConsulted())
+                      <form method="POST" action="{{ route('facturador.invoices.consult', $invoice) }}">
+                        @csrf
+                        <button type="submit" class="btn-secondary">
+                          <i class='bx bx-refresh'></i> Consultar SUNAT
+                        </button>
+                      </form>
+                    @endif
+                  @endcan
 
-              @can('consult', $invoice)
-                @if($invoice->canBeConsulted())
-                  <form method="POST" action="{{ route('facturador.invoices.consult', $invoice) }}">
-                    @csrf
-                    <button type="submit" class="btn-secondary">
-                      <i class='bx bx-refresh'></i> Consultar SUNAT
-                    </button>
-                  </form>
-                @endif
-              @endcan
-
-              @can('releaseFailedEmission', $invoice)
-                <form method="POST" action="{{ route('facturador.invoices.release-failed-emission', $invoice) }}" id="form-release-failed-emission">
-                  @csrf
-                  <input type="hidden" name="motivo" id="release-failed-emission-motivo" value="">
-                  <button type="button" class="btn-secondary" id="btn-release-failed-emission" style="color:#b45309; border-color:#fbbf24;">
-                    <i class='bx bx-reset'></i> Liberar para reintento
-                  </button>
-                </form>
-              @endcan
-
-              @can('delete', $invoice)
-                <form method="POST" action="{{ route('facturador.invoices.destroy', $invoice) }}"
-                      data-confirm="¿Eliminar este comprobante? Esta acción no se puede deshacer.">
-                  @csrf
-                  @method('DELETE')
-                  <button type="submit" class="btn-secondary" style="color:#ef4444; border-color:#fca5a5;">
-                    <i class='bx bx-trash'></i> Eliminar
-                  </button>
-                </form>
-              @endcan
-
-              @if($invoice->xml_path)
-                @can('downloadXml', $invoice)
-                  <a href="{{ route('facturador.invoices.xml', $invoice) }}" class="btn-secondary">
-                    <i class='bx bx-file'></i> XML local
+                  <a href="{{ route('sunat.comprobantes.validar.index', ['invoice_id' => $invoice->id]) }}" class="btn-secondary">
+                    <i class='bx bx-search-alt'></i> Validar SUNAT
                   </a>
-                @endcan
-              @endif
 
-              @if($invoice->ruta_xml)
-                <a href="{{ $invoice->ruta_xml }}" target="_blank" rel="noopener" class="btn-secondary">
-                  <i class='bx bx-download'></i> Descargar XML
-                </a>
-              @endif
+                  @can('releaseFailedEmission', $invoice)
+                    <form method="POST" action="{{ route('facturador.invoices.release-failed-emission', $invoice) }}" id="form-release-failed-emission">
+                      @csrf
+                      <input type="hidden" name="motivo" id="release-failed-emission-motivo" value="">
+                      <button type="button" class="btn-secondary" id="btn-release-failed-emission" style="color:#b45309; border-color:#fbbf24;">
+                        <i class='bx bx-block'></i> Marcar no emitido
+                      </button>
+                    </form>
+                  @endcan
+                </div>
+              </div>
 
-              @if($invoice->ruta_cdr)
-                <a href="{{ $invoice->ruta_cdr }}" target="_blank" rel="noopener" class="btn-secondary">
-                  <i class='bx bx-shield-check'></i> Descargar CDR
-                </a>
-              @endif
+              <div class="invoice-action-group">
+                <span class="invoice-action-group__label">Descargas</span>
+                <div class="invoice-action-buttons">
+                  @if($invoice->ruta_reporte)
+                    <a href="{{ $invoice->ruta_reporte }}" target="_blank" rel="noopener" class="btn-primary">
+                      <i class='bx bx-file-pdf'></i> Ver PDF Feasy
+                    </a>
+                  @endif
 
-              @if($invoice->ruta_reporte)
-                <a href="{{ $invoice->ruta_reporte }}" target="_blank" rel="noopener" class="btn-primary">
-                  <i class='bx bx-file-pdf'></i> Ver PDF
-                </a>
-              @endif
+                  <div class="pdf-custom-action">
+                    <a href="{{ route('facturador.invoices.custom-pdf', $invoice) }}" class="btn-secondary">
+                      <i class='bx bx-download'></i> PDF personalizado
+                    </a>
+                    <span class="pdf-custom-help">
+                      Usa el logo y estilo de <a href="{{ route('facturador.quote-settings.edit') }}">Config. Comprobante/Cotizador</a>.
+                    </span>
+                  </div>
 
-              @if($invoice->canBeExchangedToLetters())
-                <button type="button" id="btn-exchange-letters" class="btn-primary">
-                  <i class='bx bx-transfer'></i> Canjear a letras
-                </button>
-              @elseif($invoice->hasBeenExchangedToLetters())
-                <a href="{{ route('facturador.letras.index', ['search' => $invoice->serie_numero]) }}" class="btn-secondary">
-                  <i class='bx bx-check-double'></i> Canjeada a letras
-                </a>
-              @endif
+                  @if($invoice->ruta_xml)
+                    <a href="{{ $invoice->ruta_xml }}" target="_blank" rel="noopener" class="btn-secondary">
+                      <i class='bx bx-download'></i> XML
+                    </a>
+                  @endif
 
-              {{-- Botón Ver Más Detalle --}}
-              <button type="button" id="btn-ver-detalle" class="btn-secondary">
-                <i class='bx bx-table'></i> Más detalle
-              </button>
+                  @if($invoice->ruta_cdr)
+                    <a href="{{ $invoice->ruta_cdr }}" target="_blank" rel="noopener" class="btn-secondary">
+                      <i class='bx bx-shield-check'></i> CDR
+                    </a>
+                  @endif
+
+                  @if($invoice->xml_path)
+                    @can('downloadXml', $invoice)
+                      <a href="{{ route('facturador.invoices.xml', $invoice) }}" class="btn-secondary">
+                        <i class='bx bx-file'></i> XML local
+                      </a>
+                    @endcan
+                  @endif
+                </div>
+              </div>
+
+              <div class="invoice-action-group">
+                <span class="invoice-action-group__label">Herramientas</span>
+                <div class="invoice-action-buttons">
+                  <a href="{{ route('facturador.invoices.duplicate', $invoice) }}" class="btn-secondary">
+                    <i class='bx bx-copy'></i> Duplicar
+                  </a>
+
+                  <button type="button" id="btn-ver-detalle" class="btn-secondary">
+                    <i class='bx bx-table'></i> Más detalle
+                  </button>
+
+                  @can('delete', $invoice)
+                    <form method="POST" action="{{ route('facturador.invoices.destroy', $invoice) }}"
+                          data-confirm="¿Eliminar este comprobante? Esta acción no se puede deshacer.">
+                      @csrf
+                      @method('DELETE')
+                      <button type="submit" class="btn-secondary" style="color:#ef4444; border-color:#fca5a5;">
+                        <i class='bx bx-trash'></i> Eliminar
+                      </button>
+                    </form>
+                  @endcan
+                </div>
+              </div>
             </div>
 
             {{-- Info cabecera + cliente --}}
@@ -471,6 +601,36 @@
                 <div style="margin-top:1.5rem; background:rgba(239, 68, 68, 0.05); border:1px solid rgba(239, 68, 68, 0.2); border-radius:12px; padding:1.25rem;">
                   <p style="font-weight:700; color:#ef4444; margin:0 0 .5rem; font-size:.9rem; display: flex; align-items: center; gap: 0.5rem;"><i class='bx bx-error'></i> Último error reportado:</p>
                   <pre style="margin:0; font-size:.85rem; color:var(--clr-text-main, #7f1d1d); white-space:pre-wrap; word-break:break-word; font-family: monospace;">{{ $invoice->last_error }}</pre>
+                </div>
+              @endif
+              @if($invoice->sendLogs->isNotEmpty())
+                <div class="module-table-wrap" style="margin-top:1.5rem;">
+                  <table class="module-table">
+                    <thead>
+                      <tr>
+                        <th>Intento</th>
+                        <th>Acción</th>
+                        <th>Fecha</th>
+                        <th>HTTP</th>
+                        <th>Código</th>
+                        <th>Resultado</th>
+                        <th>Usuario</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @foreach($invoice->sendLogs as $log)
+                        <tr>
+                          <td>#{{ $log->attempt_number }}</td>
+                          <td>{{ strtoupper($log->action) }}</td>
+                          <td>{{ $log->created_at?->format('d/m/Y H:i:s') }}</td>
+                          <td>{{ $log->http_status ?? '—' }}</td>
+                          <td>{{ $log->codigo_respuesta ?? '—' }}</td>
+                          <td>{{ $log->success ? 'OK' : ($log->mensaje_respuesta ?? 'Error') }}</td>
+                          <td>{{ $log->user?->name ?? '—' }}</td>
+                        </tr>
+                      @endforeach
+                    </tbody>
+                  </table>
                 </div>
               @endif
             </div>
@@ -811,18 +971,18 @@
       });
     });
 
-    // — Liberar falso duplicado Feasy/SUNAT con motivo auditado
+    // — Retirar falso duplicado Feasy/SUNAT con motivo auditado
     document.getElementById('btn-release-failed-emission')?.addEventListener('click', function () {
       Swal.fire({
-        title: 'Liberar comprobante para reintento',
-        html: 'Usa esta acción solo si verificaste que <strong>{{ $invoice->serie_numero }}</strong> no existe en SUNAT ni en Feasy.',
+        title: 'Marcar correlativo como no emitido',
+        html: 'Usa esta acción solo si verificaste que <strong>{{ $invoice->serie_numero }}</strong> no existe en SUNAT ni en Feasy. El número quedará ocupado y no volverá a sugerirse.',
         icon: 'warning',
         input: 'textarea',
         inputLabel: 'Motivo y evidencia',
         inputPlaceholder: 'Ej: SUNAT indica NO EXISTE con total 1180.00 y Feasy no muestra registros del 28/04 al 30/04.',
         inputAttributes: { maxlength: 500 },
         showCancelButton: true,
-        confirmButtonText: '<i class="bx bx-reset"></i> Liberar',
+        confirmButtonText: '<i class="bx bx-block"></i> Marcar no emitido',
         cancelButtonText: 'Cancelar',
         confirmButtonColor: '#b45309',
         cancelButtonColor: '#6b7280',

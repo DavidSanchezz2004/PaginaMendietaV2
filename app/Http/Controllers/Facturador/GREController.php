@@ -6,6 +6,7 @@ use App\Enums\FeasyStatusEnum;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Facturador\StoreGRERequest;
 use App\Models\Company;
+use App\Models\CompanyGrePreset;
 use App\Models\Invoice;
 use App\Services\Facturador\InvoiceService;
 use App\Services\Facturador\OpenAiGrePdfExtractorService;
@@ -71,8 +72,12 @@ class GREController extends Controller
         $products     = $this->productService->allActive();
         $company      = Company::findOrFail((int) session('company_id'));
         $recentRelatedInvoices = $this->relatedInvoiceOptions($company);
+        $grePresets = CompanyGrePreset::where('company_id', $company->id)
+            ->orderByDesc('is_default')
+            ->orderBy('name')
+            ->get();
 
-        return view('facturador.gre.create', compact('suggestion09', 'products', 'company', 'recentRelatedInvoices'));
+        return view('facturador.gre.create', compact('suggestion09', 'products', 'company', 'recentRelatedInvoices', 'grePresets'));
     }
 
     public function store(StoreGRERequest $request): RedirectResponse
